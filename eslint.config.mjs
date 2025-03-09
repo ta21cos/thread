@@ -11,6 +11,12 @@ const compat = new FlatCompat({
 
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    files: ["*.config.js", "postcss.config.js", "tailwind.config.js"],
+    rules: {
+      "import/no-commonjs": "off",
+    },
+  },
 ];
 
 export default eslintConfig;
