@@ -75,6 +75,7 @@ Cline must follow this **workflow** when generating or modifying code:
 - **Cline must NEVER modify code without explicit approval.**
 - **Changes must always be based on user input and agreed plans.**
 - **The priority is maintainability, not just short-term functionality.**
+- **Do not need add commit to git. It's a task of the author.**
 
 Please follow these rules while assisting with the development of the Next.js 15 memo application.
 
