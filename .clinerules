@@ -2,14 +2,14 @@
 Rules for developing a full-stack memo application using Next.js 15 and Supabase.
 
 ## **Project Overview**
-This project is a **full-stack memo application** built with Next.js 15, Supabase, and Prisma.
+This project is a **full-stack memo application** built with Next.js 15, Supabase, and Kysely.
 Users can post memos similar to Slack, create threaded discussions, and upload images.
 
 ## **Technology Stack**
 - **Frontend**: Next.js 15 / TypeScript / Tailwind CSS
 - **Backend**: Next.js Server Actions
 - **Database, Storage, and Authentication**: Supabase
-- **ORM**: Prisma
+- **ORM**: Kysely
 - **Code Style**: ESLint + Prettier
 
 ## **Rules for Cline**
