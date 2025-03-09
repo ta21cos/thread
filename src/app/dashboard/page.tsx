@@ -3,12 +3,16 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { Memo } from '@/lib/db/schema';
+import { Memo, NewMemo } from '@/lib/db/schema';
+import { createMemo, getMemos } from '@/lib/actions';
 
 export default function Dashboard() {
   const { user, isLoading, signOut } = useAuth();
   const router = useRouter();
   const [memos, setMemos] = useState<Memo[]>([]);
+  const [content, setContent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Redirect if not authenticated
@@ -20,20 +24,67 @@ export default function Dashboard() {
   // Fetch memos when user is authenticated
   useEffect(() => {
     if (user) {
-      // This is a placeholder for actual data fetching
-      // In a real app, you would fetch memos from Supabase here
       const fetchMemos = async () => {
         try {
-          // Placeholder data - in a real app, this would be fetched from the database
-          setMemos([]);
+          const result = await getMemos();
+          if (result.success && result.data) {
+            setMemos(result.data);
+          } else {
+            setError('Failed to fetch memos');
+          }
         } catch (error) {
           console.error('Error fetching memos:', error);
+          setError('An error occurred while fetching memos');
         }
       };
       
       fetchMemos();
     }
   }, [user]);
+
+  // Handle memo submission
+  const handleSubmitMemo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!content.trim()) {
+      setError('Memo content cannot be empty');
+      return;
+    }
+
+    if (!user) {
+      setError('You must be logged in to post a memo');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const newMemo: NewMemo = {
+        content: content.trim(),
+        user_id: user.id,
+        parent_id: null
+      };
+
+      const result = await createMemo(newMemo);
+      
+      if (result.success) {
+        setContent('');
+        // Refresh memos after posting
+        const memosResult = await getMemos();
+        if (memosResult.success && memosResult.data) {
+          setMemos(memosResult.data);
+        }
+      } else {
+        setError(result.error || 'Failed to create memo');
+      }
+    } catch (error) {
+      console.error('Error creating memo:', error);
+      setError('An error occurred while creating the memo');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Handle sign out
   const handleSignOut = async () => {
@@ -83,20 +134,27 @@ export default function Dashboard() {
         <div className="max-w-3xl mx-auto">
           <div className="bg-white shadow rounded-lg p-6 mb-8">
             <h2 className="text-lg font-semibold mb-4">Create a New Memo</h2>
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleSubmitMemo}>
+              {error && (
+                <div className="text-red-500 text-sm mb-4">{error}</div>
+              )}
               <div>
                 <textarea
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   rows={3}
                   placeholder="What's on your mind?"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  required
                 ></textarea>
               </div>
               <div className="flex justify-end">
                 <button
                   type="submit"
                   className="btn btn-primary"
+                  disabled={isSubmitting}
                 >
-                  Post Memo
+                  {isSubmitting ? 'Posting...' : 'Post Memo'}
                 </button>
               </div>
             </form>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth/AuthContext';
 
@@ -11,7 +10,7 @@ export default function SignUp() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const { signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,7 +26,8 @@ export default function SignUp() {
 
     try {
       await signUp(email, password);
-      router.push('/login?message=Check your email to confirm your account');
+      setIsSubmitted(true);
+      // Don't redirect immediately, show confirmation message
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during sign up';
       setError(errorMessage);
@@ -36,6 +36,30 @@ export default function SignUp() {
       setIsLoading(false);
     }
   };
+
+  // If sign up is submitted successfully, show confirmation message
+  if (isSubmitted) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8 text-center">
+          <div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+              Check your email
+            </h2>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              We&apos;ve sent a confirmation link to <span className="font-medium">{email}</span>.
+              Please check your email and click the link to complete your registration.
+            </p>
+          </div>
+          <div className="mt-5">
+            <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+              Return to login
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
