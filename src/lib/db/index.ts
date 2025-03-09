@@ -1,8 +1,9 @@
 import { Pool } from 'pg';
 import { Kysely, PostgresDialect } from 'kysely';
 import { Database } from './schema';
+import { supabase } from '../supabase';
 
-// Create a PostgreSQL connection pool
+// Create a PostgreSQL connection pool using Supabase connection string
 const dialect = new PostgresDialect({
   pool: new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -13,3 +14,6 @@ const dialect = new PostgresDialect({
 export const db = new Kysely<Database>({
   dialect,
 });
+
+// Export Supabase storage for file uploads
+export const storage = supabase.storage;
