@@ -2,119 +2,137 @@
 
 import { db, storage } from './db';
 import { revalidatePath } from 'next/cache';
-import { NewMemo } from './db/schema';
+import { NewMemo, Memo } from './db/schema';
+import { ResultAsync } from 'neverthrow';
+
+// Define error types
+export type AppError = {
+  message: string;
+  cause?: unknown;
+};
 
 /**
  * Create a new memo
  */
-export async function createMemo(data: NewMemo) {
-  try {
-    // Insert the memo into the database
-    const result = await db
-      .insertInto('memos')
+export function createMemo({ content, user_id, parent_id }: NewMemo): ResultAsync<Memo, AppError> {
+  return ResultAsync.fromPromise(
+    db.insertInto('memos')
       .values({
-        content: data.content,
-        user_id: data.user_id,
-        parent_id: data.parent_id,
+        content,
+        user_id,
+        parent_id,
       })
       .returningAll()
-      .executeTakeFirstOrThrow();
-
-    // Revalidate the path to update the UI
-    revalidatePath('/dashboard');
-    
-    return { success: true, data: result };
-  } catch (error) {
-    console.error('Error creating memo:', error);
-    return { success: false, error: 'Failed to create memo' };
-  }
+      .executeTakeFirstOrThrow()
+      .then(result => {
+        // Revalidate the path to update the UI
+        revalidatePath('/dashboard');
+        return result;
+      }),
+    (error) => {
+      console.error('Error creating memo:', error);
+      return {
+        message: 'Failed to create memo',
+        cause: error
+      };
+    }
+  );
 }
 
 /**
  * Get all memos (root level, no parent)
  */
-export async function getMemos() {
-  try {
-    const memos = await db
-      .selectFrom('memos')
+export function getMemos(): ResultAsync<Memo[], AppError> {
+  return ResultAsync.fromPromise(
+    db.selectFrom('memos')
       .where('parent_id', 'is', null)
       .orderBy('created_at', 'desc')
       .selectAll()
-      .execute();
-    
-    return { success: true, data: memos };
-  } catch (error) {
-    console.error('Error fetching memos:', error);
-    return { success: false, error: 'Failed to fetch memos' };
-  }
+      .execute(),
+    (error) => {
+      console.error('Error fetching memos:', error);
+      return {
+        message: 'Failed to fetch memos',
+        cause: error
+      };
+    }
+  );
 }
 
 /**
  * Get replies to a specific memo
  */
-export async function getReplies(memoId: string) {
-  try {
-    const replies = await db
-      .selectFrom('memos')
+export function getReplies({ memoId }: { memoId: string }): ResultAsync<Memo[], AppError> {
+  return ResultAsync.fromPromise(
+    db.selectFrom('memos')
       .where('parent_id', '=', memoId)
       .orderBy('created_at', 'asc')
       .selectAll()
-      .execute();
-    
-    return { success: true, data: replies };
-  } catch (error) {
-    console.error('Error fetching replies:', error);
-    return { success: false, error: 'Failed to fetch replies' };
-  }
+      .execute(),
+    (error) => {
+      console.error('Error fetching replies:', error);
+      return {
+        message: 'Failed to fetch replies',
+        cause: error
+      };
+    }
+  );
 }
 
 /**
  * Upload an image to Supabase storage
  */
-export async function uploadImage(file: File, userId: string) {
-  try {
-    const filename = `${userId}_${Date.now()}_${file.name}`;
-    const { error } = await storage
-      .from('memo-images')
-      .upload(filename, file);
-    
-    if (error) throw error;
-    
-    // Get the public URL
-    const { data: { publicUrl } } = storage
-      .from('memo-images')
-      .getPublicUrl(filename);
-    
-    return { success: true, url: publicUrl };
-  } catch (error) {
-    console.error('Error uploading image:', error);
-    return { success: false, error: 'Failed to upload image' };
-  }
+export function uploadImage({ file, userId }: { file: File; userId: string }): ResultAsync<{ url: string }, AppError> {
+  const filename = `${userId}_${Date.now()}_${file.name}`;
+  
+  return ResultAsync.fromPromise(
+    storage.from('memo-images')
+      .upload(filename, file)
+      .then(({ error }) => {
+        if (error) throw error;
+        
+        // Get the public URL
+        const { data: { publicUrl } } = storage
+          .from('memo-images')
+          .getPublicUrl(filename);
+        
+        return { url: publicUrl };
+      }),
+    (error) => {
+      console.error('Error uploading image:', error);
+      return {
+        message: 'Failed to upload image',
+        cause: error
+      };
+    }
+  );
 }
 
 /**
  * Delete a memo
  */
-export async function deleteMemo(memoId: string) {
-  try {
+export function deleteMemo({ memoId }: { memoId: string }): ResultAsync<void, AppError> {
+  return ResultAsync.fromPromise(
     // First delete all replies
-    await db
-      .deleteFrom('memos')
+    db.deleteFrom('memos')
       .where('parent_id', '=', memoId)
-      .execute();
-    
-    // Then delete the memo itself
-    await db
-      .deleteFrom('memos')
-      .where('id', '=', memoId)
-      .execute();
-    
-    // Revalidate the path to update the UI
-    revalidatePath('/dashboard');
-    
-    return { success: true };
-  } catch (error) {
-    console.error('Error deleting memo:', error);
-    return { success: false, error: 'Failed to delete memo' };
-  }
+      .execute()
+      .then(() => {
+        // Then delete the memo itself
+        return db.deleteFrom('memos')
+          .where('id', '=', memoId)
+          .execute();
+      })
+      .then(() => {
+        // Revalidate the path to update the UI
+        revalidatePath('/dashboard');
+      }),
+    (error) => {
+      console.error('Error deleting memo:', error);
+      return {
+        message: 'Failed to delete memo',
+        cause: error
+      };
+    }
+  );
 }
