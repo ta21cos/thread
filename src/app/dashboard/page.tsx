@@ -25,19 +25,13 @@ export default function Dashboard() {
   useEffect(() => {
     if (user) {
       const fetchMemos = async () => {
-        try {
-          const result = await getMemos();
-          if (result.success && result.data) {
-            setMemos(result.data);
-          } else {
-            setError('Failed to fetch memos');
-          }
-        } catch (error) {
-          console.error('Error fetching memos:', error);
-          setError('An error occurred while fetching memos');
+        const result = await getMemos();
+        if (result.ok) {
+          setMemos(result.data);
+        } else {
+          setError(result.error.message);
         }
       };
-      
       fetchMemos();
     }
   }, [user]);
@@ -45,7 +39,7 @@ export default function Dashboard() {
   // Handle memo submission
   const handleSubmitMemo = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!content.trim()) {
       setError('Memo content cannot be empty');
       return;
@@ -59,31 +53,23 @@ export default function Dashboard() {
     setIsSubmitting(true);
     setError(null);
 
-    try {
-      const newMemo: NewMemo = {
-        content: content.trim(),
-        user_id: user.id,
-        parent_id: null
-      };
+    const newMemo: NewMemo = {
+      content: content.trim(),
+      user_id: user.id,
+      parent_id: null,
+    };
 
-      const result = await createMemo(newMemo);
-      
-      if (result.success) {
-        setContent('');
-        // Refresh memos after posting
-        const memosResult = await getMemos();
-        if (memosResult.success && memosResult.data) {
-          setMemos(memosResult.data);
-        }
-      } else {
-        setError(result.error || 'Failed to create memo');
-      }
-    } catch (error) {
-      console.error('Error creating memo:', error);
-      setError('An error occurred while creating the memo');
-    } finally {
-      setIsSubmitting(false);
+    const result = await createMemo(newMemo);
+    if (result.ok) {
+      setContent('');
+      // Refresh memos after posting
+      const memosResult = await getMemos();
+      const memos = memosResult.ok ? memosResult.data : [];
+      setMemos(memos);
+    } else {
+      setError(result.error.message);
     }
+    setIsSubmitting(false);
   };
 
   // Handle sign out
@@ -100,7 +86,10 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full" role="status">
+          <div
+            className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full"
+            role="status"
+          >
             <span className="visually-hidden">Loading...</span>
           </div>
           <p className="mt-2">Loading...</p>
@@ -120,10 +109,7 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold text-gray-900">Thread</h1>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-600">{user.email}</span>
-            <button
-              onClick={handleSignOut}
-              className="btn btn-outline btn-sm"
-            >
+            <button onClick={handleSignOut} className="btn btn-outline btn-sm">
               Sign Out
             </button>
           </div>
@@ -135,9 +121,7 @@ export default function Dashboard() {
           <div className="bg-white shadow rounded-lg p-6 mb-8">
             <h2 className="text-lg font-semibold mb-4">Create a New Memo</h2>
             <form className="space-y-4" onSubmit={handleSubmitMemo}>
-              {error && (
-                <div className="text-red-500 text-sm mb-4">{error}</div>
-              )}
+              {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
               <div>
                 <textarea
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -149,11 +133,7 @@ export default function Dashboard() {
                 ></textarea>
               </div>
               <div className="flex justify-end">
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={isSubmitting}
-                >
+                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
                   {isSubmitting ? 'Posting...' : 'Post Memo'}
                 </button>
               </div>
@@ -162,7 +142,6 @@ export default function Dashboard() {
 
           <div className="space-y-6">
             <h2 className="text-lg font-semibold">Recent Memos</h2>
-            
             {memos.length === 0 ? (
               <div className="bg-white shadow rounded-lg p-6 text-center text-gray-500">
                 <p>No memos yet. Create your first memo above!</p>
