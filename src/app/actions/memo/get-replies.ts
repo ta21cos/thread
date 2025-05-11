@@ -2,7 +2,7 @@
 
 import { ResultAsync } from 'neverthrow';
 import { db } from '../../../lib/db';
-import { AppError, Memo, MemoIdSchema } from './schema';
+import { Memo, MemoIdSchema } from './schema';
 import { SerializableResult } from './types';
 import { toSerializable } from './utils';
 

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { errAsync, ResultAsync } from 'neverthrow';
 import { db } from '../../../lib/db';
-import { NewMemoSchema, AppError, Memo } from './schema';
+import { NewMemoSchema, Memo } from './schema';
 import { SerializableResult } from './types';
 import { toSerializable } from './utils';
 

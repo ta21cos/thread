@@ -2,7 +2,7 @@
 
 import { ResultAsync } from 'neverthrow';
 import { supabase } from '../../../lib/supabase';
-import { AppError, ImageUploadSchema } from './schema';
+import { ImageUploadSchema } from './schema';
 import { SerializableResult } from './types';
 import { toSerializable } from './utils';
 

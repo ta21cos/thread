@@ -31,9 +31,3 @@ export type Memo = {
   created_at: Date;
   updated_at: Date;
 };
-
-// Define error types
-export type AppError = {
-  message: string;
-  cause?: unknown;
-};
