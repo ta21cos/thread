@@ -2,119 +2,175 @@
 
 import { db, storage } from './db';
 import { revalidatePath } from 'next/cache';
-import { NewMemo } from './db/schema';
+import { NewMemo, Memo } from './db/schema';
+import { ResultAsync } from 'neverthrow';
+
+// StructuredClone-able result type for client
+// Client cannot receive neverthrow's result type directly
+export type ActionResult<T, E> = { ok: true; data: T } | { ok: false; error: E };
+
+// Define error types
+export type AppError = {
+  message: string;
+  cause?: unknown;
+};
+
+export async function toActionResult<T, E extends AppError>(
+  result: ResultAsync<T, E>
+): Promise<ActionResult<T, E>> {
+  return await result.match(
+    (data) => ({ ok: true, data }),
+    (error) => ({ ok: false, error })
+  );
+}
 
 /**
  * Create a new memo
  */
-export async function createMemo(data: NewMemo) {
-  try {
-    // Insert the memo into the database
-    const result = await db
+export async function createMemo({
+  content,
+  user_id,
+  parent_id,
+}: NewMemo): Promise<ActionResult<Memo, AppError>> {
+  const result = ResultAsync.fromPromise(
+    db
       .insertInto('memos')
       .values({
-        content: data.content,
-        user_id: data.user_id,
-        parent_id: data.parent_id,
+        content,
+        user_id,
+        parent_id,
       })
       .returningAll()
-      .executeTakeFirstOrThrow();
-
-    // Revalidate the path to update the UI
-    revalidatePath('/dashboard');
-    
-    return { success: true, data: result };
-  } catch (error) {
-    console.error('Error creating memo:', error);
-    return { success: false, error: 'Failed to create memo' };
-  }
+      .executeTakeFirstOrThrow()
+      .then((result) => {
+        // Revalidate the path to update the UI
+        revalidatePath('/dashboard');
+        return result;
+      }),
+    (error) => {
+      return {
+        message: 'Failed to create memo',
+        cause: error,
+      };
+    }
+  );
+  return toActionResult(result);
 }
 
 /**
  * Get all memos (root level, no parent)
  */
-export async function getMemos() {
-  try {
-    const memos = await db
+export async function getMemos(): Promise<ActionResult<Memo[], AppError>> {
+  const result = ResultAsync.fromPromise(
+    db
       .selectFrom('memos')
       .where('parent_id', 'is', null)
       .orderBy('created_at', 'desc')
       .selectAll()
-      .execute();
-    
-    return { success: true, data: memos };
-  } catch (error) {
-    console.error('Error fetching memos:', error);
-    return { success: false, error: 'Failed to fetch memos' };
-  }
+      .execute(),
+    (error) => {
+      console.error('Error fetching memos:', error);
+      return {
+        message: 'Failed to fetch memos',
+        cause: error,
+      };
+    }
+  );
+  return toActionResult(result);
 }
 
 /**
  * Get replies to a specific memo
  */
-export async function getReplies(memoId: string) {
-  try {
-    const replies = await db
+export async function getReplies({
+  memoId,
+}: {
+  memoId: string;
+}): Promise<ActionResult<Memo[], AppError>> {
+  const result = ResultAsync.fromPromise(
+    db
       .selectFrom('memos')
       .where('parent_id', '=', memoId)
       .orderBy('created_at', 'asc')
       .selectAll()
-      .execute();
-    
-    return { success: true, data: replies };
-  } catch (error) {
-    console.error('Error fetching replies:', error);
-    return { success: false, error: 'Failed to fetch replies' };
-  }
+      .execute(),
+    (error) => {
+      console.error('Error fetching replies:', error);
+      return {
+        message: 'Failed to fetch replies',
+        cause: error,
+      };
+    }
+  );
+  return toActionResult(result);
 }
 
 /**
  * Upload an image to Supabase storage
  */
-export async function uploadImage(file: File, userId: string) {
-  try {
-    const filename = `${userId}_${Date.now()}_${file.name}`;
-    const { error } = await storage
+export async function uploadImage({
+  file,
+  userId,
+}: {
+  file: File;
+  userId: string;
+}): Promise<ActionResult<{ url: string }, AppError>> {
+  const filename = `${userId}_${Date.now()}_${file.name}`;
+
+  const result = ResultAsync.fromPromise(
+    storage
       .from('memo-images')
-      .upload(filename, file);
-    
-    if (error) throw error;
-    
-    // Get the public URL
-    const { data: { publicUrl } } = storage
-      .from('memo-images')
-      .getPublicUrl(filename);
-    
-    return { success: true, url: publicUrl };
-  } catch (error) {
-    console.error('Error uploading image:', error);
-    return { success: false, error: 'Failed to upload image' };
-  }
+      .upload(filename, file)
+      .then(({ error }) => {
+        if (error) throw error;
+
+        // Get the public URL
+        const {
+          data: { publicUrl },
+        } = storage.from('memo-images').getPublicUrl(filename);
+
+        return { url: publicUrl };
+      }),
+    (error) => {
+      console.error('Error uploading image:', error);
+      return {
+        message: 'Failed to upload image',
+        cause: error,
+      };
+    }
+  );
+  return toActionResult(result);
 }
 
 /**
  * Delete a memo
  */
-export async function deleteMemo(memoId: string) {
-  try {
+export async function deleteMemo({
+  memoId,
+}: {
+  memoId: string;
+}): Promise<ActionResult<void, AppError>> {
+  const result = ResultAsync.fromPromise(
     // First delete all replies
-    await db
+    db
       .deleteFrom('memos')
       .where('parent_id', '=', memoId)
-      .execute();
-    
-    // Then delete the memo itself
-    await db
-      .deleteFrom('memos')
-      .where('id', '=', memoId)
-      .execute();
-    
-    // Revalidate the path to update the UI
-    revalidatePath('/dashboard');
-    
-    return { success: true };
-  } catch (error) {
-    console.error('Error deleting memo:', error);
-    return { success: false, error: 'Failed to delete memo' };
-  }
+      .execute()
+      .then(() => {
+        // Then delete the memo itself
+        return db.deleteFrom('memos').where('id', '=', memoId).execute();
+      })
+      .then(() => {
+        // Revalidate the path to update the UI
+        revalidatePath('/dashboard');
+      }),
+    (error) => {
+      console.error('Error deleting memo:', error);
+      return {
+        message: 'Failed to delete memo',
+        cause: error,
+      };
+    }
+  );
+  return toActionResult(result);
 }

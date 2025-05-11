@@ -1,0 +1,103 @@
+# Thread Project Intelligence
+
+## Project Patterns
+
+### Code Organization
+- Next.js App Router structure with pages in src/app directory
+- Server Actions in src/lib/actions.ts
+- Database schema and types in src/lib/db/schema.ts
+- Supabase client in src/lib/supabase.ts
+- Authentication context in src/lib/auth/AuthContext.tsx
+
+### Naming Conventions
+- PascalCase for React components
+- camelCase for functions and variables
+- snake_case for database columns
+- Descriptive names that indicate purpose
+
+### Component Structure
+- Functional components with TypeScript interfaces
+- useState and useEffect for state management
+- Server Actions for data operations
+- Tailwind CSS for styling
+
+### Error Handling
+- Try/catch blocks in async functions
+- Structured error responses from Server Actions
+- UI feedback for error states
+
+## User Preferences
+
+### Code Style
+- TypeScript for type safety
+- Clean, well-commented code
+- Modular components
+- Consistent error handling
+
+### Development Workflow
+- Feature branches with descriptive names
+- Pull requests for code review
+- Detailed commit messages
+- Documentation updates with code changes
+
+### UI/UX Preferences
+- Clean, minimalist design
+- Responsive layouts
+- Consistent styling with Tailwind CSS
+- Clear user feedback for actions
+
+## Known Challenges
+
+### Technical Challenges
+- Tailwind CSS v4 requires '@tailwindcss/postcss' in postcss.config.js
+- Supabase authentication requires careful session management
+- TypeScript types must be kept in sync with database schema
+- Server Actions have specific patterns for error handling
+
+### Project-Specific Nuances
+- Memo threading requires careful parent-child relationships
+- User authentication state must be properly managed across the app
+- Database queries should be optimized for performance
+- File uploads require proper storage configuration
+
+## Critical Implementation Paths
+
+### Authentication Flow
+1. User enters credentials
+2. AuthContext handles authentication with Supabase
+3. Session is stored and managed
+4. Protected routes check authentication state
+
+### Memo Creation Flow
+1. User enters memo content
+2. Form submission triggers Server Action
+3. Server Action validates and stores memo
+4. UI updates to show new memo
+5. Error handling provides feedback if needed
+
+### Data Fetching Pattern
+1. Component mounts or event triggers
+2. Server Action is called to fetch data
+3. Loading state is shown during fetch
+4. Data is displayed or error is handled
+5. UI updates accordingly
+
+## Evolution of Project Decisions
+
+### Initial Setup
+- Next.js 15 with App Router for modern React patterns
+- Supabase for backend services to simplify development
+- Tailwind CSS for utility-first styling
+- TypeScript for type safety
+
+### Recent Changes
+- Implemented memo posting functionality
+- Fixed PostCSS configuration for Tailwind CSS v4
+- Added proper error handling and loading states
+- Ensured data persistence across sessions
+
+### Future Directions
+- Threaded replies to memos
+- Image upload functionality
+- Enhanced UI/UX with better feedback
+- Real-time updates for new memos

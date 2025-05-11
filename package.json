@@ -7,30 +7,37 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "format": "prettier --write .",
     "test:supabase": "node --experimental-json-modules test-supabase-connection.mjs",
     "setup:supabase": "node --experimental-json-modules setup-supabase.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
+    "@tailwindcss/postcss": "^4.1.5",
     "autoprefixer": "^10.4.20",
     "daisyui": "^5.0.0",
     "kysely": "^0.27.6",
+    "neverthrow": "^8.2.0",
     "next": "15.2.0",
     "pg": "^8.13.3",
     "postcss": "^8.5.3",
+    "prettier": "^3.5.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-use": "^17.6.0",
     "tailwindcss": "^4.0.12"
   },
   "devDependencies": {
-    "dotenv": "^16.4.5",
     "@eslint/eslintrc": "^3",
     "@types/node": "^20",
     "@types/pg": "^8.11.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^16.4.5",
     "eslint": "^9",
     "eslint-config-next": "15.2.0",
+    "eslint-config-prettier": "^10.1.2",
+    "eslint-plugin-prettier": "^5.2.6",
     "typescript": "^5"
   }
 }
