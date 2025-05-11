@@ -1,9 +1,10 @@
 'use server';
 
-import { ResultAsync } from 'neverthrow';
+import { errAsync, ResultAsync } from 'neverthrow';
 import { supabase } from '../../../lib/supabase';
-import { AppError } from '@/lib/actions';
+import { AppError, ImageUploadSchema } from './schema';
 
+// TODO: auth の実装
 /**
  * Upload an image to Supabase storage
  *
@@ -13,17 +14,35 @@ import { AppError } from '@/lib/actions';
 export async function uploadImage(
   formData: FormData
 ): Promise<ResultAsync<{ url: string }, AppError>> {
-  // Extract and validate the form data
+  // Extract form data
   const userId = formData.get('userId')?.toString() || '';
   const file = formData.get('file') as File;
 
   // Validate file presence
   if (!file || !(file instanceof File)) {
-    throw new Error('No file provided or invalid file');
+    return errAsync({
+      message: 'No file provided or invalid file',
+      cause: new Error('No file provided or invalid file'),
+    });
   }
 
+  // Validate user ID with zod schema using safeParse
+  const validation = ImageUploadSchema.safeParse({ userId });
+
+  // If validation failed, return error result
+  if (!validation.success) {
+    console.error('Validation error:', validation.error.errors);
+    return errAsync({
+      message: 'Invalid user ID',
+      cause: validation.error.errors,
+    });
+  }
+
+  // Validation succeeded, extract the validated user ID
+  const { userId: validatedUserId } = validation.data;
+
   // Create a unique filename
-  const filename = `${userId}_${Date.now()}_${file.name}`;
+  const filename = `${validatedUserId}_${Date.now()}_${file.name}`;
 
   // Use Supabase storage for file upload
   return ResultAsync.fromPromise(

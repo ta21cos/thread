@@ -2,8 +2,7 @@
 
 import { ResultAsync } from 'neverthrow';
 import { db } from '../../../lib/db';
-import { AppError } from '@/lib/actions';
-import { Memo } from '@/lib/db/schema';
+import { AppError, Memo } from './schema';
 
 /**
  * Get all memos (root level, no parent)
@@ -11,6 +10,7 @@ import { Memo } from '@/lib/db/schema';
  * @returns ResultAsync containing an array of memos or an error
  */
 export async function getMemos(): Promise<ResultAsync<Memo[], AppError>> {
+  // Execute the database operation
   return ResultAsync.fromPromise(
     db
       .selectFrom('memos')

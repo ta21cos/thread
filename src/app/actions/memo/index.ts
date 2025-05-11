@@ -6,3 +6,6 @@ export { getMemos } from './get';
 export { getReplies } from './get-replies';
 export { uploadImage } from './upload-image';
 export { deleteMemo } from './delete';
+
+// Export all types from the schema
+export * from './schema';
