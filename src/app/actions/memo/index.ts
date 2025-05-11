@@ -7,5 +7,7 @@ export { getReplies } from './get-replies';
 export { uploadImage } from './upload-image';
 export { deleteMemo } from './delete';
 
-// Export all types from the schema
+// Export all types
 export * from './schema';
+export * from './types';
+export { toSerializable } from './utils';

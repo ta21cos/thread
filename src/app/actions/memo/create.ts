@@ -4,14 +4,16 @@ import { revalidatePath } from 'next/cache';
 import { errAsync, ResultAsync } from 'neverthrow';
 import { db } from '../../../lib/db';
 import { NewMemoSchema, AppError, Memo } from './schema';
+import { SerializableResult } from './types';
+import { toSerializable } from './utils';
 
 /**
  * Create a new memo
  *
  * @param formData - FormData from the client
- * @returns ResultAsync containing the created memo or an error
+ * @returns A serializable result containing the created memo or an error
  */
-export async function createMemo(formData: FormData): Promise<ResultAsync<Memo, AppError>> {
+export async function createMemo(formData: FormData): Promise<SerializableResult<Memo>> {
   // Extract form data
   const content = formData.get('content')?.toString() || '';
   const user_id = formData.get('user_id')?.toString() || '';
@@ -27,17 +29,20 @@ export async function createMemo(formData: FormData): Promise<ResultAsync<Memo, 
   // If validation failed, return error result
   if (!validation.success) {
     console.error('Validation error:', validation.error.errors);
-    return errAsync({
-      message: 'Invalid input data',
-      cause: validation.error.errors,
-    });
+    return {
+      success: false,
+      error: {
+        message: 'Invalid input data',
+        cause: validation.error.errors,
+      },
+    };
   }
 
   // Validation succeeded, extract the validated data
   const validatedData = validation.data;
 
   // Execute the database operation
-  return ResultAsync.fromPromise(
+  const result = await ResultAsync.fromPromise(
     db
       .insertInto('memos')
       .values({
@@ -60,4 +65,7 @@ export async function createMemo(formData: FormData): Promise<ResultAsync<Memo, 
       };
     }
   );
+
+  // Convert ResultAsync to SerializableResult
+  return toSerializable(result);
 }
