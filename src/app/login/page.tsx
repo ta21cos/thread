@@ -1,19 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth/AuthContext';
 
-export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+// Component to handle search params
+function LoginMessages() {
   const searchParams = useSearchParams();
-  const { signIn } = useAuth();
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Check for confirmation message or other messages from URL
   useEffect(() => {
@@ -22,6 +17,19 @@ export default function Login() {
       setSuccessMessage(message);
     }
   }, [searchParams]);
+
+  return successMessage ? (
+    <div className="text-green-500 text-sm text-center">{successMessage}</div>
+  ) : null;
+}
+
+export default function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,13 +91,12 @@ export default function Login() {
             </div>
           </div>
 
-          {error && (
-            <div className="text-red-500 text-sm text-center">{error}</div>
-          )}
-          
-          {successMessage && (
-            <div className="text-green-500 text-sm text-center">{successMessage}</div>
-          )}
+          {error && <div className="text-red-500 text-sm text-center">{error}</div>}
+
+          {/* Wrap the component that uses searchParams in Suspense */}
+          <Suspense fallback={<div className="h-5 w-full"></div>}>
+            <LoginMessages />
+          </Suspense>
 
           <div>
             <button
