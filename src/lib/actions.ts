@@ -1,9 +1,10 @@
 'use server';
 
-import { db, storage } from './db';
 import { revalidatePath } from 'next/cache';
-import { NewMemo, Memo } from './db/schema';
 import { ResultAsync } from 'neverthrow';
+import { storage } from './supabase';
+import { Memo } from '@/generated/prisma';
+import { MemoRepository } from './db';
 
 // StructuredClone-able result type for client
 // Client cannot receive neverthrow's result type directly
@@ -31,22 +32,21 @@ export async function createMemo({
   content,
   user_id,
   parent_id,
-}: NewMemo): Promise<ActionResult<Memo, AppError>> {
+}: {
+  content: string;
+  user_id: string;
+  parent_id: string | null;
+}): Promise<ActionResult<Memo, AppError>> {
   const result = ResultAsync.fromPromise(
-    db
-      .insertInto('memos')
-      .values({
-        content,
-        user_id,
-        parent_id,
-      })
-      .returningAll()
-      .executeTakeFirstOrThrow()
-      .then((result) => {
-        // Revalidate the path to update the UI
-        revalidatePath('/dashboard');
-        return result;
-      }),
+    MemoRepository.create({
+      content,
+      user_id,
+      parent_id,
+    }).then((result) => {
+      // Revalidate the path to update the UI
+      revalidatePath('/dashboard');
+      return result;
+    }),
     (error) => {
       return {
         message: 'Failed to create memo',
@@ -61,21 +61,13 @@ export async function createMemo({
  * Get all memos (root level, no parent)
  */
 export async function getMemos(): Promise<ActionResult<Memo[], AppError>> {
-  const result = ResultAsync.fromPromise(
-    db
-      .selectFrom('memos')
-      .where('parent_id', 'is', null)
-      .orderBy('created_at', 'desc')
-      .selectAll()
-      .execute(),
-    (error) => {
-      console.error('Error fetching memos:', error);
-      return {
-        message: 'Failed to fetch memos',
-        cause: error,
-      };
-    }
-  );
+  const result = ResultAsync.fromPromise(MemoRepository.findAll(), (error) => {
+    console.error('Error fetching memos:', error);
+    return {
+      message: 'Failed to fetch memos',
+      cause: error,
+    };
+  });
   return toActionResult(result);
 }
 
@@ -87,21 +79,13 @@ export async function getReplies({
 }: {
   memoId: string;
 }): Promise<ActionResult<Memo[], AppError>> {
-  const result = ResultAsync.fromPromise(
-    db
-      .selectFrom('memos')
-      .where('parent_id', '=', memoId)
-      .orderBy('created_at', 'asc')
-      .selectAll()
-      .execute(),
-    (error) => {
-      console.error('Error fetching replies:', error);
-      return {
-        message: 'Failed to fetch replies',
-        cause: error,
-      };
-    }
-  );
+  const result = ResultAsync.fromPromise(MemoRepository.findReplies(memoId), (error) => {
+    console.error('Error fetching replies:', error);
+    return {
+      message: 'Failed to fetch replies',
+      cause: error,
+    };
+  });
   return toActionResult(result);
 }
 
@@ -151,19 +135,10 @@ export async function deleteMemo({
   memoId: string;
 }): Promise<ActionResult<void, AppError>> {
   const result = ResultAsync.fromPromise(
-    // First delete all replies
-    db
-      .deleteFrom('memos')
-      .where('parent_id', '=', memoId)
-      .execute()
-      .then(() => {
-        // Then delete the memo itself
-        return db.deleteFrom('memos').where('id', '=', memoId).execute();
-      })
-      .then(() => {
-        // Revalidate the path to update the UI
-        revalidatePath('/dashboard');
-      }),
+    MemoRepository.delete(memoId).then(() => {
+      // Revalidate the path to update the UI
+      revalidatePath('/dashboard');
+    }),
     (error) => {
       console.error('Error deleting memo:', error);
       return {

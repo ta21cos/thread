@@ -14,12 +14,19 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Helper function to get user from server components
 export async function getUser() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   return user;
 }
 
 // Helper function to get session from server components
 export async function getSession() {
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   return session;
 }
+
+// Export Supabase storage for file uploads
+export const storage = supabase.storage;
