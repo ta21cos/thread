@@ -1,12 +1,10 @@
-'use server';
-
 import { z } from 'zod';
 
 // Define the memo schemas using zod
 export const NewMemoSchema = z.object({
   content: z.string().min(1, 'Content is required'),
   user_id: z.string().uuid('Invalid user ID'),
-  parent_id: z.string().uuid('Invalid parent memo ID').nullable().optional(),
+  parent_id: z.string().uuid('Invalid parent memo ID').nullable(),
 });
 
 export const MemoIdSchema = z.object({

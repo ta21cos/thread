@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { ResultAsync } from 'neverthrow';
-import { NewMemoSchema } from './schema';
+import { NewMemoInput, NewMemoSchema } from './schema';
 import { SerializableResult } from './types';
 import { toSerializable } from './utils';
 import { MemoRepository } from '../../../lib/db';
@@ -14,11 +14,8 @@ import { Memo } from '@/generated/prisma';
  * @param formData - FormData from the client
  * @returns A serializable result containing the created memo or an error
  */
-export async function createMemo(formData: FormData): Promise<SerializableResult<Memo>> {
-  // Extract form data
-  const content = formData.get('content')?.toString() || '';
-  const user_id = formData.get('user_id')?.toString() || '';
-  const parent_id = formData.get('parent_id')?.toString() || null;
+export async function createMemo(memo: NewMemoInput): Promise<SerializableResult<Memo>> {
+  const { content, user_id, parent_id } = memo;
 
   // Validate with zod schema using safeParse
   const validation = NewMemoSchema.safeParse({
@@ -50,7 +47,6 @@ export async function createMemo(formData: FormData): Promise<SerializableResult
       parent_id: validatedData.parent_id || null,
     }).then((result) => {
       // Revalidate the path to update the UI
-      // Ensure path is always a string to avoid TypeError
       revalidatePath('/dashboard');
       return result;
     }),
