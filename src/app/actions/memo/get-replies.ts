@@ -1,7 +1,7 @@
 'use server';
 
 import { ResultAsync } from 'neverthrow';
-import { MemoIdSchema } from './schema';
+import { MemoIdInput, MemoIdSchema } from './schema';
 import { SerializableResult } from './types';
 import { toSerializable } from './utils';
 import { MemoRepository } from '../../../lib/db';
@@ -10,15 +10,12 @@ import { Memo } from '@/generated/prisma';
 /**
  * Get replies to a specific memo
  *
- * @param formData - FormData containing the memo ID
+ * @param input - Object containing the memo ID
  * @returns Serializable result containing an array of replies or an error
  */
-export async function getReplies(formData: FormData): Promise<SerializableResult<Memo[]>> {
-  // Extract form data
-  const memoId = formData.get('memoId')?.toString() || '';
-
+export async function getReplies(input: MemoIdInput): Promise<SerializableResult<Memo[]>> {
   // Validate with zod schema using safeParse
-  const validation = MemoIdSchema.safeParse({ memoId });
+  const validation = MemoIdSchema.safeParse(input);
 
   // If validation failed, return error result
   if (!validation.success) {

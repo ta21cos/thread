@@ -2,23 +2,21 @@
 
 import { ResultAsync } from 'neverthrow';
 import { supabase } from '../../../lib/supabase';
-import { ImageUploadSchema } from './schema';
+import { ImageUploadInput, ImageUploadSchema } from './schema';
 import { SerializableResult } from './types';
 import { toSerializable } from './utils';
 
 /**
  * Upload an image to Supabase storage
  *
- * @param formData - FormData containing the image file and user ID
+ * @param input - Object containing the user ID
+ * @param file - File to upload
  * @returns Serializable result containing the image URL or an error
  */
 export async function uploadImage(
-  formData: FormData
+  input: ImageUploadInput,
+  file: File
 ): Promise<SerializableResult<{ url: string }>> {
-  // Extract form data
-  const userId = formData.get('userId')?.toString() || '';
-  const file = formData.get('file') as File;
-
   // Validate file presence
   if (!file || !(file instanceof File)) {
     return {
@@ -31,7 +29,7 @@ export async function uploadImage(
   }
 
   // Validate user ID with zod schema using safeParse
-  const validation = ImageUploadSchema.safeParse({ userId });
+  const validation = ImageUploadSchema.safeParse(input);
 
   // If validation failed, return error result
   if (!validation.success) {

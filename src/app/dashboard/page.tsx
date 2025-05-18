@@ -62,7 +62,7 @@ export default function Dashboard() {
       parent_id: null,
     };
 
-    const result = await createMemo(newMemo as unknown as FormData);
+    const result = await createMemo(newMemo);
     if (result.success) {
       setContent('');
       // Refresh memos after posting
