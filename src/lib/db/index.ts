@@ -4,6 +4,8 @@ import { Database } from './schema';
 import { supabase } from '../supabase';
 
 // Create a PostgreSQL connection pool using Supabase connection string
+console.log('Connecting to PostgreSQL database...', process.env.DATABASE_URL);
+
 const dialect = new PostgresDialect({
   pool: new Pool({
     connectionString: process.env.DATABASE_URL,
