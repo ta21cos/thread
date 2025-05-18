@@ -50,7 +50,6 @@ export async function createMemo(formData: FormData): Promise<SerializableResult
       parent_id: validatedData.parent_id || null,
     }).then((result) => {
       // Revalidate the path to update the UI
-      // Ensure path is always a string to avoid TypeError
       revalidatePath('/dashboard');
       return result;
     }),

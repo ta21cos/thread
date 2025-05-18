@@ -1,10 +1,11 @@
 'use server';
 
 import { ResultAsync } from 'neverthrow';
-import { Memo, MemoIdSchema } from './schema';
+import { MemoIdSchema } from './schema';
 import { SerializableResult } from './types';
 import { toSerializable } from './utils';
 import { MemoRepository } from '../../../lib/db';
+import { Memo } from '@/generated/prisma';
 
 /**
  * Get replies to a specific memo
