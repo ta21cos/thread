@@ -1,11 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { errAsync, ResultAsync } from 'neverthrow';
-import { db } from '../../../lib/db';
-import { NewMemoSchema, Memo } from './schema';
+import { ResultAsync } from 'neverthrow';
+import { NewMemoSchema } from './schema';
 import { SerializableResult } from './types';
 import { toSerializable } from './utils';
+import { MemoRepository } from '../../../lib/db';
+import { Memo } from '@/generated/prisma';
 
 /**
  * Create a new memo
@@ -41,22 +42,18 @@ export async function createMemo(formData: FormData): Promise<SerializableResult
   // Validation succeeded, extract the validated data
   const validatedData = validation.data;
 
-  // Execute the database operation
+  // Execute the database operation using our MemoRepository
   const result = await ResultAsync.fromPromise(
-    db
-      .insertInto('memos')
-      .values({
-        content: validatedData.content,
-        user_id: validatedData.user_id,
-        parent_id: validatedData.parent_id,
-      })
-      .returningAll()
-      .executeTakeFirstOrThrow()
-      .then((result) => {
-        // Revalidate the path to update the UI
-        revalidatePath('/dashboard');
-        return result;
-      }),
+    MemoRepository.create({
+      content: validatedData.content,
+      user_id: validatedData.user_id,
+      parent_id: validatedData.parent_id || null,
+    }).then((result) => {
+      // Revalidate the path to update the UI
+      // Ensure path is always a string to avoid TypeError
+      revalidatePath('/dashboard');
+      return result;
+    }),
     (error) => {
       console.error('Error creating memo:', error);
       return {

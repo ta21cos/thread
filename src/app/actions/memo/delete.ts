@@ -2,10 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { ResultAsync } from 'neverthrow';
-import { db } from '../../../lib/db';
 import { MemoIdSchema } from './schema';
 import { SerializableResult } from './types';
 import { toSerializable } from './utils';
+import { MemoRepository } from '../../../lib/db';
 
 /**
  * Delete a memo and all its replies
@@ -35,21 +35,12 @@ export async function deleteMemo(formData: FormData): Promise<SerializableResult
   // Validation succeeded, extract the validated memo ID
   const { memoId: validatedMemoId } = validation.data;
 
-  // Execute the database operation
+  // Execute the database operation using our MemoRepository
   const result = await ResultAsync.fromPromise(
-    // First delete all replies
-    db
-      .deleteFrom('memos')
-      .where('parent_id', '=', validatedMemoId)
-      .execute()
-      .then(() => {
-        // Then delete the memo itself
-        return db.deleteFrom('memos').where('id', '=', validatedMemoId).execute();
-      })
-      .then(() => {
-        // Revalidate the path to update the UI
-        revalidatePath('/dashboard');
-      }),
+    MemoRepository.delete(validatedMemoId).then(() => {
+      // Revalidate the path to update the UI
+      revalidatePath('/dashboard');
+    }),
     (error) => {
       console.error('Error deleting memo:', error);
       return {

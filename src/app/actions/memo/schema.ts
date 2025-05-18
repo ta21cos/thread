@@ -21,13 +21,3 @@ export const ImageUploadSchema = z.object({
 export type NewMemoInput = z.infer<typeof NewMemoSchema>;
 export type MemoIdInput = z.infer<typeof MemoIdSchema>;
 export type ImageUploadInput = z.infer<typeof ImageUploadSchema>;
-
-// Define response types
-export type Memo = {
-  id: string;
-  content: string;
-  user_id: string;
-  parent_id: string | null;
-  created_at: Date;
-  updated_at: Date;
-};

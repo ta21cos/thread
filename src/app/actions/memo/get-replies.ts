@@ -1,10 +1,10 @@
 'use server';
 
 import { ResultAsync } from 'neverthrow';
-import { db } from '../../../lib/db';
 import { Memo, MemoIdSchema } from './schema';
 import { SerializableResult } from './types';
 import { toSerializable } from './utils';
+import { MemoRepository } from '../../../lib/db';
 
 /**
  * Get replies to a specific memo
@@ -34,14 +34,9 @@ export async function getReplies(formData: FormData): Promise<SerializableResult
   // Validation succeeded, extract the validated memo ID
   const { memoId: validatedMemoId } = validation.data;
 
-  // Execute the database operation
+  // Execute the database operation using our MemoRepository
   const result = await ResultAsync.fromPromise(
-    db
-      .selectFrom('memos')
-      .where('parent_id', '=', validatedMemoId)
-      .orderBy('created_at', 'asc')
-      .selectAll()
-      .execute(),
+    MemoRepository.findReplies(validatedMemoId),
     (error) => {
       console.error('Error fetching replies:', error);
       return {
