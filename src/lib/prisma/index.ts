@@ -1,4 +1,4 @@
-import { PrismaClient } from '@/generated/prisma';
+import { PrismaClient } from '@/app/generated/prisma';
 
 // Prevent multiple instances of Prisma Client in development
 const globalForPrisma = global as unknown as {
