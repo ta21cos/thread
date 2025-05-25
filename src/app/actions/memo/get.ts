@@ -26,8 +26,8 @@ const showFiles = (folderName: string) => {
   });
 };
 
-showFiles('/var/task/node_modules/.prisma/client');
-showFiles('/vercel/path0/node_modules/@prisma/client');
+showFiles('../../../../node_modules/.prisma/client');
+showFiles('../../../../../../vercel/path0/node_modules/@prisma/client');
 
 /**
  * Get all memos (root level, no parent)
