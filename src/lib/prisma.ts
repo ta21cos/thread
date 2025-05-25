@@ -13,5 +13,7 @@ export const prisma =
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 
+console.log({ prisma });
+
 // Store the Prisma Client instance in global scope in development
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
