@@ -26,9 +26,11 @@ const showFiles = (folderName: string) => {
   });
 };
 
-showFiles('../../generated/prisma');
-showFiles('../generated/prisma');
-showFiles('../../../generated/prisma');
+// showFiles('../../generated/prisma');
+// showFiles('../generated/prisma');
+showFiles('../../../../src/app/generated/prisma');
+showFiles('../../../../../src/app/generated/prisma');
+showFiles('../../../src/app/generated/prisma');
 
 /**
  * Get all memos (root level, no parent)
