@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 
-import { Memo } from '@/generated/prisma';
 import { getMemos } from '../actions/memo/get';
 import { createMemo } from '../actions/memo/create';
 import { NewMemoInput } from '../actions/memo/schema';
+import { Memo } from '@/lib/prisma/types';
 
 export default function Dashboard() {
   const { user, isLoading, signOut } = useAuth();

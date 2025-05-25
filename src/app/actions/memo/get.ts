@@ -5,7 +5,7 @@ import { ResultAsync } from 'neverthrow';
 import { SerializableResult } from './types';
 import { toSerializable } from './utils';
 import { MemoRepository } from '../../../lib/db';
-import { Memo } from '@/generated/prisma';
+import { Memo } from '@/lib/prisma/types';
 
 /**
  * Get all memos (root level, no parent)

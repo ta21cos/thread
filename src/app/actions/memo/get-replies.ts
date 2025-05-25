@@ -5,7 +5,7 @@ import { MemoIdInput, MemoIdSchema } from './schema';
 import { SerializableResult } from './types';
 import { toSerializable } from './utils';
 import { MemoRepository } from '../../../lib/db';
-import { Memo } from '@/generated/prisma';
+import { Memo } from '@/lib/prisma/types';
 
 /**
  * Get replies to a specific memo

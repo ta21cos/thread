@@ -1,4 +1,4 @@
-import { Memo } from '@/generated/prisma';
+import { Memo } from '@/lib/prisma/types';
 import { prisma } from '../../prisma';
 /**
  * Repository for Memo entity
