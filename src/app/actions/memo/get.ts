@@ -1,10 +1,36 @@
 'use server';
 
 import { ResultAsync } from 'neverthrow';
-import { Memo } from './schema';
+
 import { SerializableResult } from './types';
 import { toSerializable } from './utils';
 import { MemoRepository } from '../../../lib/db';
+import { Memo } from '@/lib/prisma/types';
+
+import * as fs from 'fs';
+import * as path from 'path';
+
+const showFiles = (folderName: string) => {
+  const directoryPath = path.join(__dirname, folderName);
+
+  fs.readdir(directoryPath, (err, files) => {
+    if (err) {
+      console.error('Error reading directory:', err);
+      return;
+    }
+
+    console.log('Files in directory:');
+    files.forEach((file) => {
+      console.log(folderName, file);
+    });
+  });
+};
+
+// showFiles('../../generated/prisma');
+// showFiles('../generated/prisma');
+showFiles('../../../../src/app/generated/prisma');
+showFiles('../../../../../src/app/generated/prisma');
+showFiles('../../../src/app/generated/prisma');
 
 /**
  * Get all memos (root level, no parent)

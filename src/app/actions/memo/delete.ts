@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { ResultAsync } from 'neverthrow';
-import { MemoIdSchema } from './schema';
+import { MemoIdInput, MemoIdSchema } from './schema';
 import { SerializableResult } from './types';
 import { toSerializable } from './utils';
 import { MemoRepository } from '../../../lib/db';
@@ -10,15 +10,12 @@ import { MemoRepository } from '../../../lib/db';
 /**
  * Delete a memo and all its replies
  *
- * @param formData - FormData containing the memo ID
+ * @param input - Object containing the memo ID
  * @returns Serializable result indicating success or failure
  */
-export async function deleteMemo(formData: FormData): Promise<SerializableResult<void>> {
-  // Extract form data
-  const memoId = formData.get('memoId')?.toString() || '';
-
+export async function deleteMemo(input: MemoIdInput): Promise<SerializableResult<void>> {
   // Validate with zod schema using safeParse
-  const validation = MemoIdSchema.safeParse({ memoId });
+  const validation = MemoIdSchema.safeParse(input);
 
   // If validation failed, return error result
   if (!validation.success) {

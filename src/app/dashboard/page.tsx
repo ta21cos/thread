@@ -3,8 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { Memo, NewMemo } from '@/lib/db/schema';
-import { createMemo, getMemos } from '@/lib/actions';
+
+import { getMemos } from '../actions/memo/get';
+import { createMemo } from '../actions/memo/create';
+import { NewMemoInput } from '../actions/memo/schema';
+import { Memo } from '@/lib/prisma/types';
 
 export default function Dashboard() {
   const { user, isLoading, signOut } = useAuth();
@@ -26,7 +29,7 @@ export default function Dashboard() {
     if (user) {
       const fetchMemos = async () => {
         const result = await getMemos();
-        if (result.ok) {
+        if (result.success) {
           setMemos(result.data);
         } else {
           setError(result.error.message);
@@ -53,19 +56,20 @@ export default function Dashboard() {
     setIsSubmitting(true);
     setError(null);
 
-    const newMemo: NewMemo = {
+    const newMemo: NewMemoInput = {
       content: content.trim(),
       user_id: user.id,
       parent_id: null,
     };
 
     const result = await createMemo(newMemo);
-    if (result.ok) {
+    if (result.success) {
       setContent('');
       // Refresh memos after posting
       const memosResult = await getMemos();
-      const memos = memosResult.ok ? memosResult.data : [];
-      setMemos(memos);
+      if (memosResult.success) {
+        setMemos(memosResult.data);
+      }
     } else {
       setError(result.error.message);
     }
