@@ -7,6 +7,7 @@
     "build": "npm run prisma:generate && next build",
     "postinstall": "npm run prisma:generate",
     "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
+    "vercel-build": "npm run prisma:generate && cp src/app/generated/prisma/libquery_engine-rhel-openssl-3.0.x.so.node public/ && next build",
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write .",
