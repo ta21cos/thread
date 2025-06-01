@@ -9,6 +9,7 @@ interface MessageCardProps {
   onEdit?: (memo: Memo) => void;
   onDelete?: (memoId: string) => void;
   isThread?: boolean;
+  showReplyButton?: boolean;
 }
 
 export function MessageCard({
@@ -17,6 +18,7 @@ export function MessageCard({
   onEdit,
   onDelete,
   isThread = false,
+  showReplyButton = true,
 }: MessageCardProps) {
   const [showActions, setShowActions] = useState(false);
 
@@ -66,7 +68,7 @@ export function MessageCard({
       {showActions && (
         <div className="chat-footer mt-2">
           <div className="flex gap-1">
-            {!isThread && onReply && (
+            {!isThread && onReply && showReplyButton && (
               <button
                 className="btn btn-ghost btn-xs"
                 onClick={() => onReply(memo.id)}

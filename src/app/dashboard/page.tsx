@@ -10,13 +10,14 @@ import { createMemo } from '../actions/memo/create';
 import { NewMemoInput } from '../actions/memo/schema';
 import { Memo } from '@/lib/prisma/types';
 import { SlackLayout } from '@/components/SlackLayout';
-import { MessageList } from '@/components/MessageList';
+import { TwoColumnLayout } from '@/components/TwoColumnLayout';
 
 export default function Dashboard() {
   const { user, isLoading, signOut } = useAuth();
   const router = useRouter();
   const [memos, setMemos] = useState<Memo[]>([]);
   const [threads, setThreads] = useState<Record<string, Memo[]>>({});
+  const [selectedMessage, setSelectedMessage] = useState<Memo | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -93,6 +94,16 @@ export default function Dashboard() {
     // TODO: Implement delete functionality
   };
 
+  // Handle message selection for thread view
+  const handleSelectMessage = (message: Memo) => {
+    setSelectedMessage(message);
+  };
+
+  // Handle closing thread panel
+  const handleCloseThread = () => {
+    setSelectedMessage(null);
+  };
+
   // Handle sign out
   const handleSignOut = async () => {
     try {
@@ -139,14 +150,17 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Message list */}
+        {/* Two column layout */}
         <div className="flex-1 min-h-0">
-          <MessageList
+          <TwoColumnLayout
             messages={memos}
             threads={threads}
+            selectedMessage={selectedMessage}
             onCreateMessage={handleCreateMessage}
             onEditMessage={handleEditMessage}
             onDeleteMessage={handleDeleteMessage}
+            onSelectMessage={handleSelectMessage}
+            onCloseThread={handleCloseThread}
           />
         </div>
       </div>

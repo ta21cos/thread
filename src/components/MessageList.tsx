@@ -11,6 +11,8 @@ interface MessageListProps {
   onEditMessage?: (memo: Memo) => void;
   onDeleteMessage?: (memoId: string) => void;
   threads?: Record<string, Memo[]>; // parentId -> replies
+  onSelectMessage?: (message: Memo) => void;
+  selectedMessageId?: string | null;
 }
 
 export function MessageList({
@@ -19,36 +21,9 @@ export function MessageList({
   onEditMessage,
   onDeleteMessage,
   threads = {},
+  onSelectMessage,
+  selectedMessageId,
 }: MessageListProps) {
-  const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
-
-  const toggleThread = (messageId: string) => {
-    const newExpanded = new Set(expandedThreads);
-    if (newExpanded.has(messageId)) {
-      newExpanded.delete(messageId);
-    } else {
-      newExpanded.add(messageId);
-    }
-    setExpandedThreads(newExpanded);
-  };
-
-  const handleReply = (parentId: string) => {
-    setReplyingTo(parentId);
-    setExpandedThreads((prev) => new Set(prev).add(parentId));
-  };
-
-  const handleThreadSubmit = async (content: string) => {
-    if (replyingTo) {
-      await onCreateMessage(content, replyingTo);
-      setReplyingTo(null);
-    }
-  };
-
-  const getThreadCount = (messageId: string) => {
-    return threads[messageId]?.length || 0;
-  };
-
   return (
     <div className="flex flex-col h-full">
       {/* Messages area */}
@@ -61,29 +36,31 @@ export function MessageList({
           </div>
         ) : (
           messages.map((message) => {
-            const threadReplies = threads[message.id] || [];
-            const threadCount = threadReplies.length;
-            const isExpanded = expandedThreads.has(message.id);
+            const threadCount = threads[message.id]?.length || 0;
+            const isSelected = selectedMessageId === message.id;
 
             return (
-              <div key={message.id} className="group">
+              <div
+                key={message.id}
+                className={`group cursor-pointer transition-colors ${
+                  isSelected ? 'bg-primary/10 border-l-4 border-primary' : 'hover:bg-base-200'
+                }`}
+                onClick={() => onSelectMessage?.(message)}
+              >
                 {/* Main message */}
                 <MessageCard
                   memo={message}
-                  onReply={handleReply}
                   onEdit={onEditMessage}
                   onDelete={onDeleteMessage}
+                  showReplyButton={false}
                 />
 
                 {/* Thread indicator */}
                 {threadCount > 0 && (
                   <div className="ml-14 mb-2">
-                    <button
-                      onClick={() => toggleThread(message.id)}
-                      className="btn btn-ghost btn-sm text-primary hover:bg-primary/10"
-                    >
+                    <div className="flex items-center gap-2 text-sm text-primary">
                       <svg
-                        className="w-4 h-4 mr-1"
+                        className="w-4 h-4"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -96,74 +73,7 @@ export function MessageList({
                         />
                       </svg>
                       {threadCount}件の返信
-                      {isExpanded ? (
-                        <svg
-                          className="w-4 h-4 ml-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 15l7-7 7 7"
-                          />
-                        </svg>
-                      ) : (
-                        <svg
-                          className="w-4 h-4 ml-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-                )}
-
-                {/* Thread replies */}
-                {isExpanded && threadReplies.length > 0 && (
-                  <div className="ml-4 border-l-2 border-base-300 pl-4 space-y-1">
-                    {threadReplies.map((reply) => (
-                      <MessageCard
-                        key={reply.id}
-                        memo={reply}
-                        onEdit={onEditMessage}
-                        onDelete={onDeleteMessage}
-                        isThread={true}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* Reply input */}
-                {replyingTo === message.id && (
-                  <div className="ml-4 border-l-2 border-primary pl-4">
-                    <div className="mb-2">
-                      <span className="text-sm text-base-content/60">
-                        User {message.user_id.slice(0, 8)} への返信
-                      </span>
-                      <button
-                        onClick={() => setReplyingTo(null)}
-                        className="btn btn-ghost btn-xs ml-2"
-                      >
-                        キャンセル
-                      </button>
                     </div>
-                    <MessageInput
-                      onSubmit={handleThreadSubmit}
-                      placeholder="スレッドで返信..."
-                      isThread={true}
-                      parentId={message.id}
-                    />
                   </div>
                 )}
               </div>
