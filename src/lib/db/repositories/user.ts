@@ -1,4 +1,4 @@
-import { User } from '@/generated/prisma';
+import { User } from '@/lib/prisma/types';
 import { prisma } from '../../prisma';
 
 /**
