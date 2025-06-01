@@ -1,11 +1,14 @@
 # general-guidelines
+
 Rules for developing a full-stack memo application using Next.js 15 and Supabase.
 
 ## **Project Overview**
+
 This project is a **full-stack memo application** built with Next.js 15, Supabase, and Kysely.
 Users can post memos similar to Slack, create threaded discussions, and upload images.
 
 ## **Technology Stack**
+
 - **Frontend**: Next.js 15 / TypeScript / Tailwind CSS
 - **Backend**: Next.js Server Actions
 - **Database, Storage, and Authentication**: Supabase
@@ -13,27 +16,31 @@ Users can post memos similar to Slack, create threaded discussions, and upload i
 - **Code Style**: ESLint + Prettier
 
 ## **Rules for Cline**
+
 Cline is an AI assistant that helps generate and refine code. However, it must strictly adhere to the following rules.
 
 ### **1. Always Provide a Plan Before Executing Code**
+
 Cline must never generate or modify code **without user confirmation**.
 Before writing any code, **clearly state the implementation plan** and **ask for approval**.
 
 ✅ **Correct Prompt Format**
 I will implement the authentication feature.
-•	Use Supabase Auth for authentication, supporting OAuth and email/password login.
-•	Handle authentication using Next.js Server Actions.
-•	Design the UI with Tailwind CSS.
+• Use Supabase Auth for authentication, supporting OAuth and email/password login.
+• Handle authentication using Next.js Server Actions.
+• Design the UI with Tailwind CSS.
 
 Does this approach look good to you?
 
 ❌ **Incorrect Prompt Format**
 I have added authentication. (← Never modify code without confirmation.)
-  ❌ **Incorrect Prompt Format**
-    I have added authentication. (← Never modify code without confirmation.)
+❌ **Incorrect Prompt Format**
+I have added authentication. (← Never modify code without confirmation.)
 
 ### **2. Ensure Code Readability and Maintainability**
+
 Cline must generate code that is:
+
 - **Well-structured and easy to read** (Use clear variable and function names).
 - **Commented where necessary** to explain purpose and logic.
 - **Componentized for reusability**, following the Atomic Design pattern.
@@ -43,9 +50,11 @@ Cline must generate code that is:
 - **Error-handled properly**, using try-catch blocks and clear API error responses.
 
 ### **3. Step-by-Step Code Generation and Refinement**
+
 Cline must follow this **workflow** when generating or modifying code:
 
 1. **Provide a Plan and Get User Approval**
+
    ```
    I will implement the memo posting feature.
    - Create a "memos" table in Supabase.
@@ -56,11 +65,14 @@ Cline must follow this **workflow** when generating or modifying code:
    ```
 
 2. **Generate Code Based on the Approved Plan**
+
    - Write code only **after the user agrees**.
    - Keep the implementation **consistent with the described plan**.
 
 3. **Explain the Generated Code**
+
    - Provide clear usage instructions.
+
    ```
    Here’s the code to submit a memo. It sends data to the Supabase API and updates the UI in real-time.
    ```
@@ -72,6 +84,7 @@ Cline must follow this **workflow** when generating or modifying code:
    ```
 
 ## **Important Notes**
+
 - **Cline must NEVER modify code without explicit approval.**
 - **Changes must always be based on user input and agreed plans.**
 - **The priority is maintainability, not just short-term functionality.**
@@ -85,13 +98,17 @@ Please follow these rules while assisting with the development of the Next.js 15
 
 DO NOT read or modify:
 
--   .env files
--   \*_/config/secrets._
--   \*_/_.pem
--   Any file containing API keys, tokens, or credentials
+- .env files
+- \*_/config/secrets._
+- \*_/_.pem
+- Any file containing API keys, tokens, or credentials
 
 ## Security Practices
 
--   Never commit sensitive files
--   Use environment variables for secrets
--   Keep credentials out of logs and output
+- Never commit sensitive files
+- Use environment variables for secrets
+- Keep credentials out of logs and output
+
+## Testing
+
+- Must ask me when you want to test on browser.
