@@ -1,114 +1,145 @@
-# general-guidelines
+# Thread Project Rules
 
-Rules for developing a full-stack memo application using Next.js 15 and Supabase.
+## Memory Bank Reference
 
-## **Project Overview**
+Before starting any development work, **always consult the memory-bank directory** for comprehensive project context:
 
-This project is a **full-stack memo application** built with Next.js 15, Supabase, and Kysely.
+- [`memory-bank/projectbrief.md`](memory-bank/projectbrief.md) - Project overview, requirements, and goals
+- [`memory-bank/techContext.md`](memory-bank/techContext.md) - Technology stack, database schema, and technical constraints
+- [`memory-bank/systemPatterns.md`](memory-bank/systemPatterns.md) - Architecture patterns, design decisions, and component relationships
+- [`memory-bank/progress.md`](memory-bank/progress.md) - Current development status and completed features
+- [`memory-bank/activeContext.md`](memory-bank/activeContext.md) - Current active development context
+- [`memory-bank/productContext.md`](memory-bank/productContext.md) - Product requirements and user experience guidelines
+
+## Project Overview
+
+This project is **Thread** - a full-stack memo application built with Next.js 15, Supabase, and Prisma.
 Users can post memos similar to Slack, create threaded discussions, and upload images.
 
-## **Technology Stack**
+## Technology Stack
 
-- **Frontend**: Next.js 15 / TypeScript / Tailwind CSS
+- **Frontend**: Next.js 15 / React 19 / TypeScript / Tailwind CSS 4 / DaisyUI
 - **Backend**: Next.js Server Actions
 - **Database, Storage, and Authentication**: Supabase
-- **ORM**: Kysely
+- **ORM**: Prisma
 - **Code Style**: ESLint + Prettier
 
-## **Rules for Cline**
+## Rules for Cline
 
 Cline is an AI assistant that helps generate and refine code. However, it must strictly adhere to the following rules.
 
-### **1. Always Provide a Plan Before Executing Code**
+### **1. Always Consult Memory Bank First**
+
+Before any development work:
+
+- **Read relevant memory-bank files** to understand current project state
+- **Check [`memory-bank/progress.md`](memory-bank/progress.md)** for what's already implemented
+- **Review [`memory-bank/activeContext.md`](memory-bank/activeContext.md)** for current focus areas
+- **Understand the architecture** from [`memory-bank/systemPatterns.md`](memory-bank/systemPatterns.md)
+
+### **2. Always Provide a Plan Before Executing Code**
 
 Cline must never generate or modify code **without user confirmation**.
 Before writing any code, **clearly state the implementation plan** and **ask for approval**.
 
 ✅ **Correct Prompt Format**
-I will implement the authentication feature.
-• Use Supabase Auth for authentication, supporting OAuth and email/password login.
-• Handle authentication using Next.js Server Actions.
-• Design the UI with Tailwind CSS.
+
+```
+I will implement the authentication feature based on the memory-bank specifications.
+• Use Supabase Auth for authentication, supporting OAuth and email/password login
+• Handle authentication using Next.js Server Actions as outlined in techContext.md
+• Follow the component patterns from systemPatterns.md
+• Design the UI with Tailwind CSS and DaisyUI
 
 Does this approach look good to you?
+```
 
 ❌ **Incorrect Prompt Format**
-I have added authentication. (← Never modify code without confirmation.)
-❌ **Incorrect Prompt Format**
-I have added authentication. (← Never modify code without confirmation.)
 
-### **2. Ensure Code Readability and Maintainability**
+```
+I have added authentication. (← Never modify code without confirmation.)
+```
+
+### **3. Ensure Code Readability and Maintainability**
 
 Cline must generate code that is:
 
-- **Well-structured and easy to read** (Use clear variable and function names).
-- **Commented where necessary** to explain purpose and logic.
-- **Componentized for reusability**, following the Atomic Design pattern.
+- **Well-structured and easy to read** (Use clear variable and function names)
+- **Commented where necessary** to explain purpose and logic
+- **Componentized for reusability**, following the Atomic Design pattern from systemPatterns.md
+- **Consistent with existing patterns** documented in memory-bank
 - **Secure**, enforcing:
-  - **Row Level Security (RLS) in Supabase**.
-  - **Proper authorization checks in API routes**.
-- **Error-handled properly**, using try-catch blocks and clear API error responses.
+  - **Row Level Security (RLS) in Supabase**
+  - **Proper authorization checks in API routes**
+- **Error-handled properly**, using try-catch blocks and clear API error responses
 
-### **3. Step-by-Step Code Generation and Refinement**
+### **4. Step-by-Step Code Generation and Refinement**
 
 Cline must follow this **workflow** when generating or modifying code:
 
-1. **Provide a Plan and Get User Approval**
+1. **Consult Memory Bank and Provide a Plan**
 
    ```
-   I will implement the memo posting feature.
-   - Create a "memos" table in Supabase.
-   - Develop an API route to handle memo submissions.
-   - Display memos in real-time using Supabase’s real-time functionality.
+   Based on memory-bank/techContext.md, I will implement the memo posting feature:
+   - Use the existing memos table schema from techContext.md
+   - Develop Server Action following the patterns in systemPatterns.md
+   - Display memos using the component architecture outlined in systemPatterns.md
+   - Follow the data flow patterns documented in the memory bank
 
    Does this sound good to you?
    ```
 
 2. **Generate Code Based on the Approved Plan**
 
-   - Write code only **after the user agrees**.
-   - Keep the implementation **consistent with the described plan**.
+   - Write code only **after the user agrees**
+   - Keep the implementation **consistent with the described plan**
+   - **Follow existing patterns** from memory-bank documentation
 
 3. **Explain the Generated Code**
 
-   - Provide clear usage instructions.
+   - Provide clear usage instructions
+   - Reference how it fits with the overall architecture
 
    ```
-   Here’s the code to submit a memo. It sends data to the Supabase API and updates the UI in real-time.
+   Here's the code to submit a memo. It follows the Server Action pattern from systemPatterns.md
+   and uses the database schema from techContext.md.
    ```
 
-4. **Ask for Refinements and Improvements**
-   - Encourage user feedback.
-   ```
-   Let me know if you need any modifications or additional features.
-   ```
+4. **Update Memory Bank if Needed**
+   - Suggest updates to progress.md for completed features
+   - Note any architectural changes that should be documented
 
 ## **Important Notes**
 
-- **Cline must NEVER modify code without explicit approval.**
-- **Changes must always be based on user input and agreed plans.**
-- **The priority is maintainability, not just short-term functionality.**
-- **Do not need add commit to git. It's a task of the author.**
+- **Cline must NEVER modify code without explicit approval**
+- **Always reference memory-bank documentation** for context and patterns
+- **Changes must always be based on user input and agreed plans**
+- **The priority is maintainability, not just short-term functionality**
+- **Follow the established architecture** documented in systemPatterns.md
+- **Do not commit to git - that's the author's task**
 
-Please follow these rules while assisting with the development of the Next.js 15 memo application.
+## Security
 
-# Security
-
-## Sensitive Files
+### Sensitive Files
 
 DO NOT read or modify:
 
 - .env files
-- \*_/config/secrets._
-- \*_/_.pem
+- _/config/secrets._
+- _/_.pem
 - Any file containing API keys, tokens, or credentials
 
-## Security Practices
+### Security Practices
 
 - Never commit sensitive files
 - Use environment variables for secrets
 - Keep credentials out of logs and output
+- Follow Row Level Security patterns from techContext.md
 
 ## Testing
 
-- Must ask me when you want to test on browser.
+- Must ask me when you want to test on browser
+- Follow testing patterns established in the project
+- Ensure all new features work with existing functionality
+
+Please follow these rules while assisting with the development of the Thread memo application.
