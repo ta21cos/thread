@@ -5,16 +5,18 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 
 import { getMemos } from '../actions/memo/get';
+import { getReplies } from '../actions/memo/get-replies';
 import { createMemo } from '../actions/memo/create';
 import { NewMemoInput } from '../actions/memo/schema';
 import { Memo } from '@/lib/prisma/types';
+import { SlackLayout } from '@/components/SlackLayout';
+import { MessageList } from '@/components/MessageList';
 
 export default function Dashboard() {
   const { user, isLoading, signOut } = useAuth();
   const router = useRouter();
   const [memos, setMemos] = useState<Memo[]>([]);
-  const [content, setContent] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [threads, setThreads] = useState<Record<string, Memo[]>>({});
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -24,56 +26,71 @@ export default function Dashboard() {
     }
   }, [user, isLoading, router]);
 
-  // Fetch memos when user is authenticated
+  // Fetch memos and threads when user is authenticated
   useEffect(() => {
     if (user) {
-      const fetchMemos = async () => {
-        const result = await getMemos();
-        if (result.success) {
-          setMemos(result.data);
-        } else {
-          setError(result.error.message);
-        }
-      };
-      fetchMemos();
+      fetchMemosAndThreads();
     }
   }, [user]);
 
-  // Handle memo submission
-  const handleSubmitMemo = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const fetchMemosAndThreads = async () => {
+    try {
+      // Fetch main memos (parent messages only)
+      const memosResult = await getMemos();
+      if (memosResult.success) {
+        const mainMemos = memosResult.data.filter((memo) => !memo.parent_id);
+        setMemos(mainMemos);
 
-    if (!content.trim()) {
-      setError('Memo content cannot be empty');
-      return;
+        // Fetch threads for each main memo
+        const threadsData: Record<string, Memo[]> = {};
+        for (const memo of mainMemos) {
+          const repliesResult = await getReplies({ memoId: memo.id });
+          if (repliesResult.success) {
+            threadsData[memo.id] = repliesResult.data;
+          }
+        }
+        setThreads(threadsData);
+      } else {
+        setError(memosResult.error.message);
+      }
+    } catch (error) {
+      console.error('Error fetching memos and threads:', error);
+      setError('Failed to load messages');
     }
+  };
 
+  // Handle memo creation (both main messages and thread replies)
+  const handleCreateMessage = async (content: string, parentId?: string) => {
     if (!user) {
-      setError('You must be logged in to post a memo');
+      setError('You must be logged in to post a message');
       return;
     }
-
-    setIsSubmitting(true);
-    setError(null);
 
     const newMemo: NewMemoInput = {
       content: content.trim(),
       user_id: user.id,
-      parent_id: null,
+      parent_id: parentId || null,
     };
 
     const result = await createMemo(newMemo);
     if (result.success) {
-      setContent('');
-      // Refresh memos after posting
-      const memosResult = await getMemos();
-      if (memosResult.success) {
-        setMemos(memosResult.data);
-      }
+      // Refresh memos and threads after posting
+      await fetchMemosAndThreads();
     } else {
       setError(result.error.message);
     }
-    setIsSubmitting(false);
+  };
+
+  // Handle memo editing (placeholder for future implementation)
+  const handleEditMessage = (memo: Memo) => {
+    console.log('Edit message:', memo);
+    // TODO: Implement edit functionality
+  };
+
+  // Handle memo deletion (placeholder for future implementation)
+  const handleDeleteMessage = (memoId: string) => {
+    console.log('Delete message:', memoId);
+    // TODO: Implement delete functionality
   };
 
   // Handle sign out
@@ -88,15 +105,10 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-base-200">
         <div className="text-center">
-          <div
-            className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full"
-            role="status"
-          >
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <p className="mt-2">Loading...</p>
+          <span className="loading loading-spinner loading-lg"></span>
+          <p className="mt-4 text-base-content/60">Loading...</p>
         </div>
       </div>
     );
@@ -107,75 +119,37 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Thread</h1>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">{user.email}</span>
-            <button onClick={handleSignOut} className="btn btn-outline btn-sm">
-              Sign Out
+    <SlackLayout user={user} onSignOut={handleSignOut}>
+      <div className="h-screen flex flex-col">
+        {/* Error display */}
+        {error && (
+          <div className="alert alert-error mx-4 mt-4">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
+            </svg>
+            <span>{error}</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => setError(null)}>
+              ✕
             </button>
           </div>
-        </div>
-      </header>
+        )}
 
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-white shadow rounded-lg p-6 mb-8">
-            <h2 className="text-lg font-semibold mb-4">Create a New Memo</h2>
-            <form className="space-y-4" onSubmit={handleSubmitMemo}>
-              {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
-              <div>
-                <textarea
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  rows={3}
-                  placeholder="What's on your mind?"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  required
-                ></textarea>
-              </div>
-              <div className="flex justify-end">
-                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                  {isSubmitting ? 'Posting...' : 'Post Memo'}
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <div className="space-y-6">
-            <h2 className="text-lg font-semibold">Recent Memos</h2>
-            {memos.length === 0 ? (
-              <div className="bg-white shadow rounded-lg p-6 text-center text-gray-500">
-                <p>No memos yet. Create your first memo above!</p>
-              </div>
-            ) : (
-              memos.map((memo) => (
-                <div key={memo.id} className="bg-white shadow rounded-lg p-6">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-sm text-gray-500">User ID: {memo.user_id}</p>
-                      <p className="mt-1">{memo.content}</p>
-                    </div>
-                    <p className="text-xs text-gray-400">
-                      {new Date(memo.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+        {/* Message list */}
+        <div className="flex-1 min-h-0">
+          <MessageList
+            messages={memos}
+            threads={threads}
+            onCreateMessage={handleCreateMessage}
+            onEditMessage={handleEditMessage}
+            onDeleteMessage={handleDeleteMessage}
+          />
         </div>
-      </main>
-
-      <footer className="bg-white shadow mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <p className="text-center text-gray-500 text-sm">
-            &copy; {new Date().getFullYear()} Thread App. All rights reserved.
-          </p>
-        </div>
-      </footer>
-    </div>
+      </div>
+    </SlackLayout>
   );
 }
