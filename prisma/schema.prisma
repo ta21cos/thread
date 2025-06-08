@@ -34,5 +34,9 @@ model Memo {
   parent   Memo?  @relation("MemoToMemo", fields: [parent_id], references: [id])
   replies  Memo[] @relation("MemoToMemo")
 
+  @@index([parent_id])
+  @@index([user_id]) 
+  @@index([created_at(sort: Desc)])
+  @@index([parent_id, created_at])
   @@map("memos")
 }
