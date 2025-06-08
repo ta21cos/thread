@@ -7,6 +7,7 @@ import { SerializableResult } from './types';
 import { toSerializable } from './utils';
 import { MemoRepository } from '../../../lib/db';
 import { Memo } from '@/lib/prisma/types';
+import { invalidateAllMemoData } from '../cache';
 
 /**
  * Create a new memo
@@ -45,9 +46,11 @@ export async function createMemo(memo: NewMemoInput): Promise<SerializableResult
       content: validatedData.content,
       user_id: validatedData.user_id,
       parent_id: validatedData.parent_id || null,
-    }).then((result) => {
+    }).then(async (result) => {
       // Revalidate the path to update the UI
       revalidatePath('/dashboard');
+      // Invalidate all memo-related cache
+      await invalidateAllMemoData();
       return result;
     }),
     (error) => {

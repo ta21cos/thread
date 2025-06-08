@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import React from 'react';
 import { Memo } from '@/lib/prisma/types';
 import { MessageCard } from './MessageCard';
 import { MessageInput } from './MessageInput';
 
 interface MessageListProps {
   messages: Memo[];
-  onCreateMessage: (content: string, parentId?: string) => Promise<void>;
+  createMessageAction: (content: string, parentId?: string) => Promise<void>;
   onEditMessage?: (memo: Memo) => void;
   onDeleteMessage?: (memoId: string) => void;
   threads?: Record<string, Memo[]>; // parentId -> replies
@@ -17,7 +17,7 @@ interface MessageListProps {
 
 export function MessageList({
   messages,
-  onCreateMessage,
+  createMessageAction,
   onEditMessage,
   onDeleteMessage,
   threads = {},
@@ -85,7 +85,7 @@ export function MessageList({
       {/* Main message input */}
       <div className="border-t border-base-300 p-4 bg-base-100">
         <MessageInput
-          onSubmit={(content) => onCreateMessage(content)}
+          onSubmitAction={(content) => createMessageAction(content)}
           placeholder="メッセージを入力..."
         />
       </div>

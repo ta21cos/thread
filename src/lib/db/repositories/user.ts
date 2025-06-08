@@ -9,61 +9,56 @@ export const UserRepository = {
   /**
    * Create a new user
    */
-  create: async ({ id, email }: { id: string; email: string }): Promise<User> => {
-    return prisma.user.create({
+  create: async ({ id, email }: { id: string; email: string }): Promise<User> =>
+    prisma.user.create({
       data: {
         id,
         email,
       },
-    });
-  },
+    }),
 
   /**
    * Find a user by ID
    */
-  findById: async (userId: string): Promise<User | null> => {
-    return prisma.user.findUnique({
+  findById: async (userId: string): Promise<User | null> =>
+    prisma.user.findUnique({
       where: {
         id: userId,
       },
-    });
-  },
+    }),
 
   /**
    * Find a user by email
    */
-  findByEmail: async (email: string): Promise<User | null> => {
-    return prisma.user.findUnique({
+  findByEmail: async (email: string): Promise<User | null> =>
+    prisma.user.findUnique({
       where: {
         email,
       },
-    });
-  },
+    }),
 
   /**
    * Get all users
    */
-  findAll: async (): Promise<User[]> => {
-    return prisma.user.findMany({
+  findAll: async (): Promise<User[]> =>
+    prisma.user.findMany({
       orderBy: {
         created_at: 'desc',
       },
-    });
-  },
+    }),
 
   /**
    * Update a user
    */
-  update: async ({ id, email }: { id: string; email: string }): Promise<User> => {
-    return prisma.user.update({
+  update: async ({ id, email }: { id: string; email: string }): Promise<User> =>
+    prisma.user.update({
       where: {
         id,
       },
       data: {
         email,
       },
-    });
-  },
+    }),
 
   /**
    * Delete a user and all associated memos

@@ -8,22 +8,22 @@ interface TwoColumnLayoutProps {
   messages: Memo[];
   threads: Record<string, Memo[]>;
   selectedMessage: Memo | null;
-  onCreateMessage: (content: string, parentId?: string) => Promise<void>;
+  createMessageAction: (content: string, parentId?: string) => Promise<void>;
   onEditMessage?: (memo: Memo) => void;
   onDeleteMessage?: (memoId: string) => void;
-  onSelectMessage: (message: Memo) => void;
-  onCloseThread: () => void;
+  onSelectMessageAction: (message: Memo) => void;
+  onCloseThreadAction: () => void;
 }
 
 export function TwoColumnLayout({
   messages,
   threads,
   selectedMessage,
-  onCreateMessage,
+  createMessageAction,
   onEditMessage,
   onDeleteMessage,
-  onSelectMessage,
-  onCloseThread,
+  onSelectMessageAction,
+  onCloseThreadAction,
 }: TwoColumnLayoutProps) {
   const selectedThreadReplies = selectedMessage ? threads[selectedMessage.id] || [] : [];
 
@@ -40,10 +40,10 @@ export function TwoColumnLayout({
           <MessageList
             messages={messages}
             threads={threads}
-            onCreateMessage={onCreateMessage}
+            createMessageAction={createMessageAction}
             onEditMessage={onEditMessage}
             onDeleteMessage={onDeleteMessage}
-            onSelectMessage={onSelectMessage}
+            onSelectMessage={onSelectMessageAction}
             selectedMessageId={selectedMessage?.id}
           />
         </div>
@@ -54,10 +54,10 @@ export function TwoColumnLayout({
         <ThreadPanel
           selectedMessage={selectedMessage}
           threadReplies={selectedThreadReplies}
-          onCreateMessage={onCreateMessage}
+          createMessageAction={createMessageAction}
           onEditMessage={onEditMessage}
           onDeleteMessage={onDeleteMessage}
-          onClose={onCloseThread}
+          onClose={onCloseThreadAction}
         />
       </div>
     </div>

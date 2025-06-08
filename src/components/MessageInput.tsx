@@ -3,17 +3,15 @@
 import { useState, useRef } from 'react';
 
 interface MessageInputProps {
-  onSubmit: (content: string) => Promise<void>;
+  onSubmitAction: (content: string) => Promise<void>;
   placeholder?: string;
   isThread?: boolean;
-  parentId?: string;
 }
 
 export function MessageInput({
-  onSubmit,
+  onSubmitAction,
   placeholder = 'メッセージを入力...',
   isThread = false,
-  parentId,
 }: MessageInputProps) {
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,7 +24,7 @@ export function MessageInput({
 
     setIsSubmitting(true);
     try {
-      await onSubmit(content.trim());
+      await onSubmitAction(content.trim());
       setContent('');
       // Reset textarea height
       if (textareaRef.current) {

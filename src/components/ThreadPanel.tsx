@@ -7,7 +7,7 @@ import { MessageInput } from './MessageInput';
 interface ThreadPanelProps {
   selectedMessage: Memo | null;
   threadReplies: Memo[];
-  onCreateMessage: (content: string, parentId?: string) => Promise<void>;
+  createMessageAction: (content: string, parentId?: string) => Promise<void>;
   onEditMessage?: (memo: Memo) => void;
   onDeleteMessage?: (memoId: string) => void;
   onClose: () => void;
@@ -16,7 +16,7 @@ interface ThreadPanelProps {
 export function ThreadPanel({
   selectedMessage,
   threadReplies,
-  onCreateMessage,
+  createMessageAction,
   onEditMessage,
   onDeleteMessage,
   onClose,
@@ -34,7 +34,7 @@ export function ThreadPanel({
   }
 
   const handleThreadSubmit = async (content: string) => {
-    await onCreateMessage(content, selectedMessage.id);
+    await createMessageAction(content, selectedMessage.id);
   };
 
   return (
@@ -109,10 +109,9 @@ export function ThreadPanel({
           </span>
         </div>
         <MessageInput
-          onSubmit={handleThreadSubmit}
+          onSubmitAction={handleThreadSubmit}
           placeholder="スレッドで返信..."
           isThread={true}
-          parentId={selectedMessage.id}
         />
       </div>
     </div>

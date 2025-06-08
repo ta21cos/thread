@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from 'next/link';
 
 export default function Home() {
   return (
@@ -24,9 +24,7 @@ export default function Home() {
             <p className="mb-4">
               A simple memo application where you can post notes and create threaded discussions.
             </p>
-            <p>
-              Please sign in to start posting memos and joining conversations.
-            </p>
+            <p>Please sign in to start posting memos and joining conversations.</p>
           </div>
 
           <div className="bg-white shadow rounded-lg p-6">
