@@ -26,27 +26,26 @@ async function testConnection() {
     // Test authentication
     console.log('\nTesting authentication...');
     const { data: authData, error: authError } = await supabase.auth.getSession();
-    
+
     if (authError) {
       console.error('Authentication error:', authError.message);
     } else {
       console.log('Authentication service is working correctly');
       console.log('Session:', authData.session ? 'Active' : 'None');
     }
-    
+
     // Test database
     console.log('\nTesting database connection...');
     try {
       // Try a simple select to check if the memos table exists
-      const { error: dbError } = await supabase
-        .from('memos')
-        .select('id')
-        .limit(1);
-      
+      const { error: dbError } = await supabase.from('memos').select('id').limit(1);
+
       if (dbError && dbError.message.includes('does not exist')) {
         console.error('Database error: The "memos" table does not exist');
         console.log('Hint: You need to run the SQL setup script in supabase-setup.sql');
-        console.log('Go to your Supabase dashboard > SQL Editor > New query, then paste and run the contents of supabase-setup.sql');
+        console.log(
+          'Go to your Supabase dashboard > SQL Editor > New query, then paste and run the contents of supabase-setup.sql'
+        );
       } else if (dbError) {
         console.error('Database query error:', dbError.message);
         console.log('Hint: Check your RLS policies in Supabase');
@@ -57,30 +56,27 @@ async function testConnection() {
     } catch (error) {
       console.error('Unexpected database error:', error.message);
     }
-    
+
     // Test storage
     console.log('\nTesting storage...');
     try {
       // First list all buckets to check if storage is accessible
-      const { data: buckets, error: listError } = await supabase
-        .storage
-        .listBuckets();
-      
+      const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+
       if (listError) {
         console.error('Storage list error:', listError.message);
         console.log('Hint: Make sure your Supabase project has storage enabled');
       } else {
         console.log('Storage service is accessible');
-        
+
         // Check if our specific bucket exists
-        const bucketExists = buckets.some(bucket => bucket.name === 'memo-images');
-        
-        console.log({ buckets })
-        
+        const bucketExists = buckets.some((bucket) => bucket.name === 'memo-images');
         if (!bucketExists) {
           console.error('Storage error: The "memo-images" bucket does not exist');
           console.log('Hint: You need to run the SQL setup script in supabase-setup.sql');
-          console.log('Go to your Supabase dashboard > SQL Editor > New query, then paste and run the contents of supabase-setup.sql');
+          console.log(
+            'Go to your Supabase dashboard > SQL Editor > New query, then paste and run the contents of supabase-setup.sql'
+          );
         } else {
           console.log('Storage is working correctly');
           console.log('memo-images bucket exists and is accessible');
@@ -89,7 +85,7 @@ async function testConnection() {
     } catch (error) {
       console.error('Unexpected storage error:', error.message);
     }
-    
+
     // Determine overall status
     console.log('\nSummary:');
     if (!authError) {
@@ -97,32 +93,27 @@ async function testConnection() {
     } else {
       console.log('❌ Authentication: Failed to connect');
     }
-    
+
     // Check if memos table exists by trying to query it
-    const { error: tableCheckError } = await supabase
-      .from('memos')
-      .select('id')
-      .limit(1);
-    
+    const { error: tableCheckError } = await supabase.from('memos').select('id').limit(1);
+
     if (!tableCheckError) {
       console.log('✅ Database: Connected successfully');
     } else {
       console.log('❌ Database: Failed to connect or table does not exist');
     }
-    
+
     // Check if storage bucket exists
-    const { data: bucketData, error: bucketError } = await supabase
-      .storage
-      .listBuckets();
-    
-    const bucketExists = bucketData && bucketData.some(bucket => bucket.name === 'memo-images');
-    
+    const { data: bucketData, error: bucketError } = await supabase.storage.listBuckets();
+
+    const bucketExists = bucketData && bucketData.some((bucket) => bucket.name === 'memo-images');
+
     if (!bucketError && bucketExists) {
       console.log('✅ Storage: Connected successfully');
     } else {
       console.log('❌ Storage: Failed to connect or bucket does not exist');
     }
-    
+
     if (!authError && !tableCheckError && !bucketError && bucketExists) {
       console.log('\n✅ Overall: Supabase connection is working correctly!');
     } else {
@@ -132,7 +123,6 @@ async function testConnection() {
       console.log('2. You have run the SQL setup script in supabase-setup.sql');
       console.log('3. Your Supabase project is properly configured');
     }
-    
   } catch (error) {
     console.error('Unexpected error:', error.message);
   }
