@@ -4,14 +4,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { createMemo } from '@/app/actions/memo/create';
-import { NewMemoInput } from '@/app/actions/memo/schema';
 import { Memo } from '@/lib/prisma/types';
 import { SlackLayout } from '@/components/SlackLayout';
 import { SuspenseWrapper } from '@/components/suspense/SuspenseWrapper';
 import {
   MessageListLoadingFallback,
   ThreadLoadingFallback,
-  CompactLoadingFallback,
 } from '@/components/suspense/LoadingFallbacks';
 import { CleanMemoList } from './CleanMemoList';
 import { ThreadViewer } from './ThreadViewer';
@@ -52,7 +50,7 @@ function DashboardStats({
 }
 
 // Data fetching component
-function DashboardDataProvider({ children }: { children: (data: any) => React.ReactNode }) {
+function DashboardDataProvider({ children }: { children: (data: unknown) => React.ReactNode }) {
   const dashboardData = useSuspenseQuery(['dashboard-complete'], async () => {
     const [mainData, recentMemos, activeThreads] = await Promise.all([
       getDashboardData(),
@@ -77,30 +75,19 @@ function DashboardDataProvider({ children }: { children: (data: any) => React.Re
 // Main content component
 function DashboardMainContent({
   memos,
-  threads,
-  onSelectMessage,
   createMessageAction,
 }: {
   memos: Memo[];
-  threads: Record<string, Memo[]>;
-  onSelectMessage: (memo: Memo) => void;
   createMessageAction: (content: string, parentId?: string) => Promise<void>;
 }) {
-  onSubmitAction;
   return (
     <div className="flex-1 flex flex-col">
       <div className="p-4 border-b">
-        <MessageInput onSubmit={createMessageAction} />
+        <MessageInput onSubmitAction={createMessageAction} />
       </div>
 
       <div className="flex-1 overflow-auto p-4">
-        <CleanMemoList
-          memos={memos}
-          threads={threads}
-          onSelectMessage={onSelectMessage}
-          onEditMessage={() => {}}
-          onDeleteMessage={() => {}}
-        />
+        <CleanMemoList memos={memos} onEditMessage={() => {}} onDeleteMessage={() => {}} />
       </div>
     </div>
   );
@@ -156,7 +143,7 @@ export function OptimizedDashboard() {
       } else {
         setError(result.error.message);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to create message');
     }
   };
@@ -186,7 +173,7 @@ export function OptimizedDashboard() {
 
         <SuspenseWrapper fallback={<MessageListLoadingFallback />}>
           <DashboardDataProvider>
-            {(data) => (
+            {(data: any) => (
               <>
                 <DashboardStats
                   totalMessages={data.totalMessages}

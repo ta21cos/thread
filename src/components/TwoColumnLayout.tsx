@@ -31,8 +31,8 @@ export function TwoColumnLayout({
     <div className="h-screen flex">
       {/* Left column - Message list */}
       <div className="flex-1 min-w-0 flex flex-col border-r border-base-300">
-        <div className="p-4 border-b border-base-300 bg-base-100">
-          <h2 className="text-lg font-semibold">メッセージ</h2>
+        <div className="px-xl py-lg border-b border-base-300 bg-base-100">
+          <h2 className="text-lg font-semibold text-base-content mb-xs">メッセージ</h2>
           <p className="text-sm text-base-content/60">メッセージをクリックしてスレッドを表示</p>
         </div>
 

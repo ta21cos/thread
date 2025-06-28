@@ -34,7 +34,7 @@ function MemoListSection({ onSelectMessage }: { onSelectMessage: (memo: Memo) =>
     <div className="flex-1 overflow-hidden">
       <SuspenseWrapper
         fallback={<CompactLoadingFallback />}
-        errorFallback={({ error, resetErrorBoundary }) => (
+        errorFallback={({ resetErrorBoundary }) => (
           <div className="p-4 text-center">
             <p className="text-red-500 mb-2">Failed to load threads</p>
             <button onClick={resetErrorBoundary} className="btn btn-sm btn-primary">
@@ -86,7 +86,7 @@ function ThreadSection({
   return (
     <SuspenseWrapper
       fallback={<ThreadLoadingFallback />}
-      errorFallback={({ error, resetErrorBoundary }) => (
+      errorFallback={({ resetErrorBoundary }) => (
         <div className="p-4 text-center">
           <p className="text-red-500 mb-2">Failed to load thread</p>
           <button onClick={resetErrorBoundary} className="btn btn-sm btn-primary">
@@ -152,18 +152,19 @@ export function ProgressiveDashboard() {
       } else {
         setError(result.error.message);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to create message');
     }
   };
 
+  const { signOut } = useAuth();
+
   const handleSignOut = async () => {
     try {
-      const { signOut } = useAuth();
       await signOut();
       router.push('/');
     } catch (error) {
-      console.error('Error sonSubmitActionut:', error);
+      console.error('Error signing out:', error);
     }
   };
 
@@ -185,12 +186,12 @@ export function ProgressiveDashboard() {
           {/* Main Content - Loads First */}
           <div className="flex-1 flex flex-col">
             <div className="p-4 border-b">
-              <MessageInput onSubmit={handleCreateMessage} />
+              <MessageInput onSubmitAction={handleCreateMessage} />
             </div>
 
             <SuspenseWrapper
               fallback={<MessageListLoadingFallback />}
-              errorFallback={({ error, resetErrorBoundary }) => (
+              errorFallback={({ resetErrorBoundary }) => (
                 <div className="flex-1 flex items-center justify-center">
                   <div className="text-center">
                     <p className="text-red-500 mb-2">Failed to load messages</p>

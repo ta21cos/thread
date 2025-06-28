@@ -23,7 +23,6 @@ function DefaultLoadingFallback() {
 }
 
 function DefaultErrorFallback({
-  error,
   resetErrorBoundary,
 }: {
   error: Error;
@@ -59,7 +58,10 @@ export function SuspenseWrapper({
 }: SuspenseWrapperProps) {
   return (
     <ErrorBoundary
-      FallbackComponent={(errorFallback as any) || DefaultErrorFallback}
+      FallbackComponent={
+        (errorFallback as React.ComponentType<{ error: Error; resetErrorBoundary: () => void }>) ||
+        DefaultErrorFallback
+      }
       onError={onError}
       onReset={onReset}
     >

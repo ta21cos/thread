@@ -60,7 +60,7 @@ export function StableDashboard() {
       } else {
         setError(result.error.message);
       }
-    } catch (_err) {
+    } catch {
       setError('Failed to create message');
     }
   };
@@ -168,7 +168,7 @@ export function StableDashboard() {
               ↻ Refresh
             </button>
           </div>
-        </dionSelectMessageAction
+        </div>
 
         <div className="flex-1 min-h-0">
           <TwoColumnLayout
@@ -178,7 +178,7 @@ export function StableDashboard() {
             createMessageAction={handleCreateMessage}
             onEditMessage={handleEditMessage}
             onDeleteMessage={handleDeleteMessage}
-            onSelectMessage={handleSelectMessage}
+            onSelectMessageAction={handleSelectMessage}
             onCloseThreadAction={handleCloseThread}
           />
         </div>

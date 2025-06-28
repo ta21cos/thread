@@ -5,19 +5,11 @@ import { Memo } from '@/lib/prisma/types';
 
 interface CleanMemoListProps {
   memos: Memo[];
-  threads: Record<string, Memo[]>;
-  onSelectMessage: (message: Memo) => void;
   onEditMessage: (memo: Memo) => void;
   onDeleteMessage: (memoId: string) => void;
 }
 
-export function CleanMemoList({
-  memos,
-  threads,
-  onSelectMessage,
-  onEditMessage,
-  onDeleteMessage,
-}: CleanMemoListProps) {
+export function CleanMemoList({ memos, onEditMessage, onDeleteMessage }: CleanMemoListProps) {
   return (
     <div className="space-y-4">
       {memos.map((memo) => (

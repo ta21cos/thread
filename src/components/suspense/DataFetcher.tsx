@@ -5,7 +5,7 @@ import { ReactNode, useState, useEffect } from 'react';
 interface DataFetcherProps<T> {
   fetchFn: () => Promise<T>;
   children: (data: T) => ReactNode;
-  deps?: any[];
+  deps?: unknown[];
 }
 
 export function DataFetcher<T>({ fetchFn, children, deps = [] }: DataFetcherProps<T>) {
@@ -34,7 +34,7 @@ export function DataFetcher<T>({ fetchFn, children, deps = [] }: DataFetcherProp
     return () => {
       isCancelled = true;
     };
-  }, deps);
+  }, [fetchFn, ...deps]);
 
   if (isLoading || !data) {
     throw new Promise(() => {}); // Suspend
@@ -43,7 +43,7 @@ export function DataFetcher<T>({ fetchFn, children, deps = [] }: DataFetcherProp
   return <>{children(data)}</>;
 }
 
-export function AsyncDataFetcher<T>({ fetchFn, children }: Omit<DataFetcherProps<T>, 'deps'>) {
+export function AsyncDataFetcher<T>({ fetchFn }: Omit<DataFetcherProps<T>, 'deps'>) {
   const [promise] = useState(() => fetchFn());
 
   // This will throw the promise to Suspense

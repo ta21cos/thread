@@ -6,18 +6,11 @@ import { MessageCard } from '@/components/MessageCard';
 import { Memo } from '@/lib/prisma/types';
 
 interface MemoListProps {
-  onSelectMessage: (message: Memo) => void;
   onEditMessage: (memo: Memo) => void;
   onDeleteMessage: (memoId: string) => void;
-  threads: Record<string, Memo[]>;
 }
 
-export function MemoList({
-  onSelectMessage,
-  onEditMessage,
-  onDeleteMessage,
-  threads,
-}: MemoListProps) {
+export function MemoList({ onEditMessage, onDeleteMessage }: MemoListProps) {
   const memosResult = useSuspenseQuery(['memos'], async () => {
     const result = await getMemos();
     if (!result.success) {

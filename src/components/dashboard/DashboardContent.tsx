@@ -8,8 +8,6 @@ import { NewMemoInput } from '@/app/actions/memo/schema';
 import { Memo } from '@/lib/prisma/types';
 import { SlackLayout } from '@/components/SlackLayout';
 import { TwoColumnLayout } from '@/components/TwoColumnLayout';
-import { SuspenseWrapper } from '@/components/suspense/SuspenseWrapper';
-import { DashboardLoadingFallback } from '@/components/suspense/LoadingFallbacks';
 import { useSuspenseQuery } from '@/hooks/useSuspenseQuery';
 import { getDashboardData } from '@/app/actions/memo/get-dashboard-data';
 
@@ -56,7 +54,7 @@ export function DashboardContent() {
       } else {
         setError(result.error.message);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to create message');
     }
   };
