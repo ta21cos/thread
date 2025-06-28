@@ -8,22 +8,22 @@ interface TwoColumnLayoutProps {
   messages: Memo[];
   threads: Record<string, Memo[]>;
   selectedMessage: Memo | null;
-  onCreateMessage: (content: string, parentId?: string) => Promise<void>;
+  createMessageAction: (content: string, parentId?: string) => Promise<void>;
   onEditMessage?: (memo: Memo) => void;
   onDeleteMessage?: (memoId: string) => void;
-  onSelectMessage: (message: Memo) => void;
-  onCloseThread: () => void;
+  onSelectMessageAction: (message: Memo) => void;
+  onCloseThreadAction: () => void;
 }
 
 export function TwoColumnLayout({
   messages,
   threads,
   selectedMessage,
-  onCreateMessage,
+  createMessageAction,
   onEditMessage,
   onDeleteMessage,
-  onSelectMessage,
-  onCloseThread,
+  onSelectMessageAction,
+  onCloseThreadAction,
 }: TwoColumnLayoutProps) {
   const selectedThreadReplies = selectedMessage ? threads[selectedMessage.id] || [] : [];
 
@@ -31,8 +31,8 @@ export function TwoColumnLayout({
     <div className="h-screen flex">
       {/* Left column - Message list */}
       <div className="flex-1 min-w-0 flex flex-col border-r border-base-300">
-        <div className="p-4 border-b border-base-300 bg-base-100">
-          <h2 className="text-lg font-semibold">メッセージ</h2>
+        <div className="px-xl py-lg border-b border-base-300 bg-base-100">
+          <h2 className="text-lg font-semibold text-base-content mb-xs">メッセージ</h2>
           <p className="text-sm text-base-content/60">メッセージをクリックしてスレッドを表示</p>
         </div>
 
@@ -40,10 +40,10 @@ export function TwoColumnLayout({
           <MessageList
             messages={messages}
             threads={threads}
-            onCreateMessage={onCreateMessage}
+            createMessageAction={createMessageAction}
             onEditMessage={onEditMessage}
             onDeleteMessage={onDeleteMessage}
-            onSelectMessage={onSelectMessage}
+            onSelectMessage={onSelectMessageAction}
             selectedMessageId={selectedMessage?.id}
           />
         </div>
@@ -54,10 +54,10 @@ export function TwoColumnLayout({
         <ThreadPanel
           selectedMessage={selectedMessage}
           threadReplies={selectedThreadReplies}
-          onCreateMessage={onCreateMessage}
+          createMessageAction={createMessageAction}
           onEditMessage={onEditMessage}
           onDeleteMessage={onDeleteMessage}
-          onClose={onCloseThread}
+          onClose={onCloseThreadAction}
         />
       </div>
     </div>

@@ -17,43 +17,35 @@ export async function toSerializable<T, E extends { message: string; cause?: unk
     // It's ResultAsync
     return result.match(
       // On success
-      (data) => {
-        return {
-          success: true,
-          data,
-        };
-      },
+      (data) => ({
+        success: true,
+        data,
+      }),
       // On error
-      (error) => {
-        return {
-          success: false,
-          error: {
-            message: error.message,
-            cause: error.cause,
-          },
-        };
-      }
+      (error) => ({
+        success: false,
+        error: {
+          message: error.message,
+          cause: error.cause,
+        },
+      })
     );
   } else {
     // It's Result
     return result.match(
       // On success
-      (data) => {
-        return {
-          success: true,
-          data,
-        };
-      },
+      (data) => ({
+        success: true,
+        data,
+      }),
       // On error
-      (error) => {
-        return {
-          success: false,
-          error: {
-            message: error.message,
-            cause: error.cause,
-          },
-        };
-      }
+      (error) => ({
+        success: false,
+        error: {
+          message: error.message,
+          cause: error.cause,
+        },
+      })
     );
   }
 }

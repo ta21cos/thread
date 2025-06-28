@@ -3,17 +3,15 @@
 import { useState, useRef } from 'react';
 
 interface MessageInputProps {
-  onSubmit: (content: string) => Promise<void>;
+  onSubmitAction: (content: string) => Promise<void>;
   placeholder?: string;
   isThread?: boolean;
-  parentId?: string;
 }
 
 export function MessageInput({
-  onSubmit,
+  onSubmitAction,
   placeholder = 'メッセージを入力...',
   isThread = false,
-  parentId,
 }: MessageInputProps) {
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,7 +24,7 @@ export function MessageInput({
 
     setIsSubmitting(true);
     try {
-      await onSubmit(content.trim());
+      await onSubmitAction(content.trim());
       setContent('');
       // Reset textarea height
       if (textareaRef.current) {
@@ -56,62 +54,82 @@ export function MessageInput({
   };
 
   return (
-    <div className={`${isThread ? 'ml-12' : ''} mb-4`}>
+    <div className={`${isThread ? 'ml-3xl' : ''} mb-lg`}>
       <form onSubmit={handleSubmit} className="relative">
-        <div className="flex flex-col bg-base-100 border border-base-300 rounded-lg focus-within:border-primary transition-colors">
-          {/* Input area */}
-          <div className="flex-1 p-3">
+        <div className="flex flex-col bg-base-100 border border-base-300 rounded-lg focus-within:border-primary transition-all duration-200 ease-out shadow-sm hover:shadow-md">
+          {/* Input area - Fixed container to prevent layout shift */}
+          <div className="flex-1 p-md">
             <textarea
               ref={textareaRef}
               value={content}
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
-              className="textarea textarea-ghost w-full resize-none min-h-[40px] max-h-[120px] p-0 text-base leading-relaxed focus:outline-none"
+              className="textarea textarea-ghost w-full resize-none min-h-input-area max-h-textarea p-0 text-sm leading-relaxed focus:outline-none placeholder:text-base-content/50"
               rows={1}
               disabled={isSubmitting}
             />
           </div>
 
-          {/* Toolbar */}
-          <div className="flex items-center justify-between px-3 pb-3 pt-1">
-            <div className="flex items-center gap-2">
+          {/* Toolbar - Fixed height to prevent shift */}
+          <div className="flex items-center justify-between px-md pb-md pt-xs border-t border-base-200 h-12">
+            <div className="flex items-center gap-xs">
               {/* File upload */}
-              <label className="btn btn-ghost btn-sm btn-circle" title="ファイルを添付">
+              <label
+                className="btn btn-ghost btn-sm btn-circle hover:bg-base-200 transition-colors"
+                title="ファイルを添付"
+              >
                 <input type="file" className="hidden" />
-                📎
+                <span className="text-sm">📎</span>
               </label>
 
               {/* Emoji picker */}
               <button
                 type="button"
-                className="btn btn-ghost btn-sm btn-circle"
+                className="btn btn-ghost btn-sm btn-circle hover:bg-base-200 transition-colors"
                 title="絵文字を追加"
               >
-                😊
+                <span className="text-sm">😊</span>
               </button>
 
               {/* Mention */}
-              <button type="button" className="btn btn-ghost btn-sm btn-circle" title="メンション">
-                @
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm btn-circle hover:bg-base-200 transition-colors"
+                title="メンション"
+              >
+                <span className="text-sm font-medium">@</span>
               </button>
             </div>
 
-            {/* Send button */}
+            {/* Send button - Fixed width to prevent layout shift */}
             <button
               type="submit"
               disabled={!content.trim() || isSubmitting}
-              className="btn btn-primary btn-sm"
+              className="btn btn-primary btn-sm min-w-[60px] transition-all duration-200 ease-out disabled:opacity-50"
             >
-              {isSubmitting ? <span className="loading loading-spinner loading-xs"></span> : '送信'}
+              {isSubmitting ? (
+                <span className="loading loading-spinner loading-xs"></span>
+              ) : (
+                <span className="text-sm">送信</span>
+              )}
             </button>
           </div>
         </div>
 
         {/* Helper text */}
-        <div className="mt-1 text-xs text-base-content/60">
-          <kbd className="kbd kbd-xs">Enter</kbd> で送信、
-          <kbd className="kbd kbd-xs">Shift</kbd> + <kbd className="kbd kbd-xs">Enter</kbd> で改行
+        <div className="mt-xs text-xs text-base-content/60 flex items-center gap-xs">
+          <div className="flex items-center gap-xs">
+            <kbd className="kbd kbd-xs px-xs py-xs">Enter</kbd>
+            <span>で送信</span>
+          </div>
+          <span className="text-base-content/40">•</span>
+          <div className="flex items-center gap-xs">
+            <kbd className="kbd kbd-xs px-xs py-xs">Shift</kbd>
+            <span>+</span>
+            <kbd className="kbd kbd-xs px-xs py-xs">Enter</kbd>
+            <span>で改行</span>
+          </div>
         </div>
       </form>
     </div>
