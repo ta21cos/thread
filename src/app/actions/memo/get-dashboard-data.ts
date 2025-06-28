@@ -42,10 +42,6 @@ const fetchDashboardDataInternal = cache(async (): Promise<DashboardData> => {
 
   sleep(2000);
 
-  if (memos.length === 0 || memos.length > 0) {
-    throw new Error('test in server');
-  }
-
   return {
     memos: rootMemos,
     threads,
