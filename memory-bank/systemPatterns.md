@@ -17,12 +17,14 @@ flowchart TD
 ### Key Components
 
 1. **Frontend Layer**
+
    - Next.js 15 with App Router
    - React components for UI
    - Client-side state management
    - Tailwind CSS for styling
 
 2. **Server Layer**
+
    - Next.js Server Actions for API functionality
    - Server-side rendering and data fetching
    - Authentication handling
