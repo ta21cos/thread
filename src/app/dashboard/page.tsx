@@ -8,7 +8,7 @@ import {
   DashboardLoadingFallback,
   AuthLoadingFallback,
 } from '@/components/suspense/LoadingFallbacks';
-import { DashboardContent } from '@/components/dashboard/DashboardContent';
+import { ProgressiveDashboard } from '@/components/dashboard/ProgressiveDashboard';
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
@@ -33,7 +33,7 @@ export default function Dashboard() {
       fallback={<DashboardLoadingFallback />}
       onError={(error) => console.error('Dashboard error:', error)}
     >
-      <DashboardContent />
+      <ProgressiveDashboard />
     </SuspenseWrapper>
   );
 }

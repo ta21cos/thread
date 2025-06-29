@@ -21,7 +21,13 @@ import { MessageInput } from '@/components/MessageInput';
 import { MessageList } from '@/components/MessageList';
 import { ThreadPanel } from '@/components/ThreadPanel';
 
-function MemoListSection({ onSelectMessage }: { onSelectMessage: (memo: Memo) => void }) {
+function MemoListSection({
+  onSelectMessage,
+  createMessageAction,
+}: {
+  onSelectMessage: (memo: Memo) => void;
+  createMessageAction: (content: string, parentId?: string) => Promise<void>;
+}) {
   const memos = useSuspenseQuery(['memos'], async () => {
     const result = await getMemos();
     if (!result.success) {
@@ -46,7 +52,7 @@ function MemoListSection({ onSelectMessage }: { onSelectMessage: (memo: Memo) =>
         <ThreadProvider memoIds={memos.map((m) => m.id)}>
           <MessageList
             messages={memos}
-            createMessageAction={async () => {}}
+            createMessageAction={createMessageAction}
             onSelectMessage={onSelectMessage}
             onEditMessage={() => {}}
             onDeleteMessage={() => {}}
@@ -77,9 +83,11 @@ function ThreadProvider({ memoIds, children }: { memoIds: string[]; children: Re
 function ThreadSection({
   selectedMessage,
   onClose,
+  onCreateReply,
 }: {
   selectedMessage: Memo | null;
   onClose: () => void;
+  onCreateReply: (content: string, parentId?: string) => Promise<void>;
 }) {
   if (!selectedMessage) return null;
 
@@ -95,7 +103,11 @@ function ThreadSection({
         </div>
       )}
     >
-      <ThreadContent selectedMessage={selectedMessage} onClose={onClose} />
+      <ThreadContent
+        selectedMessage={selectedMessage}
+        onClose={onClose}
+        onCreateReply={onCreateReply}
+      />
     </SuspenseWrapper>
   );
 }
@@ -103,9 +115,11 @@ function ThreadSection({
 function ThreadContent({
   selectedMessage,
   onClose,
+  onCreateReply,
 }: {
   selectedMessage: Memo;
   onClose: () => void;
+  onCreateReply: (content: string, parentId?: string) => Promise<void>;
 }) {
   const threads = useSuspenseQuery(['thread-replies', selectedMessage.id], async () => {
     const repliesResult = await getReplies({ memoId: selectedMessage.id });
@@ -120,7 +134,7 @@ function ThreadContent({
       selectedMessage={selectedMessage}
       threadReplies={threads}
       onClose={onClose}
-      createMessageAction={async () => {}}
+      createMessageAction={onCreateReply}
     />
   );
 }
@@ -148,6 +162,9 @@ export function ProgressiveDashboard() {
       if (result.success) {
         invalidateQuery(['memos']);
         invalidateQuery(['threads']);
+        if (parentId) {
+          invalidateQuery(['thread-replies', parentId]);
+        }
         setError(null);
       } else {
         setError(result.error.message);
@@ -202,7 +219,10 @@ export function ProgressiveDashboard() {
                 </div>
               )}
             >
-              <MemoListSection onSelectMessage={setSelectedMessage} />
+              <MemoListSection
+                onSelectMessage={setSelectedMessage}
+                createMessageAction={handleCreateMessage}
+              />
             </SuspenseWrapper>
           </div>
 
@@ -212,6 +232,7 @@ export function ProgressiveDashboard() {
               <ThreadSection
                 selectedMessage={selectedMessage}
                 onClose={() => setSelectedMessage(null)}
+                onCreateReply={handleCreateMessage}
               />
             </div>
           )}
