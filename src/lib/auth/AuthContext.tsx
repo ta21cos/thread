@@ -21,12 +21,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let refreshTimer: NodeJS.Timeout | null = null;
+
     // Get initial session
     const getInitialSession = async () => {
       const { data } = await supabase.auth.getSession();
       setSession(data.session);
       setUser(data.session?.user ?? null);
       setIsLoading(false);
+
+      // Set up token refresh timer if session exists
+      if (data.session) {
+        scheduleTokenRefresh(data.session);
+      }
+    };
+
+    // Schedule automatic token refresh
+    const scheduleTokenRefresh = (session: Session) => {
+      if (refreshTimer) {
+        clearTimeout(refreshTimer);
+      }
+
+      const expiresAt = session.expires_at;
+      if (expiresAt) {
+        // Refresh 5 minutes before expiration
+        const refreshTime = expiresAt * 1000 - Date.now() - 5 * 60 * 1000;
+
+        if (refreshTime > 0) {
+          refreshTimer = setTimeout(async () => {
+            try {
+              const { data, error } = await supabase.auth.refreshSession();
+              if (error) {
+                console.error('Token refresh failed:', error);
+                // Force sign out if refresh fails
+                await supabase.auth.signOut();
+              } else if (data.session) {
+                // Schedule next refresh
+                scheduleTokenRefresh(data.session);
+              }
+            } catch (error) {
+              console.error('Token refresh error:', error);
+            }
+          }, refreshTime);
+        }
+      }
     };
 
     getInitialSession();
@@ -34,14 +72,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
+
+      // Handle token refresh scheduling
+      if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+        scheduleTokenRefresh(session);
+      } else if (event === 'SIGNED_OUT') {
+        if (refreshTimer) {
+          clearTimeout(refreshTimer);
+        }
+      }
     });
 
     return () => {
       subscription.unsubscribe();
+      if (refreshTimer) {
+        clearTimeout(refreshTimer);
+      }
     };
   }, []);
 
