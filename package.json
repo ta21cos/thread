@@ -2,6 +2,8 @@
   "name": "thread",
   "version": "0.1.0",
   "private": true,
+  "main": "public/electron.js",
+  "homepage": "./",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "npm run prisma:generate && next build",
@@ -12,7 +14,12 @@
     "lint": "next lint",
     "format": "prettier --write .",
     "test:supabase": "node --experimental-json-modules test-supabase-connection.mjs",
-    "setup:supabase": "node --experimental-json-modules setup-supabase.mjs"
+    "setup:supabase": "node --experimental-json-modules setup-supabase.mjs",
+    "electron": "electron .",
+    "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-pack": "ELECTRON_BUILD=true npm run build && electron-builder",
+    "build:electron": "ELECTRON_BUILD=true npm run build && electron-builder",
+    "dist": "ELECTRON_BUILD=true npm run build && electron-builder --publish=never"
   },
   "dependencies": {
     "@prisma/client": "6.8.2",
@@ -41,12 +48,66 @@
     "@types/pg": "^8.11.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^9.2.0",
     "dotenv": "^16.4.5",
+    "electron": "^37.1.0",
+    "electron-builder": "^26.0.12",
+    "electron-is-dev": "^3.0.1",
     "eslint": "^9",
     "eslint-config-next": "15.2.0",
     "eslint-config-prettier": "^10.1.2",
     "eslint-plugin-prettier": "^5.2.6",
     "supabase": "^2.24.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wait-on": "^8.0.3"
+  },
+  "build": {
+    "appId": "com.thread.app",
+    "productName": "Thread",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*",
+      "electron/**/*",
+      "public/electron.js",
+      "public/preload.js",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "extraResources": [
+      {
+        "from": "prisma/",
+        "to": "prisma/"
+      }
+    ]
   }
 }
