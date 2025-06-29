@@ -7,29 +7,143 @@ import { createMemo } from '@/app/actions/memo/create';
 import { NewMemoInput } from '@/app/actions/memo/schema';
 import { Memo } from '@/lib/prisma/types';
 import { SlackLayout } from '@/components/SlackLayout';
-import { TwoColumnLayout } from '@/components/TwoColumnLayout';
+import { SuspenseWrapper } from '@/components/suspense/SuspenseWrapper';
+import {
+  MessageListLoadingFallback,
+  ThreadLoadingFallback,
+  CompactLoadingFallback,
+} from '@/components/suspense/LoadingFallbacks';
 import { useSuspenseQuery } from '@/hooks/useSuspenseQuery';
-import { getDashboardData } from '@/app/actions/memo/get-dashboard-data';
+import { getMemos } from '@/app/actions/memo/get';
+import { getReplies } from '@/app/actions/memo/get-replies';
+import { invalidateQuery } from '@/hooks/useSuspenseQuery';
+import { MessageInput } from '@/components/MessageInput';
+import { MessageList } from '@/components/MessageList';
+import { ThreadPanel } from '@/components/ThreadPanel';
 
-export function DashboardContent() {
-  const { user, signOut } = useAuth();
-  const router = useRouter();
-  const [selectedMessage, setSelectedMessage] = useState<Memo | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  // Single query to fetch all dashboard data
-  const dashboardData = useSuspenseQuery(['dashboard-data'], async () => {
-    const result = await getDashboardData();
-    // const a = 1;
-    // if (!a || a) {
-    //   throw new Error('test');
-    // }
-
+function MemoListSection({
+  onSelectMessage,
+  createMessageAction,
+}: {
+  onSelectMessage: (memo: Memo) => void;
+  createMessageAction: (content: string, parentId?: string) => Promise<void>;
+}) {
+  const memos = useSuspenseQuery(['memos'], async () => {
+    const result = await getMemos();
     if (!result.success) {
       throw new Error(result.error.message);
     }
-    return result.data;
+    return result.data.filter((memo) => !memo.parent_id);
   });
+
+  return (
+    <div className="flex-1 overflow-hidden">
+      <SuspenseWrapper
+        fallback={<CompactLoadingFallback />}
+        errorFallback={({ resetErrorBoundary }) => (
+          <div className="p-4 text-center">
+            <p className="text-red-500 mb-2">Failed to load threads</p>
+            <button onClick={resetErrorBoundary} className="btn btn-sm btn-primary">
+              Retry
+            </button>
+          </div>
+        )}
+      >
+        <ThreadProvider memoIds={memos.map((m) => m.id)}>
+          <MessageList
+            messages={memos}
+            createMessageAction={createMessageAction}
+            onSelectMessage={onSelectMessage}
+            onEditMessage={() => {}}
+            onDeleteMessage={() => {}}
+          />
+        </ThreadProvider>
+      </SuspenseWrapper>
+    </div>
+  );
+}
+
+function ThreadProvider({ memoIds, children }: { memoIds: string[]; children: React.ReactNode }) {
+  useSuspenseQuery(['threads', memoIds], async () => {
+    const threadsData: Record<string, Memo[]> = {};
+
+    for (const memoId of memoIds) {
+      const repliesResult = await getReplies({ memoId });
+      if (repliesResult.success) {
+        threadsData[memoId] = repliesResult.data;
+      }
+    }
+
+    return threadsData;
+  });
+
+  return <>{children}</>;
+}
+
+function ThreadSection({
+  selectedMessage,
+  onClose,
+  onCreateReply,
+}: {
+  selectedMessage: Memo | null;
+  onClose: () => void;
+  onCreateReply: (content: string, parentId?: string) => Promise<void>;
+}) {
+  if (!selectedMessage) return null;
+
+  return (
+    <SuspenseWrapper
+      fallback={<ThreadLoadingFallback />}
+      errorFallback={({ resetErrorBoundary }) => (
+        <div className="p-4 text-center">
+          <p className="text-red-500 mb-2">Failed to load thread</p>
+          <button onClick={resetErrorBoundary} className="btn btn-sm btn-primary">
+            Retry
+          </button>
+        </div>
+      )}
+    >
+      <ThreadContent
+        selectedMessage={selectedMessage}
+        onClose={onClose}
+        onCreateReply={onCreateReply}
+      />
+    </SuspenseWrapper>
+  );
+}
+
+function ThreadContent({
+  selectedMessage,
+  onClose,
+  onCreateReply,
+}: {
+  selectedMessage: Memo;
+  onClose: () => void;
+  onCreateReply: (content: string, parentId?: string) => Promise<void>;
+}) {
+  const threads = useSuspenseQuery(['thread-replies', selectedMessage.id], async () => {
+    const repliesResult = await getReplies({ memoId: selectedMessage.id });
+    if (!repliesResult.success) {
+      throw new Error(repliesResult.error.message);
+    }
+    return repliesResult.data;
+  });
+
+  return (
+    <ThreadPanel
+      selectedMessage={selectedMessage}
+      threadReplies={threads}
+      onClose={onClose}
+      createMessageAction={onCreateReply}
+    />
+  );
+}
+
+export function DashboardContent() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [selectedMessage, setSelectedMessage] = useState<Memo | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleCreateMessage = async (content: string, parentId?: string) => {
     if (!user) {
@@ -46,11 +160,12 @@ export function DashboardContent() {
     try {
       const result = await createMemo(newMemo);
       if (result.success) {
-        // The server action will handle cache invalidation
-        // Force re-fetch by invalidating our local query
+        invalidateQuery(['memos']);
+        invalidateQuery(['threads']);
+        if (parentId) {
+          invalidateQuery(['thread-replies', parentId]);
+        }
         setError(null);
-        // Trigger a refresh of dashboard data
-        window.location.reload(); // Simple approach for now
       } else {
         setError(result.error.message);
       }
@@ -59,21 +174,7 @@ export function DashboardContent() {
     }
   };
 
-  const handleEditMessage = (memo: Memo) => {
-    console.log('Edit message:', memo);
-  };
-
-  const handleDeleteMessage = (memoId: string) => {
-    console.log('Delete message:', memoId);
-  };
-
-  const handleSelectMessage = (message: Memo) => {
-    setSelectedMessage(message);
-  };
-
-  const handleCloseThread = () => {
-    setSelectedMessage(null);
-  };
+  const { signOut } = useAuth();
 
   const handleSignOut = async () => {
     try {
@@ -91,14 +192,6 @@ export function DashboardContent() {
       <div className="h-screen flex flex-col">
         {error && (
           <div className="alert alert-error mx-4 mt-4">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
             <span>{error}</span>
             <button className="btn btn-ghost btn-sm" onClick={() => setError(null)}>
               ✕
@@ -106,26 +199,43 @@ export function DashboardContent() {
           </div>
         )}
 
-        {/* Dashboard Stats */}
-        <div className="px-4 py-2 bg-base-200 border-b">
-          <div className="flex gap-4 text-sm text-base-content/60">
-            <span>{dashboardData.totalMessages} total messages</span>
-            <span>{dashboardData.totalThreads} active threads</span>
-            <span>{dashboardData.memos.length} conversations</span>
-          </div>
-        </div>
+        <div className="flex-1 min-h-0 flex">
+          {/* Main Content - Loads First */}
+          <div className="flex-1 flex flex-col">
+            <div className="p-4 border-b">
+              <MessageInput onSubmitAction={handleCreateMessage} />
+            </div>
 
-        <div className="flex-1 min-h-0">
-          <TwoColumnLayout
-            messages={dashboardData.memos}
-            threads={dashboardData.threads}
-            selectedMessage={selectedMessage}
-            createMessageAction={handleCreateMessage}
-            onEditMessage={handleEditMessage}
-            onDeleteMessage={handleDeleteMessage}
-            onSelectMessageAction={handleSelectMessage}
-            onCloseThreadAction={handleCloseThread}
-          />
+            <SuspenseWrapper
+              fallback={<MessageListLoadingFallback />}
+              errorFallback={({ resetErrorBoundary }) => (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <p className="text-red-500 mb-2">Failed to load messages</p>
+                    <button onClick={resetErrorBoundary} className="btn btn-primary">
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              )}
+            >
+              <MemoListSection
+                onSelectMessage={setSelectedMessage}
+                createMessageAction={handleCreateMessage}
+              />
+            </SuspenseWrapper>
+          </div>
+
+          {/* Thread Panel - Loads After Selection */}
+          {selectedMessage && (
+            <div className="w-96 border-l border-base-300">
+              <ThreadSection
+                selectedMessage={selectedMessage}
+                onClose={() => setSelectedMessage(null)}
+                onCreateReply={handleCreateMessage}
+              />
+            </div>
+          )}
         </div>
       </div>
     </SlackLayout>
