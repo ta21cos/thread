@@ -30,8 +30,8 @@ const buildUrl = (
   path: string,
   params?: Record<string, string | number | boolean | undefined>
 ): string => {
-  // NOTE: For Electron, API_BASE_URL is already absolute
-  const baseUrl = isElectron
+  // NOTE: Use API_BASE_URL if it's an absolute URL, otherwise use window.location.origin
+  const baseUrl = API_BASE_URL.startsWith('http')
     ? API_BASE_URL
     : window.location.origin;
 
