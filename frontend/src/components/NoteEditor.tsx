@@ -105,7 +105,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         onCancel();
       }
     },
-    [onCancel]
+    [handleSubmit, onCancel]
   );
 
   const insertMention = useCallback(
