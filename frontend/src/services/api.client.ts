@@ -30,12 +30,10 @@ const buildUrl = (
   path: string,
   params?: Record<string, string | number | boolean | undefined>
 ): string => {
-  // NOTE: Use API_BASE_URL if it's an absolute URL, otherwise use window.location.origin
-  const baseUrl = API_BASE_URL.startsWith('http')
-    ? API_BASE_URL
-    : window.location.origin;
-
-  const url = new URL(path, baseUrl);
+  // NOTE: If path is already absolute, use it directly; otherwise build from origin
+  const url = path.startsWith('http')
+    ? new URL(path)
+    : new URL(path, window.location.origin);
 
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
