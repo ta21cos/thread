@@ -18,20 +18,18 @@ interface FetchOptions extends RequestInit {
 const isElectron = typeof window !== 'undefined' &&
   (window as typeof window & { electron?: { platform: string } }).electron !== undefined
 
-// NOTE: In Electron, use full backend URL (can't use relative paths)
-const API_BASE_URL = isElectron
-  ? import.meta.env.VITE_BACKEND_API_ENDPOINT || 'http://localhost:3000/api'
-  : import.meta.env.VITE_BACKEND_API_ENDPOINT
-    ? `${import.meta.env.VITE_BACKEND_API_ENDPOINT}/api`
-    : '/api';
+// NOTE: API_BASE_URL is always an absolute URL (http://... or https://...)
+const API_BASE_URL = import.meta.env.VITE_BACKEND_API_ENDPOINT
+  ? `${import.meta.env.VITE_BACKEND_API_ENDPOINT}/api`
+  : 'http://localhost:3000/api';
 
 // NOTE: Build URL with query parameters
 const buildUrl = (
   path: string,
   params?: Record<string, string | number | boolean | undefined>
 ): string => {
-  // NOTE: Construct URL - works with both absolute URLs and path-absolute URLs (starting with /)
-  const url = new URL(path, path.startsWith('http') ? undefined : window.location.origin);
+  // NOTE: path is always absolute (starts with http), so base URL is not needed
+  const url = new URL(path);
 
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
