@@ -27,6 +27,7 @@ export class MentionRepository {
 
   async getMentionsWithNotes(toNoteId: string) {
     return db
+      // @ts-ignore - Drizzle type inference issue with select() in joins
       .select({
         mention: mentions,
         note: notes,

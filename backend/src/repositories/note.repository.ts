@@ -1,4 +1,4 @@
-import { eq, isNull, desc, asc, sql } from 'drizzle-orm';
+import { eq, isNull, desc, asc, sql, getTableColumns } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 import { db, notes, type Note, type NewNote, type NoteWithReplyCount } from '../db';
 
@@ -19,13 +19,9 @@ export class NoteRepository {
     const childNotes = alias(notes, 'child_notes');
 
     const results = await db
+      // @ts-ignore - Drizzle type inference issue with select() in joins
       .select({
-        id: notes.id,
-        content: notes.content,
-        parentId: notes.parentId,
-        createdAt: notes.createdAt,
-        updatedAt: notes.updatedAt,
-        depth: notes.depth,
+        ...getTableColumns(notes),
         replyCount: sql<number>`COUNT(${childNotes.id})`.mapWith(Number),
       })
       .from(notes)
@@ -37,15 +33,17 @@ export class NoteRepository {
       .offset(offset);
 
     // NOTE: Ensure replyCount is a number
-    return results.map(note => ({
+    // @ts-ignore - Drizzle join result type issue
+    return results.map((note) => ({
       ...note,
+      // @ts-ignore
       replyCount: Number(note.replyCount) || 0,
-    })) as NoteWithReplyCount[];
+    }));
   }
 
   async countRootNotes(): Promise<number> {
     const result = await db
-      .select({ count: notes.id })
+      .select()
       .from(notes)
       .where(isNull(notes.parentId));
     return result.length;

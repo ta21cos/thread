@@ -24,7 +24,7 @@ describe('GET /api/notes/:id/mentions', () => {
 
   it('should return list of notes mentioning the specified note', async () => {
     const response = await fetch('http://localhost:3000/api/notes/abc123/mentions');
-    const data = await response.json();
+    const data = (await response.json()) as { mentions: unknown[] };
 
     expect(response.status).toBe(200);
     expect(data).toHaveProperty('mentions');
@@ -33,7 +33,7 @@ describe('GET /api/notes/:id/mentions', () => {
 
   it('should include note object and position in each mention', async () => {
     const response = await fetch('http://localhost:3000/api/notes/abc123/mentions');
-    const data = await response.json();
+    const data = (await response.json()) as { mentions: Array<{ note: unknown; position: number }> };
 
     expect(response.status).toBe(200);
     if (data.mentions.length > 0) {
@@ -45,7 +45,7 @@ describe('GET /api/notes/:id/mentions', () => {
 
   it('should return empty array for note with no mentions', async () => {
     const response = await fetch('http://localhost:3000/api/notes/noment/mentions');
-    const data = await response.json();
+    const data = (await response.json()) as { mentions: unknown[] };
 
     expect(response.status).toBe(200);
     expect(data.mentions).toEqual([]);

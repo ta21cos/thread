@@ -24,7 +24,7 @@ describe('PUT /api/notes/:id', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: 'Updated content' }),
     });
-    const data = await response.json();
+    const data = (await response.json()) as { content: string; updatedAt: string };
 
     expect(response.status).toBe(200);
     expect(data.content).toBe('Updated content');

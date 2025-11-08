@@ -20,7 +20,7 @@ describe('GET /api/notes/:id', () => {
 
   it('should return note details with thread', async () => {
     const response = await fetch('http://localhost:3000/api/notes/abc123?includeThread=true');
-    const data = await response.json();
+    const data = (await response.json()) as { note: unknown; thread: unknown[] };
 
     expect(response.status).toBe(200);
     expect(data).toHaveProperty('note');
@@ -30,7 +30,7 @@ describe('GET /api/notes/:id', () => {
 
   it('should return only note without thread when includeThread=false', async () => {
     const response = await fetch('http://localhost:3000/api/notes/abc123?includeThread=false');
-    const data = await response.json();
+    const data = (await response.json()) as { note: unknown; thread?: unknown };
 
     expect(response.status).toBe(200);
     expect(data).toHaveProperty('note');

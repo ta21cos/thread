@@ -19,7 +19,7 @@ describe('POST /api/notes', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: 'Test note' }),
     });
-    const data = await response.json();
+    const data = (await response.json()) as { id: string; content: string; parentId: string | null; depth: number };
 
     expect(response.status).toBe(201);
     expect(data).toHaveProperty('id');
@@ -37,7 +37,7 @@ describe('POST /api/notes', () => {
         parentId: 'abc123',
       }),
     });
-    const data = await response.json();
+    const data = (await response.json()) as { parentId: string; depth: number };
 
     expect(response.status).toBe(201);
     expect(data.parentId).toBe('abc123');

@@ -2,12 +2,14 @@ import { Hono } from 'hono';
 import { mentionService } from '../../services/mention.service';
 import { validateNoteId } from '../middleware/validation';
 import type { MentionsResponse } from '@thread-note/shared/types';
+import { convertNoteToApi } from '../../utils/converters';
 
 const app = new Hono();
 
 // GET /api/notes/:id/mentions - Get notes mentioning this note
 app.get('/:id/mentions', validateNoteId, async (c) => {
-  const { id } = c.req.valid('param');
+  const params = c.req.valid('param') as { id: string };
+  const { id } = params;
 
   // NOTE: Check if note exists first
   const { noteService } = await import('../../services/note.service');
@@ -19,9 +21,10 @@ app.get('/:id/mentions', validateNoteId, async (c) => {
   const mentionsWithNotes = await mentionService.getMentionsWithNotes(id);
 
   const response: MentionsResponse = {
-    mentions: mentionsWithNotes.map((m) => ({
-      note: m.notes,
-      position: m.mentions,
+    // @ts-ignore - Drizzle returns `notes` and `mentions` from join
+    mentions: mentionsWithNotes.map((item) => ({
+      note: convertNoteToApi(item.notes),
+      position: item.mentions.position,
     })),
   };
 

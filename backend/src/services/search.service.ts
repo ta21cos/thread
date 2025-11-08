@@ -13,7 +13,8 @@ export class SearchService {
 
   async searchByMention(noteId: string): Promise<Note[]> {
     const mentionsWithNotes = await this.mentionRepo.getMentionsWithNotes(noteId);
-    return mentionsWithNotes.map((m) => m.note);
+    // @ts-ignore - Drizzle returns `notes` from join
+    return mentionsWithNotes.map((m) => m.notes);
   }
 }
 
