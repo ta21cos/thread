@@ -18,10 +18,25 @@ interface FetchOptions extends RequestInit {
 const isElectron = typeof window !== 'undefined' &&
   (window as typeof window & { electron?: { platform: string } }).electron !== undefined
 
+// NOTE: Get API base URL, throw error if not configured in production
+const getApiBaseUrl = (): string => {
+  if (import.meta.env.VITE_BACKEND_API_ENDPOINT) {
+    return `${import.meta.env.VITE_BACKEND_API_ENDPOINT}/api`;
+  }
+
+  // NOTE: Allow localhost fallback only in development
+  if (import.meta.env.DEV) {
+    return 'http://localhost:3000/api';
+  }
+
+  throw new Error(
+    'VITE_BACKEND_API_ENDPOINT environment variable is required in production. ' +
+    'Please set it in your .env.production or .env.staging file.'
+  );
+};
+
 // NOTE: API_BASE_URL is always an absolute URL (http://... or https://...)
-const API_BASE_URL = import.meta.env.VITE_BACKEND_API_ENDPOINT
-  ? `${import.meta.env.VITE_BACKEND_API_ENDPOINT}/api`
-  : 'http://localhost:3000/api';
+const API_BASE_URL = getApiBaseUrl();
 
 // NOTE: Build URL with query parameters
 const buildUrl = (
