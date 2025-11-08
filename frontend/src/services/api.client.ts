@@ -20,8 +20,11 @@ const isElectron = typeof window !== 'undefined' &&
 
 // NOTE: Get API base URL, throw error if not configured in production
 const getApiBaseUrl = (): string => {
-  if (import.meta.env.VITE_BACKEND_API_ENDPOINT) {
-    return `${import.meta.env.VITE_BACKEND_API_ENDPOINT}/api`;
+  const endpoint = import.meta.env.VITE_BACKEND_API_ENDPOINT;
+
+  // NOTE: Throw error if endpoint is null, undefined, or empty string
+  if (endpoint !== undefined && endpoint !== null && endpoint !== '') {
+    return `${endpoint}/api`;
   }
 
   // NOTE: Allow localhost fallback only in development
