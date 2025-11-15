@@ -5,6 +5,7 @@ import { FocusProvider } from './store/focus.context';
 import { AppRouter } from './router';
 import { AuthGuard } from './components/AuthGuard';
 import { useUserSync } from './hooks/useUserSync';
+import { GlobalKeyboardShortcuts } from './components/GlobalKeyboardShortcuts';
 
 // NOTE: Configure TanStack Query client
 const queryClient = new QueryClient({
@@ -28,13 +29,14 @@ const App: React.FC = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NotesUIProvider>
-        <FocusProvider>
+      <FocusProvider>
+        <NotesUIProvider>
           <AuthGuard>
+            <GlobalKeyboardShortcuts />
             <AppRouter />
           </AuthGuard>
-        </FocusProvider>
-      </NotesUIProvider>
+        </NotesUIProvider>
+      </FocusProvider>
     </QueryClientProvider>
   );
 };

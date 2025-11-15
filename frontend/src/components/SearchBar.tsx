@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { useFocus } from '@/store/focus.context';
+import { useFocusManager } from '@/hooks/useFocusManager';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -8,6 +8,7 @@ interface SearchBarProps {
   initialValue?: string;
   onClear?: () => void;
   autoFocus?: boolean;
+  focusId?: string; // Unique ID for focus management
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
@@ -17,26 +18,20 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   initialValue = '',
   onClear,
   autoFocus = false,
+  focusId = 'search-bar',
 }) => {
   const [query, setQuery] = useState(initialValue);
   const [isSearching, setIsSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const { registerInput, unregisterInput } = useFocus();
 
-  // NOTE: Register input with FocusContext
-  useEffect(() => {
-    registerInput('search-bar', inputRef);
-    return () => {
-      unregisterInput('search-bar');
-    };
-  }, [registerInput, unregisterInput]);
-
-  useEffect(() => {
-    if (autoFocus && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [autoFocus]);
+  // Register with focus manager
+  useFocusManager({
+    id: focusId,
+    ref: inputRef,
+    autoFocus,
+    priority: 8, // High priority for search
+  });
 
   // NOTE: Debounced search implementation
   const performSearch = useCallback(
