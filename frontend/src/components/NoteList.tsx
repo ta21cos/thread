@@ -321,7 +321,12 @@ export const NoteList: React.FC<NoteListProps> = ({
       {/* Note Editor at bottom */}
       {onCreateNote && (
         <div className="border-t border-border p-4 flex-shrink-0">
-          <NoteEditor onSubmit={onCreateNote} placeholder="Message #notes" />
+          <NoteEditor
+            onSubmit={onCreateNote}
+            placeholder="Message #notes"
+            focusId="note-editor"
+            restoreFocusOnSubmit={true}
+          />
         </div>
       )}
     </div>

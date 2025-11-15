@@ -2,9 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   X,
-  Send,
-  Smile,
-  Paperclip,
   MoreVertical,
   Trash2,
   Bookmark,
@@ -15,7 +12,6 @@ import {
 } from 'lucide-react';
 import { Note } from '../../../shared/types';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   DropdownMenu,
@@ -48,7 +44,6 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
 }) => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState<string | null>(null);
-  const [replyContent, setReplyContent] = useState('');
   const [expandedImages, setExpandedImages] = useState<Record<string, boolean>>({});
   const isMobile = !useMediaQuery('(min-width: 1024px)');
 
@@ -63,10 +58,8 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
     }));
   };
 
-  const handleReply = async () => {
-    if (!replyContent.trim()) return;
-    await onReply(rootNote.id, replyContent);
-    setReplyContent('');
+  const handleReplySubmit = async (content: string) => {
+    await onReply(rootNote.id, content);
   };
 
   const handleEdit = async (noteId: string, content: string) => {
@@ -432,41 +425,16 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
         </div>
       </ScrollArea>
 
-      {/* Reply Input */}
+      {/* Reply Input - Using NoteEditor for better UX */}
       <div className="border-t border-border p-4 flex-shrink-0" data-testid="thread-reply-input">
-        <div className="flex items-end gap-2">
-          <div className="flex-1 rounded-lg border border-input bg-card">
-            <Input
-              placeholder="Reply... (Cmd/Ctrl+Enter to send)"
-              value={replyContent}
-              onChange={(e) => setReplyContent(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                  e.preventDefault();
-                  handleReply();
-                }
-              }}
-              className="border-0 bg-transparent focus-visible:ring-0"
-              data-testid="thread-reply-textarea"
-            />
-            <div className="flex items-center gap-1 px-3 pb-2">
-              <Button size="icon" variant="ghost" className="h-7 w-7">
-                <Paperclip className="h-4 w-4" />
-              </Button>
-              <Button size="icon" variant="ghost" className="h-7 w-7">
-                <Smile className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          <Button
-            size="icon"
-            className="h-10 w-10 shrink-0"
-            onClick={handleReply}
-            data-testid="thread-reply-submit"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
+        <NoteEditor
+          parentNote={rootNote}
+          onSubmit={handleReplySubmit}
+          focusId="thread-reply-editor"
+          restoreFocusOnSubmit={true}
+          compactMode={true}
+          autoFocus={false}
+        />
       </div>
     </div>
   );

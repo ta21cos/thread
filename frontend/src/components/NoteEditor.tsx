@@ -3,6 +3,7 @@ import { Note } from '../../../shared/types';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { useFocusManager } from '@/hooks/useFocusManager';
 
 interface NoteEditorProps {
   initialContent?: string;
@@ -14,6 +15,9 @@ interface NoteEditorProps {
   autoFocus?: boolean;
   onMentionTrigger?: (searchTerm: string) => void;
   onMentionInsert?: (insertFn: (noteId: string) => void) => void;
+  focusId?: string; // Unique ID for focus management
+  restoreFocusOnSubmit?: boolean; // Auto-focus after submit
+  compactMode?: boolean; // Compact layout for reply inputs
 }
 
 export const NoteEditor: React.FC<NoteEditorProps> = ({
@@ -26,18 +30,41 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   autoFocus = false,
   onMentionTrigger,
   onMentionInsert,
+  focusId = 'note-editor',
+  restoreFocusOnSubmit = true,
+  compactMode = false,
 }) => {
   const [content, setContent] = useState(initialContent);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [cursorPosition, setCursorPosition] = useState(0);
 
+  // Register with focus manager
+  const { focus } = useFocusManager({
+    id: focusId,
+    ref: textareaRef,
+    autoFocus,
+    priority: parentNote ? 5 : 10, // Higher priority for main editor
+  });
+
+  // Track focus state for compact mode
   useEffect(() => {
-    if (autoFocus && textareaRef.current) {
-      textareaRef.current.focus();
-    }
-  }, [autoFocus]);
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const handleFocus = () => setIsFocused(true);
+    const handleBlur = () => setIsFocused(false);
+
+    textarea.addEventListener('focus', handleFocus);
+    textarea.addEventListener('blur', handleBlur);
+
+    return () => {
+      textarea.removeEventListener('focus', handleFocus);
+      textarea.removeEventListener('blur', handleBlur);
+    };
+  }, []);
 
   const handleContentChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -84,6 +111,13 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       await onSubmit(content.trim());
       setContent('');
       setError(null);
+
+      // Auto-restore focus after submit (chat-like UX)
+      if (restoreFocusOnSubmit) {
+        setTimeout(() => {
+          focus();
+        }, 100);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save note');
     } finally {
@@ -141,9 +175,19 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     }
   }, [onMentionInsert, insertMention]);
 
+  // Dynamic placeholder based on context
+  const dynamicPlaceholder = placeholder || (
+    parentNote
+      ? 'Reply... @ID to mention • Ctrl+Enter to send'
+      : 'Start a new thread... @ID to mention • Ctrl+Enter to send'
+  );
+
+  // Adjust rows based on compact mode and focus state
+  const textareaRows = compactMode ? (isFocused ? 3 : 1) : 3;
+
   return (
     <div className="space-y-3" data-testid="note-editor">
-      {parentNote && (
+      {parentNote && !compactMode && (
         <div className="rounded-lg bg-accent p-3">
           <span className="block text-muted-foreground text-xs mb-1">
             Replying to #{parentNote.id}
@@ -162,13 +206,15 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             value={content}
             onChange={handleContentChange}
             onKeyDown={handleKeyDown}
-            placeholder={placeholder}
+            placeholder={dynamicPlaceholder}
             className={cn(
-              'min-h-20 resize-none',
+              'resize-none transition-all duration-200',
+              compactMode ? 'min-h-10' : 'min-h-20',
+              isFocused && 'ring-2 ring-primary ring-offset-2',
               error && 'border-destructive focus-visible:ring-destructive'
             )}
             disabled={isSubmitting}
-            rows={3}
+            rows={textareaRows}
             data-testid="note-editor-textarea"
           />
 
