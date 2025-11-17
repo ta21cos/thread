@@ -1,10 +1,10 @@
-
 # Implementation Plan: Thread-Based Note-Taking Application
 
 **Branch**: `001-thread-based-note` | **Date**: 2025-10-03 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/001-thread-based-note/spec.md`
 
 ## Execution Flow (/plan command scope)
+
 ```
 1. Load feature spec from Input path
    → If not found: ERROR "No feature spec at {path}"
@@ -27,13 +27,16 @@
 ```
 
 **IMPORTANT**: The /plan command STOPS at step 7. Phases 2-4 are executed by other commands:
+
 - Phase 2: /tasks command creates tasks.md
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
+
 Thread-based note-taking application enabling knowledge workers to create interconnected markdown notes with replies and mentions (@ID syntax), organized in conversation-like threads for personal knowledge management. Single-user offline-first web application with split-view UI.
 
 ## Technical Context
+
 **Language/Version**: TypeScript 5.x with Bun runtime
 **Primary Dependencies**: React 18 (frontend), Hono (backend), Drizzle ORM, DOMPurify (sanitization)
 **Storage**: SQLite (embedded, offline-first) with full-text search
@@ -45,7 +48,8 @@ Thread-based note-taking application enabling knowledge workers to create interc
 **Scale/Scope**: Single-user, support 1000+ notes, split-view UI with infinite scroll
 
 ## Constitution Check
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 **Status**: PASS (No constitution file with specific constraints found; following project CLAUDE.md guidelines)
 
@@ -58,6 +62,7 @@ Thread-based note-taking application enabling knowledge workers to create interc
 ## Project Structure
 
 ### Documentation (this feature)
+
 ```
 specs/[###-feature]/
 ├── plan.md              # This file (/plan command output)
@@ -69,6 +74,7 @@ specs/[###-feature]/
 ```
 
 ### Source Code (repository root)
+
 ```
 backend/
 ├── src/
@@ -97,12 +103,14 @@ shared/
 **Structure Decision**: Web application (Option 2). Frontend serves split-view React UI, backend provides REST API via Hono. Shared types ensure type safety across boundary. SQLite database embedded in backend.
 
 ## Phase 0: Outline & Research
+
 1. **Extract unknowns from Technical Context** above:
    - For each NEEDS CLARIFICATION → research task
    - For each dependency → best practices task
    - For each integration → patterns task
 
 2. **Generate and dispatch research agents**:
+
    ```
    For each unknown in Technical Context:
      Task: "Research {unknown} for {feature context}"
@@ -118,7 +126,8 @@ shared/
 **Output**: research.md with all NEEDS CLARIFICATION resolved
 
 ## Phase 1: Design & Contracts
-*Prerequisites: research.md complete*
+
+_Prerequisites: research.md complete_
 
 1. **Extract entities from feature spec** → `data-model.md`:
    - Entity name, fields, relationships
@@ -148,12 +157,14 @@ shared/
    - Keep under 150 lines for token efficiency
    - Output to repository root
 
-**Output**: data-model.md, /contracts/*, failing tests, quickstart.md, agent-specific file
+**Output**: data-model.md, /contracts/\*, failing tests, quickstart.md, agent-specific file
 
 ## Phase 2: Task Planning Approach
-*This section describes what the /tasks command will do - DO NOT execute during /plan*
+
+_This section describes what the /tasks command will do - DO NOT execute during /plan_
 
 **Task Generation Strategy**:
+
 - Load `.specify/templates/tasks-template.md` as base
 - Generate tasks from Phase 1 design docs (contracts, data model, quickstart)
 - Each contract → contract test task [P]
@@ -162,11 +173,13 @@ shared/
 - Implementation tasks to make tests pass
 
 **Ordering Strategy**:
+
 - TDD order: Tests before implementation
 - Dependency order: Models before services before UI
 - Mark [P] for parallel execution (independent files)
 
 **Task Breakdown by Layer**:
+
 1. **Database Setup** (1-2 tasks):
    - Drizzle schema definitions for Note, Mention, SearchIndex
    - Database migration setup
@@ -214,25 +227,28 @@ shared/
 **IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
 
 ## Phase 3+: Future Implementation
-*These phases are beyond the scope of the /plan command*
+
+_These phases are beyond the scope of the /plan command_
 
 **Phase 3**: Task execution (/tasks command creates tasks.md)  
 **Phase 4**: Implementation (execute tasks.md following constitutional principles)  
 **Phase 5**: Validation (run tests, execute quickstart.md, performance validation)
 
 ## Complexity Tracking
-*Fill ONLY if Constitution Check has violations that must be justified*
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+_Fill ONLY if Constitution Check has violations that must be justified_
 
+| Violation                  | Why Needed         | Simpler Alternative Rejected Because |
+| -------------------------- | ------------------ | ------------------------------------ |
+| [e.g., 4th project]        | [current need]     | [why 3 projects insufficient]        |
+| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient]  |
 
 ## Progress Tracking
-*This checklist is updated during execution flow*
+
+_This checklist is updated during execution flow_
 
 **Phase Status**:
+
 - [x] Phase 0: Research complete (/plan command)
 - [x] Phase 1: Design complete (/plan command)
 - [x] Phase 2: Task planning complete (/plan command - describe approach only)
@@ -241,10 +257,12 @@ shared/
 - [ ] Phase 5: Validation passed
 
 **Gate Status**:
+
 - [x] Initial Constitution Check: PASS
 - [x] Post-Design Constitution Check: PASS
 - [x] All NEEDS CLARIFICATION resolved
 - [x] Complexity deviations documented (none)
 
 ---
-*Based on Constitution v2.1.1 - See `/memory/constitution.md`*
+
+_Based on Constitution v2.1.1 - See `/memory/constitution.md`_

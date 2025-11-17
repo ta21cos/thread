@@ -1,15 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  X,
-  MoreVertical,
-  Trash2,
-  Bookmark,
-  Link2,
-  Edit,
-  Pin,
-  ArrowLeft,
-} from 'lucide-react';
+import { X, MoreVertical, Trash2, Bookmark, Link2, Edit, Pin, ArrowLeft } from 'lucide-react';
 import { Note } from '../../../shared/types';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';

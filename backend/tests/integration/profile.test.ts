@@ -13,15 +13,18 @@ describe('Profile Schema', () => {
     const profileId = randomUUID();
     const now = new Date();
 
-    const [profile] = await db.insert(profiles).values({
-      id: profileId,
-      displayName: 'Test User',
-      bio: 'Test bio',
-      avatarUrl: 'https://example.com/avatar.jpg',
-      preferences: { theme: 'dark', language: 'en' },
-      createdAt: now,
-      updatedAt: now,
-    }).returning();
+    const [profile] = await db
+      .insert(profiles)
+      .values({
+        id: profileId,
+        displayName: 'Test User',
+        bio: 'Test bio',
+        avatarUrl: 'https://example.com/avatar.jpg',
+        preferences: { theme: 'dark', language: 'en' },
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
 
     expect(profile.id).toBe(profileId);
     expect(profile.displayName).toBe('Test User');
@@ -35,10 +38,13 @@ describe('Profile Schema', () => {
   it('should create a profile with minimal required fields', async () => {
     const profileId = randomUUID();
 
-    const [profile] = await db.insert(profiles).values({
-      id: profileId,
-      displayName: 'Minimal User',
-    }).returning();
+    const [profile] = await db
+      .insert(profiles)
+      .values({
+        id: profileId,
+        displayName: 'Minimal User',
+      })
+      .returning();
 
     expect(profile.id).toBe(profileId);
     expect(profile.displayName).toBe('Minimal User');
@@ -57,7 +63,8 @@ describe('Profile Schema', () => {
       displayName: 'Original Name',
     });
 
-    const [updated] = await db.update(profiles)
+    const [updated] = await db
+      .update(profiles)
       .set({
         displayName: 'Updated Name',
         bio: 'Updated bio',

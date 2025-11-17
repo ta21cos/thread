@@ -45,11 +45,7 @@
       "indexes": {
         "mentions_from_note_id_to_note_id_position_unique": {
           "name": "mentions_from_note_id_to_note_id_position_unique",
-          "columns": [
-            "from_note_id",
-            "to_note_id",
-            "position"
-          ],
+          "columns": ["from_note_id", "to_note_id", "position"],
           "isUnique": true
         }
       },
@@ -57,26 +53,18 @@
         "mentions_from_note_id_notes_id_fk": {
           "name": "mentions_from_note_id_notes_id_fk",
           "tableFrom": "mentions",
-          "columnsFrom": [
-            "from_note_id"
-          ],
+          "columnsFrom": ["from_note_id"],
           "tableTo": "notes",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "mentions_to_note_id_notes_id_fk": {
           "name": "mentions_to_note_id_notes_id_fk",
           "tableFrom": "mentions",
-          "columnsFrom": [
-            "to_note_id"
-          ],
+          "columnsFrom": ["to_note_id"],
           "tableTo": "notes",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -139,13 +127,9 @@
         "notes_parent_id_notes_id_fk": {
           "name": "notes_parent_id_notes_id_fk",
           "tableFrom": "notes",
-          "columnsFrom": [
-            "parent_id"
-          ],
+          "columnsFrom": ["parent_id"],
           "tableTo": "notes",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -199,13 +183,9 @@
         "search_index_note_id_notes_id_fk": {
           "name": "search_index_note_id_notes_id_fk",
           "tableFrom": "search_index",
-          "columnsFrom": [
-            "note_id"
-          ],
+          "columnsFrom": ["note_id"],
           "tableTo": "notes",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }

@@ -13,4 +13,5 @@ export * from '../models/mention.schema';
 export * from '../models/search.schema';
 export * from '../models/profile.schema';
 export * from '../models/external-identity.schema';
+export * from '../models/bookmark.schema';
 export type { Database } from './types';

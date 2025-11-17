@@ -14,10 +14,7 @@ export function extractMentions(content: string): string[] {
 }
 
 // NOTE: Get positions of mentions in content
-export function getMentionPositions(
-  content: string,
-  noteId: string
-): number[] {
+export function getMentionPositions(content: string, noteId: string): number[] {
   const mentionRegex = new RegExp(`@${noteId}`, 'g');
   const positions: number[] = [];
   let match;

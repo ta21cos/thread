@@ -35,9 +35,12 @@ export const FocusProvider: React.FC<FocusProviderProps> = ({ children }) => {
   const currentFocusRef = useRef<string | null>(null);
   const lastFocusRef = useRef<string | null>(null);
 
-  const registerInput = useCallback((id: string, ref: React.RefObject<HTMLElement>, priority = 0) => {
-    inputsRef.current.set(id, { id, ref, priority });
-  }, []);
+  const registerInput = useCallback(
+    (id: string, ref: React.RefObject<HTMLElement>, priority = 0) => {
+      inputsRef.current.set(id, { id, ref, priority });
+    },
+    []
+  );
 
   const unregisterInput = useCallback((id: string) => {
     inputsRef.current.delete(id);

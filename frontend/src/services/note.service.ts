@@ -49,6 +49,7 @@ export const noteKeys = {
   detail: (id: string) => [...noteKeys.details(), id] as const,
   search: (query: string, type: string) => [...noteKeys.all, 'search', query, type] as const,
   mentions: (id: string) => [...noteKeys.all, 'mentions', id] as const,
+  bookmarks: () => [...noteKeys.all, 'bookmarks'] as const,
 };
 
 // NOTE: Fetch all root notes
@@ -215,6 +216,81 @@ export const useDeleteNote = () => {
 
       // NOTE: Remove deleted note from cache
       queryClient.removeQueries({ queryKey: noteKeys.detail(deletedId) });
+    },
+  });
+};
+
+// NOTE: Fetch bookmarked notes with infinite scroll
+export const useBookmarkedNotes = (limit: number = 20) => {
+  const { get } = useApiClient();
+
+  return useInfiniteQuery({
+    queryKey: [...noteKeys.bookmarks(), { limit }],
+    queryFn: async ({ pageParam = 0 }) => {
+      const response = await get<NotesListResponse>('/notes/bookmarked', {
+        offset: pageParam,
+        limit,
+      });
+      return response;
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.hasMore) return undefined;
+      return allPages.length * limit;
+    },
+    initialPageParam: 0,
+    staleTime: 1000 * 60 * 1,
+  });
+};
+
+// NOTE: Toggle bookmark for a note
+export const useToggleBookmark = () => {
+  const queryClient = useQueryClient();
+  const { put } = useApiClient();
+
+  return useMutation({
+    mutationFn: async (noteId: string) => {
+      const response = await put<{ bookmarked: boolean }>(`/notes/${noteId}/bookmark`, {});
+      return { noteId, ...response };
+    },
+    onMutate: async (noteId) => {
+      // NOTE: Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: noteKeys.lists() });
+      await queryClient.cancelQueries({ queryKey: noteKeys.bookmarks() });
+
+      // NOTE: Snapshot previous value
+      const previousLists = queryClient.getQueryData(noteKeys.lists());
+      const previousBookmarks = queryClient.getQueryData(noteKeys.bookmarks());
+
+      // NOTE: Optimistically update note lists
+      queryClient.setQueriesData({ queryKey: noteKeys.lists() }, (old: unknown) => {
+        if (!old || typeof old !== 'object' || !('pages' in old)) return old;
+        const data = old as { pages: NotesListResponse[] };
+        return {
+          ...data,
+          pages: data.pages.map((page: NotesListResponse) => ({
+            ...page,
+            notes: page.notes.map((note: Note) =>
+              note.id === noteId ? { ...note, bookmarked: !note.bookmarked } : note
+            ),
+          })),
+        };
+      });
+
+      return { previousLists, previousBookmarks };
+    },
+    onError: (err, noteId, context) => {
+      // NOTE: Rollback on error
+      if (context?.previousLists) {
+        queryClient.setQueryData(noteKeys.lists(), context.previousLists);
+      }
+      if (context?.previousBookmarks) {
+        queryClient.setQueryData(noteKeys.bookmarks(), context.previousBookmarks);
+      }
+    },
+    onSuccess: () => {
+      // NOTE: Refetch to ensure consistency
+      queryClient.invalidateQueries({ queryKey: noteKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: noteKeys.bookmarks() });
     },
   });
 };

@@ -8,11 +8,7 @@
     "output": "release/${version}",
     "buildResources": "resources"
   },
-  "files": [
-    "dist-electron",
-    "dist",
-    "node_modules/electron-updater"
-  ],
+  "files": ["dist-electron", "dist", "node_modules/electron-updater"],
   "mac": {
     "target": ["dmg", "zip"],
     "category": "public.app-category.productivity",

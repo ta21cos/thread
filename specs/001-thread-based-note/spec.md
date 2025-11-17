@@ -6,6 +6,7 @@
 **Input**: User description: "Thread-based note-taking application where users can create interconnected notes with replies, and mentions, similar to social media threads but for personal knowledge management"
 
 ## Execution Flow (main)
+
 ```
 1. Parse user description from Input
    → If empty: ERROR "No feature description provided"
@@ -28,23 +29,27 @@
 ---
 
 ## ⚡ Quick Guidelines
+
 - ✅ Focus on WHAT users need and WHY
 - ❌ Avoid HOW to implement (no tech stack, APIs, code structure)
 - 👥 Written for business stakeholders, not developers
 
 ### Section Requirements
+
 - **Mandatory sections**: Must be completed for every feature
 - **Optional sections**: Include only when relevant to the feature
 - When a section doesn't apply, remove it entirely (don't leave as "N/A")
 
 ### For AI Generation
+
 When creating this spec from a user prompt:
+
 1. **Mark all ambiguities**: Use [NEEDS CLARIFICATION: specific question] for any assumption you'd need to make
 2. **Don't guess**: If the prompt doesn't specify something (e.g., "login system" without auth method), mark it
 3. **Think like a tester**: Every vague requirement should fail the "testable and unambiguous" checklist item
 4. **Common underspecified areas**:
    - User types and permissions
-   - Data retention/deletion policies  
+   - Data retention/deletion policies
    - Performance targets and scale
    - Error handling behaviors
    - Integration requirements
@@ -55,38 +60,41 @@ When creating this spec from a user prompt:
 ## Clarifications
 
 ### Session 2025-10-03
+
 - Q: What is the maximum allowed note length? → A: 1000 characters
 - Q: What is the expected behavior when circular mention references are detected? → A: Block/prevent creation of circular references
 - Q: What is the acceptable performance degradation threshold? → A: <200ms response time up to 1000 notes
 
 ---
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### Primary User Story
+
 As a knowledge worker, I want to create notes that can reference and reply to other notes, forming conversation-like threads, so that I can organize my thoughts and ideas in a connected, contextual manner similar to how discussions naturally evolve.
 
 ### Acceptance Scenarios
+
 1. **Given** a user has no existing notes, **When** they create their first note, **Then** the note is saved and displayed as a standalone thread
 2. **Given** a user is viewing an existing note, **When** they create a reply to that note, **Then** the reply appears nested under the original note maintaining the thread hierarchy
 3. **Given** a user has multiple notes, **Then** each note should show has a unique ID
 4. **Given** a user has multiple notes, **When** they add @ + ID to a note, **Then** the note is mentioned in the note with the ID
-6. **Given** a user has multiple threaded notes, **When** they click on a mention or tag, **Then** they navigate to the referenced note or see all notes with that tag
-7. **Given** a user has multiple notes, **When** they search for a note, **Then** they can find it by content, or mentions
-8. **Given** a user has multiple notes, **Then** they can see the latest note at the bottom of the list
-9. **Given** a user has multiple notes, **When** they scroll to the top of the list, **Then** the oldest note is at the top (infinite scroll)
-10. **Given** a user has multiple notes, **When** they clicked on a note, **Then** they can see the note's threads in the right half of the screen
-11. **Given** a user has multiple notes, **When** they delete a note, **Then** the note and all its replies are deleted
-12. **Given** a user has multiple notes, **When** they add a tag to a note, **Then** the note is findable through that tag
-13. **Given** a user has multiple notes, **When** they attempt to create a circular reference (e.g., note A mentions B, B mentions C, C mentions A), **Then** the system prevents the creation and displays an error message
-14. **Given** a user has multiple notes, **When** they search for non-existent note ID, **Then** the system doesn't show any results
-15. **Given** a user is composing a note, **When** they type a note exceeding 1000 characters, **Then** the note should not be saved and an error message is displayed
-16. **Given** a user has up to 1000 notes, **When** they perform any operation (create, read, search, delete), **Then** the system responds in less than 200ms
+5. **Given** a user has multiple threaded notes, **When** they click on a mention or tag, **Then** they navigate to the referenced note or see all notes with that tag
+6. **Given** a user has multiple notes, **When** they search for a note, **Then** they can find it by content, or mentions
+7. **Given** a user has multiple notes, **Then** they can see the latest note at the bottom of the list
+8. **Given** a user has multiple notes, **When** they scroll to the top of the list, **Then** the oldest note is at the top (infinite scroll)
+9. **Given** a user has multiple notes, **When** they clicked on a note, **Then** they can see the note's threads in the right half of the screen
+10. **Given** a user has multiple notes, **When** they delete a note, **Then** the note and all its replies are deleted
+11. **Given** a user has multiple notes, **When** they add a tag to a note, **Then** the note is findable through that tag
+12. **Given** a user has multiple notes, **When** they attempt to create a circular reference (e.g., note A mentions B, B mentions C, C mentions A), **Then** the system prevents the creation and displays an error message
+13. **Given** a user has multiple notes, **When** they search for non-existent note ID, **Then** the system doesn't show any results
+14. **Given** a user is composing a note, **When** they type a note exceeding 1000 characters, **Then** the note should not be saved and an error message is displayed
+15. **Given** a user has up to 1000 notes, **When** they perform any operation (create, read, search, delete), **Then** the system responds in less than 200ms
 
-
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
+
 - **FR-001**: System MUST allow users to create text-based (markdown) notes
 - **FR-002**: System MUST enable users to reply to existing notes, creating a thread structure
 - **FR-003**: System MUST support mentions using "@" + note ID syntax to reference other notes
@@ -107,7 +115,8 @@ As a knowledge worker, I want to create notes that can reference and reply to ot
 - **FR-019**: System MUST return no results for non-existent note ID searches
 - **FR-020**: System MUST maintain response times under 200ms for all operations (create, read, search, delete) with up to 1000 notes
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
+
 - **Note**: Represents a single piece of content that can be standalone or part of a thread. Contains unique ID, markdown text content, creation timestamp, modification timestamp, and optional parent reference
 - **Thread**: A collection of related notes organized hierarchically with parent-child relationships
 - **Mention**: A reference from one note to another using "@" + ID notation, creating explicit connections between notes
@@ -116,17 +125,20 @@ As a knowledge worker, I want to create notes that can reference and reply to ot
 ---
 
 ## Review & Acceptance Checklist
-*GATE: Automated checks run during main() execution*
+
+_GATE: Automated checks run during main() execution_
 
 ### Content Quality
+
 - [x] No implementation details (languages, frameworks, APIs)
 - [x] Focused on user value and business needs
 - [x] Written for non-technical stakeholders
 - [x] All mandatory sections completed
 
 ### Requirement Completeness
+
 - [x] No [NEEDS CLARIFICATION] markers remain
-- [x] Requirements are testable and unambiguous  
+- [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Scope is clearly bounded
 - [x] Dependencies and assumptions identified
@@ -134,7 +146,8 @@ As a knowledge worker, I want to create notes that can reference and reply to ot
 ---
 
 ## Execution Status
-*Updated by main() during processing*
+
+_Updated by main() during processing_
 
 - [x] User description parsed
 - [x] Key concepts extracted

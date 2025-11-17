@@ -1,6 +1,7 @@
 import { noteService } from '../../services/note.service';
 import { threadService } from '../../services/thread.service';
 import { deleteService } from '../../services/delete.service';
+import { bookmarkService } from '../../services/bookmark.service';
 import {
   validateCreateNote,
   validateUpdateNote,
@@ -63,6 +64,36 @@ const app = new Hono()
   .delete('/:id', requireAuth, validateNoteId, async (c) => {
     const { id } = c.req.valid('param');
     await deleteService.deleteNote(id);
+    return c.body(null, 204);
+  })
+  // GET /api/notes/bookmarked - List bookmarked notes
+  .get('/bookmarked', requireAuth, validatePagination, async (c) => {
+    const userId = c.get('userId');
+    const { limit, offset } = c.req.valid('query');
+    const result = await bookmarkService.getBookmarkedNotes(userId, limit, offset);
+
+    const response: NoteListResponse = {
+      notes: result.notes.map(serialize),
+      total: result.total,
+      hasMore: result.hasMore,
+    };
+
+    return c.json(response);
+  })
+  // PUT /api/notes/:id/bookmark - Toggle bookmark
+  .put('/:id/bookmark', requireAuth, validateNoteId, async (c) => {
+    const userId = c.get('userId');
+    const { id } = c.req.valid('param');
+
+    const result = await bookmarkService.toggleBookmark(userId, id);
+    return c.json(result);
+  })
+  // DELETE /api/notes/:id/bookmark - Remove bookmark
+  .delete('/:id/bookmark', requireAuth, validateNoteId, async (c) => {
+    const userId = c.get('userId');
+    const { id } = c.req.valid('param');
+
+    await bookmarkService.toggleBookmark(userId, id);
     return c.body(null, 204);
   });
 

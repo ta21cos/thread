@@ -22,7 +22,6 @@ describe('Delete Note with Cascade Scenario', () => {
       parentId: parent.id, // Both children have same parent
     });
 
-
     await deleteService.deleteNote(parent.id);
 
     // Verify all notes in thread are deleted
@@ -31,8 +30,6 @@ describe('Delete Note with Cascade Scenario', () => {
   });
 
   it('should not affect other threads when deleting', async () => {
-    
-
     const thread1Root = await noteService.createNote({ content: 'Thread 1' });
     const thread1Child = await noteService.createNote({
       content: 'Thread 1 Child',
@@ -41,7 +38,6 @@ describe('Delete Note with Cascade Scenario', () => {
 
     const thread2Root = await noteService.createNote({ content: 'Thread 2' });
 
-    
     await deleteService.deleteNote(thread1Root.id);
 
     // Thread 2 should still exist

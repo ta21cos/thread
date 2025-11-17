@@ -40,7 +40,10 @@ test.describe('View Thread', () => {
     await selectNoteByContent(page, noteContent);
 
     // NOTE: Verify content is displayed in thread view
-    const threadContent = page.locator(selectors.threadView.node).first().locator(selectors.threadView.nodeContent);
+    const threadContent = page
+      .locator(selectors.threadView.node)
+      .first()
+      .locator(selectors.threadView.nodeContent);
     await expect(threadContent).toContainText(noteContent);
   });
 
@@ -134,6 +137,8 @@ test.describe('View Thread', () => {
 
     // NOTE: Verify edit and delete actions are in the menu
     await expect(page.locator('[data-testid="thread-action-edit"]')).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('[data-testid="thread-action-delete"]')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('[data-testid="thread-action-delete"]')).toBeVisible({
+      timeout: 5000,
+    });
   });
 });

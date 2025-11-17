@@ -11,8 +11,7 @@ export interface Note {
   replyCount?: number; // Number of direct replies (optional, included in list views)
   tags?: string[]; // Optional tags for categorization (UI-only for now)
   images?: string[]; // Optional image URLs (UI-only for now)
-  pinned?: boolean; // Optional pinned status (UI-only for now)
-  bookmarked?: boolean; // Optional bookmarked status (UI-only for now)
+  bookmarked?: boolean; // Per-user bookmark status (computed from user_bookmarks table)
 }
 
 export interface Mention {
@@ -68,4 +67,8 @@ export interface ErrorResponse {
   error: string;
   message: string;
   details?: unknown;
+}
+
+export interface BookmarkToggleResponse {
+  bookmarked: boolean;
 }

@@ -16,9 +16,7 @@ describe('Enforce 1000 Character Limit Scenario', () => {
   it('should reject notes exceeding 1000 characters', async () => {
     const tooLong = 'a'.repeat(MAX_NOTE_LENGTH + 1);
 
-    await expect(
-      noteService.createNote({ content: tooLong })
-    ).rejects.toThrow(/1000.*character/i);
+    await expect(noteService.createNote({ content: tooLong })).rejects.toThrow(/1000.*character/i);
   });
 
   it('should accept notes at exactly 1000 characters', async () => {

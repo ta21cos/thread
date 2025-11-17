@@ -26,10 +26,7 @@ export class NoteRepository {
     // NOTE: Get reply counts for each root note
     const notesWithCounts: NoteWithReplyCount[] = await Promise.all(
       rootNotes.map(async (note) => {
-        const replies = await db
-          .select()
-          .from(notes)
-          .where(eq(notes.parentId, note.id));
+        const replies = await db.select().from(notes).where(eq(notes.parentId, note.id));
         return {
           ...note,
           replyCount: replies.length,
@@ -41,10 +38,7 @@ export class NoteRepository {
   }
 
   async countRootNotes(): Promise<number> {
-    const result = await db
-      .select()
-      .from(notes)
-      .where(isNull(notes.parentId));
+    const result = await db.select().from(notes).where(isNull(notes.parentId));
     return result.length;
   }
 
@@ -82,10 +76,7 @@ export class NoteRepository {
       visited.add(currentId);
 
       // Fetch current note
-      const [currentNote] = await db
-        .select()
-        .from(notes)
-        .where(eq(notes.id, currentId));
+      const [currentNote] = await db.select().from(notes).where(eq(notes.id, currentId));
 
       if (!currentNote) {
         continue;

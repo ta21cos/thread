@@ -69,7 +69,9 @@ export async function createNote(page: Page, content: string): Promise<string> {
 export async function waitForNoteWithContent(page: Page, content: string, timeout: number = 5000) {
   await page.waitForFunction(
     ({ contentText }) => {
-      const contentElements = Array.from(document.querySelectorAll('[data-testid="note-item-content"]'));
+      const contentElements = Array.from(
+        document.querySelectorAll('[data-testid="note-item-content"]')
+      );
       return contentElements.some((el) => el.textContent?.includes(contentText));
     },
     { contentText: content },
@@ -143,7 +145,10 @@ export async function selectNoteByContent(page: Page, content: string) {
 }
 
 export async function getNoteIdFromList(page: Page, noteIndex: number = 0): Promise<string> {
-  const noteId = page.locator(selectors.noteList.items).nth(noteIndex).locator(selectors.noteList.itemId);
+  const noteId = page
+    .locator(selectors.noteList.items)
+    .nth(noteIndex)
+    .locator(selectors.noteList.itemId);
   const text = await noteId.textContent();
   return text?.replace('#', '') || '';
 }
@@ -170,7 +175,8 @@ export async function deleteNote(page: Page) {
 
   // NOTE: Listen for API response
   const responsePromise = page.waitForResponse(
-    (response) => response.url().includes('/api/notes/') && response.request().method() === 'DELETE',
+    (response) =>
+      response.url().includes('/api/notes/') && response.request().method() === 'DELETE',
     { timeout: 15000 }
   );
 
@@ -215,20 +221,30 @@ export async function getNoteCount(page: Page): Promise<number> {
 
 export async function verifyNoteContent(page: Page, content: string, noteIndex?: number) {
   if (noteIndex !== undefined) {
-    const noteContent = page.locator(selectors.noteList.items).nth(noteIndex).locator(selectors.noteList.itemContent);
+    const noteContent = page
+      .locator(selectors.noteList.items)
+      .nth(noteIndex)
+      .locator(selectors.noteList.itemContent);
     await expect(noteContent).toContainText(content);
   } else {
     // NOTE: Verify note exists anywhere in the list
-    await expect(page.locator(selectors.noteList.itemContent).filter({ hasText: content })).toBeVisible();
+    await expect(
+      page.locator(selectors.noteList.itemContent).filter({ hasText: content })
+    ).toBeVisible();
   }
 }
 
 export async function verifyNoteExists(page: Page, content: string) {
-  await expect(page.locator(selectors.noteList.itemContent).filter({ hasText: content })).toBeVisible();
+  await expect(
+    page.locator(selectors.noteList.itemContent).filter({ hasText: content })
+  ).toBeVisible();
 }
 
 export async function verifyThreadNodeContent(page: Page, content: string, nodeIndex: number = 0) {
-  const nodeContent = page.locator(selectors.threadView.node).nth(nodeIndex).locator(selectors.threadView.nodeContent);
+  const nodeContent = page
+    .locator(selectors.threadView.node)
+    .nth(nodeIndex)
+    .locator(selectors.threadView.nodeContent);
   await expect(nodeContent).toContainText(content);
 }
 

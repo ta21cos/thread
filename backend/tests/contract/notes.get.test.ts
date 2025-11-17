@@ -9,35 +9,43 @@ const API_BASE_URL = process.env.API_BASE_URL;
 describe('GET /api/notes', () => {
   beforeAll(async () => {
     // NOTE: Ensure some root notes exist for testing
-    await db.insert(notes).values([
-      {
-        id: 'root01',
-        content: 'First root note',
-        depth: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 'root02',
-        content: 'Second root note',
-        depth: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ]).onConflictDoNothing();
+    await db
+      .insert(notes)
+      .values([
+        {
+          id: 'root01',
+          content: 'First root note',
+          depth: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: 'root02',
+          content: 'Second root note',
+          depth: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ])
+      .onConflictDoNothing();
 
     // Also ensure child note exists to verify it's not included
-    await db.insert(notes).values({
-      id: 'child1',
-      content: 'Child note (should not appear in root list)',
-      parentId: 'root01',
-      depth: 1,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).onConflictDoNothing();
+    await db
+      .insert(notes)
+      .values({
+        id: 'child1',
+        content: 'Child note (should not appear in root list)',
+        parentId: 'root01',
+        depth: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoNothing();
   });
   it('should return paginated list of root notes', async () => {
-    const { response, data } = await fetchJson<NoteListResponse>(`${API_BASE_URL}/api/notes?limit=20&offset=0`);
+    const { response, data } = await fetchJson<NoteListResponse>(
+      `${API_BASE_URL}/api/notes?limit=20&offset=0`
+    );
 
     expect(response.status).toBe(200);
     expect(data).toHaveProperty('notes');
@@ -47,7 +55,9 @@ describe('GET /api/notes', () => {
   });
 
   it('should respect limit parameter (max 100)', async () => {
-    const { response, data } = await fetchJson<NoteListResponse>(`${API_BASE_URL}/api/notes?limit=5`);
+    const { response, data } = await fetchJson<NoteListResponse>(
+      `${API_BASE_URL}/api/notes?limit=5`
+    );
 
     expect(response.status).toBe(200);
     expect(data.notes.length).toBeLessThanOrEqual(5);

@@ -23,7 +23,9 @@ test.describe('Thread Reply', () => {
     await expect(threadNodes).toHaveCount(2); // Root + 1 reply
 
     // NOTE: Verify reply content is visible
-    await expect(page.locator(selectors.threadView.nodeContent).filter({ hasText: replyContent })).toBeVisible();
+    await expect(
+      page.locator(selectors.threadView.nodeContent).filter({ hasText: replyContent })
+    ).toBeVisible();
   });
 
   test('should display parent-child relationship', async ({ page }) => {
@@ -47,7 +49,9 @@ test.describe('Thread Reply', () => {
     // NOTE: Verify child is present in thread
     const childNodes = page.locator(selectors.threadView.node);
     await expect(childNodes).toHaveCount(2);
-    await expect(page.locator(selectors.threadView.nodeContent).filter({ hasText: childContent })).toBeVisible();
+    await expect(
+      page.locator(selectors.threadView.nodeContent).filter({ hasText: childContent })
+    ).toBeVisible();
   });
 
   test('should display reply indicator in note list', async ({ page }) => {
@@ -101,9 +105,15 @@ test.describe('Thread Reply', () => {
     const threadNodes = page.locator(selectors.threadView.node);
     await expect(threadNodes).toHaveCount(3); // Root + 2 replies
 
-    await expect(page.locator(selectors.threadView.nodeContent).filter({ hasText: rootContent })).toBeVisible();
-    await expect(page.locator(selectors.threadView.nodeContent).filter({ hasText: reply1Content })).toBeVisible();
-    await expect(page.locator(selectors.threadView.nodeContent).filter({ hasText: reply2Content })).toBeVisible();
+    await expect(
+      page.locator(selectors.threadView.nodeContent).filter({ hasText: rootContent })
+    ).toBeVisible();
+    await expect(
+      page.locator(selectors.threadView.nodeContent).filter({ hasText: reply1Content })
+    ).toBeVisible();
+    await expect(
+      page.locator(selectors.threadView.nodeContent).filter({ hasText: reply2Content })
+    ).toBeVisible();
 
     // NOTE: Verify parent note shows reply indicator with multiple replies
     const parentNote = page.locator('[data-testid="note-item"]').filter({ hasText: rootContent });

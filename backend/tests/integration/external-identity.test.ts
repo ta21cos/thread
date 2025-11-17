@@ -22,18 +22,21 @@ describe('External Identity Schema', () => {
     const identityId = randomUUID();
     const now = new Date();
 
-    const [identity] = await db.insert(externalIdentities).values({
-      id: identityId,
-      provider: 'CLERK',
-      providerUserId: 'user_123',
-      profileId: testProfileId,
-      email: 'test@example.com',
-      emailVerified: true,
-      metadata: { sub: 'user_123' },
-      providerCreatedAt: now,
-      providerUpdatedAt: now,
-      lastSyncedAt: now,
-    }).returning();
+    const [identity] = await db
+      .insert(externalIdentities)
+      .values({
+        id: identityId,
+        provider: 'CLERK',
+        providerUserId: 'user_123',
+        profileId: testProfileId,
+        email: 'test@example.com',
+        emailVerified: true,
+        metadata: { sub: 'user_123' },
+        providerCreatedAt: now,
+        providerUpdatedAt: now,
+        lastSyncedAt: now,
+      })
+      .returning();
 
     expect(identity.id).toBe(identityId);
     expect(identity.provider).toBe('CLERK');
@@ -48,13 +51,16 @@ describe('External Identity Schema', () => {
   it('should create external identity with minimal required fields', async () => {
     const identityId = randomUUID();
 
-    const [identity] = await db.insert(externalIdentities).values({
-      id: identityId,
-      provider: 'GOOGLE',
-      providerUserId: 'google_123',
-      profileId: testProfileId,
-      lastSyncedAt: new Date(),
-    }).returning();
+    const [identity] = await db
+      .insert(externalIdentities)
+      .values({
+        id: identityId,
+        provider: 'GOOGLE',
+        providerUserId: 'google_123',
+        profileId: testProfileId,
+        lastSyncedAt: new Date(),
+      })
+      .returning();
 
     expect(identity.id).toBe(identityId);
     expect(identity.provider).toBe('GOOGLE');
@@ -101,13 +107,16 @@ describe('External Identity Schema', () => {
       lastSyncedAt: new Date(),
     });
 
-    const [identity] = await db.insert(externalIdentities).values({
-      id: randomUUID(),
-      provider: 'GOOGLE',
-      providerUserId: userId,
-      profileId: testProfileId,
-      lastSyncedAt: new Date(),
-    }).returning();
+    const [identity] = await db
+      .insert(externalIdentities)
+      .values({
+        id: randomUUID(),
+        provider: 'GOOGLE',
+        providerUserId: userId,
+        profileId: testProfileId,
+        lastSyncedAt: new Date(),
+      })
+      .returning();
 
     expect(identity.providerUserId).toBe(userId);
     expect(identity.provider).toBe('GOOGLE');
@@ -126,7 +135,8 @@ describe('External Identity Schema', () => {
 
     await db.delete(profiles).where(eq(profiles.id, testProfileId));
 
-    const result = await db.select()
+    const result = await db
+      .select()
       .from(externalIdentities)
       .where(eq(externalIdentities.id, identityId));
 
@@ -151,7 +161,8 @@ describe('External Identity Schema', () => {
       },
     ]);
 
-    const identities = await db.select()
+    const identities = await db
+      .select()
       .from(externalIdentities)
       .where(eq(externalIdentities.profileId, testProfileId));
 

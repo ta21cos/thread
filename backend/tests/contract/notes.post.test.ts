@@ -9,13 +9,16 @@ const API_BASE_URL = process.env.API_BASE_URL;
 describe('POST /api/notes', () => {
   beforeAll(async () => {
     // NOTE: Ensure parent note exists for reply test
-    await db.insert(notes).values({
-      id: 'abc123',
-      content: 'Parent note for replies',
-      depth: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).onConflictDoNothing();
+    await db
+      .insert(notes)
+      .values({
+        id: 'abc123',
+        content: 'Parent note for replies',
+        depth: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoNothing();
   });
   it('should create a new root note', async () => {
     const { response, data } = await fetchJson<Note>(`${API_BASE_URL}/api/notes`, {

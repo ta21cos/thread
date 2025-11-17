@@ -1,5 +1,16 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { Hash, Search, MoreVertical, Trash2, Bookmark, Link2, Edit, Pin, Plus } from 'lucide-react';
+import {
+  Hash,
+  Search,
+  MoreVertical,
+  Trash2,
+  Bookmark,
+  Link2,
+  Edit,
+  Pin,
+  Plus,
+  BookmarkCheck,
+} from 'lucide-react';
 import { Note } from '../../../shared/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +26,7 @@ import { getRelativeTime } from '@/lib/utils';
 import NoteEditor from './NoteEditor';
 import { ThemeToggle } from './ThemeToggle';
 import { UserButton } from './UserButton';
+import { useToggleBookmark } from '@/services/note.service';
 
 interface NoteListProps {
   notes: Note[];
@@ -39,6 +51,7 @@ export const NoteList: React.FC<NoteListProps> = ({
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedImages, setExpandedImages] = useState<Record<string, boolean>>({});
+  const toggleBookmark = useToggleBookmark();
 
   const filteredNotes = notes.filter(
     (note) =>
@@ -97,6 +110,11 @@ export const NoteList: React.FC<NoteListProps> = ({
     }));
   };
 
+  const handleToggleBookmark = (noteId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    toggleBookmark.mutate(noteId);
+  };
+
   return (
     <div className="flex flex-col h-full w-full bg-background" data-testid="note-list">
       {/* Header */}
@@ -152,13 +170,13 @@ export const NoteList: React.FC<NoteListProps> = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <Pin className="mr-2 h-4 w-4" />
-                      Pin note
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Bookmark className="mr-2 h-4 w-4" />
-                      Bookmark
+                    <DropdownMenuItem onClick={(e) => handleToggleBookmark(note.id, e)}>
+                      {note.bookmarked ? (
+                        <BookmarkCheck className="mr-2 h-4 w-4" />
+                      ) : (
+                        <Bookmark className="mr-2 h-4 w-4" />
+                      )}
+                      {note.bookmarked ? 'Remove bookmark' : 'Bookmark'}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => copyLink(note.id)}>
                       <Link2 className="mr-2 h-4 w-4" />

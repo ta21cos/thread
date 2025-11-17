@@ -52,7 +52,9 @@ describe('GET /api/notes/search', () => {
     `);
   });
   it('should search notes by content', async () => {
-    const { response, data } = await fetchJson<SearchResponse>(`${API_BASE_URL}/api/notes/search?q=test&type=content`);
+    const { response, data } = await fetchJson<SearchResponse>(
+      `${API_BASE_URL}/api/notes/search?q=test&type=content`
+    );
 
     expect(response.status).toBe(200);
     expect(data).toHaveProperty('results');
@@ -61,21 +63,27 @@ describe('GET /api/notes/search', () => {
   });
 
   it('should search notes by mention', async () => {
-    const { response, data } = await fetchJson<SearchResponse>(`${API_BASE_URL}/api/notes/search?q=abc123&type=mention`);
+    const { response, data } = await fetchJson<SearchResponse>(
+      `${API_BASE_URL}/api/notes/search?q=abc123&type=mention`
+    );
 
     expect(response.status).toBe(200);
     expect(data.results).toBeDefined();
   });
 
   it('should default to content search when type not specified', async () => {
-    const { response, data } = await fetchJson<SearchResponse>(`${API_BASE_URL}/api/notes/search?q=test`);
+    const { response, data } = await fetchJson<SearchResponse>(
+      `${API_BASE_URL}/api/notes/search?q=test`
+    );
 
     expect(response.status).toBe(200);
     expect(data.results).toBeDefined();
   });
 
   it('should respect limit parameter (default 20)', async () => {
-    const { response, data } = await fetchJson<SearchResponse>(`${API_BASE_URL}/api/notes/search?q=test&limit=5`);
+    const { response, data } = await fetchJson<SearchResponse>(
+      `${API_BASE_URL}/api/notes/search?q=test&limit=5`
+    );
 
     expect(response.status).toBe(200);
     expect(data.results.length).toBeLessThanOrEqual(5);

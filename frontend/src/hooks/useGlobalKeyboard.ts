@@ -42,9 +42,7 @@ export const useGlobalKeyboard = ({
       // Check if user is typing in an input field
       const target = event.target as HTMLElement;
       const isInputFocused =
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable;
+        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
       // Skip if input is focused and shortcuts are disabled for inputs
       // Exception: Allow Escape key to work even in inputs

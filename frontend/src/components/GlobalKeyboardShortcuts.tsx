@@ -42,10 +42,10 @@ export const GlobalKeyboardShortcuts = () => {
     // This could be used to show a keyboard shortcuts help modal
     // For now, we'll just log that shortcuts are active
     console.log('Global keyboard shortcuts active:', {
-      'n': 'New note',
+      n: 'New note',
       '/': 'Search',
-      'Escape': 'Clear focus',
-      'r': 'Reply to thread',
+      Escape: 'Clear focus',
+      r: 'Reply to thread',
     });
   }, []);
 

@@ -53,7 +53,7 @@ export const NotesUIProvider: React.FC<{ children: ReactNode }> = ({ children })
     setState((prev) => ({
       ...prev,
       searchQuery: query,
-      isSearchOpen: query.length > 0  // NOTE: Auto-open search when typing
+      isSearchOpen: query.length > 0, // NOTE: Auto-open search when typing
     }));
   }, []);
 
@@ -106,11 +106,7 @@ export const NotesUIProvider: React.FC<{ children: ReactNode }> = ({ children })
     reset,
   };
 
-  return (
-    <NotesUIContext.Provider value={value}>
-      {children}
-    </NotesUIContext.Provider>
-  );
+  return <NotesUIContext.Provider value={value}>{children}</NotesUIContext.Provider>;
 };
 
 // NOTE: Hook to use UI state

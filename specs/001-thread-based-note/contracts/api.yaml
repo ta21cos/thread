@@ -41,7 +41,7 @@ paths:
                     type: integer
                   hasMore:
                     type: boolean
-    
+
     post:
       summary: Create a new note
       requestBody:
@@ -109,7 +109,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-    
+
     put:
       summary: Update note content
       parameters:
@@ -140,7 +140,7 @@ paths:
                 $ref: '#/components/schemas/Note'
         '404':
           description: Note not found
-    
+
     delete:
       summary: Delete note and its replies
       parameters:
@@ -232,12 +232,12 @@ components:
         id:
           type: string
           pattern: '^[A-Za-z0-9]{6}$'
-          example: "a3k7m9"
+          example: 'a3k7m9'
         content:
           type: string
           minLength: 1
           maxLength: 10000
-          example: "This is a note with @a3k7m9 mention"
+          example: 'This is a note with @a3k7m9 mention'
         parentId:
           type: string
           nullable: true
@@ -260,7 +260,7 @@ components:
           items:
             type: string
             pattern: '^[A-Za-z0-9]{6}$'
-    
+
     Error:
       type: object
       required:

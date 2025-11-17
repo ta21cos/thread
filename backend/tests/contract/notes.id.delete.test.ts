@@ -7,31 +7,40 @@ const API_BASE_URL = process.env.API_BASE_URL;
 describe('DELETE /api/notes/:id', () => {
   beforeEach(async () => {
     // NOTE: Create fresh test data for each test
-    await db.insert(notes).values({
-      id: 'abc123',
-      content: 'Test note to delete',
-      depth: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).onConflictDoNothing();
+    await db
+      .insert(notes)
+      .values({
+        id: 'abc123',
+        content: 'Test note to delete',
+        depth: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoNothing();
 
     // Create parent-child structure for cascade test
-    await db.insert(notes).values({
-      id: 'prnt23',
-      content: 'Parent note',
-      depth: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).onConflictDoNothing();
+    await db
+      .insert(notes)
+      .values({
+        id: 'prnt23',
+        content: 'Parent note',
+        depth: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoNothing();
 
-    await db.insert(notes).values({
-      id: 'chld56',
-      content: 'Child note',
-      parentId: 'prnt23',
-      depth: 1,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).onConflictDoNothing();
+    await db
+      .insert(notes)
+      .values({
+        id: 'chld56',
+        content: 'Child note',
+        parentId: 'prnt23',
+        depth: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoNothing();
   });
 
   it('should delete note and return 204', async () => {

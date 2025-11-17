@@ -14,10 +14,7 @@ export class MentionService {
   }
 
   // NOTE: DFS cycle detection (from clarifications: prevent circular references)
-  async validateMentions(
-    fromNoteId: string,
-    toNoteIds: string[]
-  ): Promise<void> {
+  async validateMentions(fromNoteId: string, toNoteIds: string[]): Promise<void> {
     const graph = await this.mentionRepo.getAllMentions();
 
     // Add proposed mentions temporarily

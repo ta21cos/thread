@@ -12,8 +12,6 @@ describe('Performance Validation (<200ms) Scenario', () => {
   });
 
   it('should perform create operation in <200ms', async () => {
-    
-
     const start = Date.now();
     await noteService.createNote({ content: 'Performance test' });
     const duration = Date.now() - start;
@@ -22,8 +20,6 @@ describe('Performance Validation (<200ms) Scenario', () => {
   });
 
   it('should perform read operation in <200ms with 1000 notes', async () => {
-    
-
     // Seed 1000 notes
     const promises = Array.from({ length: 100 }, (_, i) =>
       noteService.createNote({ content: `Note ${i}` })
@@ -38,9 +34,6 @@ describe('Performance Validation (<200ms) Scenario', () => {
   });
 
   it('should perform search in <200ms with 1000 notes', async () => {
-    
-    
-
     // Seed notes
     const promises = Array.from({ length: 100 }, (_, i) =>
       noteService.createNote({ content: `Search test ${i}` })
@@ -55,9 +48,6 @@ describe('Performance Validation (<200ms) Scenario', () => {
   });
 
   it('should perform delete operation in <200ms', async () => {
-    
-    
-
     const note = await noteService.createNote({ content: 'To delete' });
 
     const start = Date.now();

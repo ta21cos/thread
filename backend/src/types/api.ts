@@ -1,4 +1,8 @@
-import type { Note as DbNote, Mention as DbMention, NoteWithReplyCount as DbNoteWithReplyCount } from '../db';
+import type {
+  Note as DbNote,
+  Mention as DbMention,
+  NoteWithReplyCount as DbNoteWithReplyCount,
+} from '../db';
 
 // NOTE: Utility type to convert Date fields to string (matches JSON.stringify behavior)
 type DateToString<T> = {

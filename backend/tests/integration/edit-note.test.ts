@@ -24,7 +24,6 @@ describe('Edit Existing Note Scenario', () => {
   });
 
   it('should enforce 1000 character limit on update', async () => {
-
     const note = await noteService.createNote({ content: 'Short' });
 
     await expect(

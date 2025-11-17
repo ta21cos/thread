@@ -7,11 +7,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Thread-based note-taking application for personal knowledge management. Users can create interconnected notes with replies and mentions (@ID), similar to social media threads.
 
 ## Active Technologies
+
 - TypeScript 5.x with Bun runtime + React 18 (frontend), Hono (backend), Drizzle ORM, DOMPurify (sanitization) (001-thread-based-note)
 - SQLite (embedded, offline-first) with full-text search (001-thread-based-note)
 
 - **TypeScript 5.x** / Bun runtime
-- **React 18** - Frontend UI framework  
+- **React 18** - Frontend UI framework
 - **Hono** - Ultra-fast backend web framework
 - **SQLite** - Embedded database (offline-first)
 - **Drizzle ORM** - Type-safe database access
@@ -60,11 +61,13 @@ The application uses environment-specific configuration files:
 - `.env.example` - Template for reference
 
 **Environment Variables:**
+
 - `DATABASE_URL` - Path to SQLite database file (e.g., `data/notes.db` for dev, `data/test.db` for test)
 - `PORT` - Server port (default: 3000 for dev, 3001 for test)
 - `NODE_ENV` - Environment mode (`development`, `test`, `production`)
 
 **Setup:**
+
 1. Copy `.env.example` to `.env` for development
 2. Test environment automatically uses `.env.test` when running tests
 3. Config module (`backend/src/config/index.ts`) loads appropriate environment file
@@ -102,6 +105,7 @@ bun run format      # Format with Prettier
 ## Key Features
 
 ### Core Functionality
+
 - Create markdown notes with unique IDs
 - Reply to notes creating threaded conversations
 - Mention other notes using @ID syntax
@@ -109,12 +113,14 @@ bun run format      # Format with Prettier
 - Edit and delete notes with cascade deletion
 
 ### UI Layout
+
 - Split view: note list (left) + thread view (right)
 - Infinite scroll for note lists
 - Chronological ordering (oldest to newest)
 - Real-time updates via WebSocket
 
 ### Data Model
+
 - **Note**: id, content, parentId, timestamps, depth
 - **Mention**: fromNoteId, toNoteId, position
 - **SearchIndex**: Full-text search support
@@ -134,6 +140,7 @@ GET    /api/notes/:id/mentions # Get mentions
 ## Development Guidelines
 
 ### Code Style
+
 - Use TypeScript strict mode
 - Functional components with hooks
 - Async/await over promises
@@ -141,6 +148,7 @@ GET    /api/notes/:id/mentions # Get mentions
 - Comment complex logic only
 
 ### Testing Requirements
+
 - TDD: Write tests first
 - Test files next to source files
 - Mock external dependencies
@@ -148,12 +156,14 @@ GET    /api/notes/:id/mentions # Get mentions
 - Maintain >80% coverage
 
 ### Git Workflow
+
 - Feature branches: `NNN-feature-name`
 - Conventional commits
 - PR required for main
 - Run tests before commit
 
 ## Recent Changes
+
 - 001-thread-based-note: Added TypeScript 5.x with Bun runtime + React 18 (frontend), Hono (backend), Drizzle ORM, DOMPurify (sanitization)
 
 - **001-thread-based-note**: Initial implementation with TypeScript, React, Hono, and SQLite
@@ -175,4 +185,5 @@ GET    /api/notes/:id/mentions # Get mentions
 - XSS protection in markdown rendering
 
 ---
-*Last updated: 2025-09-07*
+
+_Last updated: 2025-09-07_

@@ -20,25 +20,17 @@ export class MentionRepository {
     // NOTE: Delete mentions where note is either sender OR receiver
     await db
       .delete(mentions)
-      .where(
-        or(eq(mentions.fromNoteId, noteId), eq(mentions.toNoteId, noteId))
-      );
+      .where(or(eq(mentions.fromNoteId, noteId), eq(mentions.toNoteId, noteId)));
   }
 
   async getMentionsWithNotes(toNoteId: string): Promise<Array<{ mentions: Mention; notes: Note }>> {
     // NOTE: Get all mentions for this note
-    const allMentions = await db
-      .select()
-      .from(mentions)
-      .where(eq(mentions.toNoteId, toNoteId));
+    const allMentions = await db.select().from(mentions).where(eq(mentions.toNoteId, toNoteId));
 
     // NOTE: Fetch the notes for each mention
     const results = await Promise.all(
       allMentions.map(async (mention) => {
-        const [note] = await db
-          .select()
-          .from(notes)
-          .where(eq(notes.id, mention.fromNoteId));
+        const [note] = await db.select().from(notes).where(eq(notes.id, mention.fromNoteId));
         return {
           mentions: mention,
           notes: note,

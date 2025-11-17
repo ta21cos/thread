@@ -7,7 +7,9 @@ import { profiles } from './profile.schema';
 export const notes = sqliteTable('notes', {
   id: text('id').primaryKey(),
   content: text('content').notNull(),
-  authorId: text('author_id').references((): AnySQLiteColumn => profiles.id, { onDelete: 'cascade' }),
+  authorId: text('author_id').references((): AnySQLiteColumn => profiles.id, {
+    onDelete: 'cascade',
+  }),
   parentId: text('parent_id').references((): AnySQLiteColumn => notes.id, { onDelete: 'cascade' }),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()

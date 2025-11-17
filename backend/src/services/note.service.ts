@@ -19,9 +19,7 @@ export class NoteService {
   }): Promise<Note> {
     // Validate length (from clarifications: 1000 char limit)
     if (data.content.length < 1 || data.content.length > MAX_NOTE_LENGTH) {
-      throw new Error(
-        `Note content must be between 1 and ${MAX_NOTE_LENGTH} characters`
-      );
+      throw new Error(`Note content must be between 1 and ${MAX_NOTE_LENGTH} characters`);
     }
 
     // Generate ID first for validation
@@ -91,9 +89,7 @@ export class NoteService {
   async updateNote(id: string, data: { content: string }): Promise<Note> {
     // Validate length
     if (data.content.length < 1 || data.content.length > MAX_NOTE_LENGTH) {
-      throw new Error(
-        `Note content must be between 1 and ${MAX_NOTE_LENGTH} characters`
-      );
+      throw new Error(`Note content must be between 1 and ${MAX_NOTE_LENGTH} characters`);
     }
 
     const existing = await this.noteRepo.findById(id);

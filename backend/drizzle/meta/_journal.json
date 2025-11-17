@@ -15,6 +15,13 @@
       "when": 1762586340000,
       "tag": "0001_split_user_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1763338546903,
+      "tag": "0002_cheerful_rictor",
+      "breakpoints": true
     }
   ]
 }

@@ -33,16 +33,12 @@ export const MentionInput: React.FC<MentionInputProps> = ({
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
-          setSelectedIndex((prev) =>
-            prev < suggestions.length - 1 ? prev + 1 : 0
-          );
+          setSelectedIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : 0));
           break;
 
         case 'ArrowUp':
           e.preventDefault();
-          setSelectedIndex((prev) =>
-            prev > 0 ? prev - 1 : suggestions.length - 1
-          );
+          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : suggestions.length - 1));
           break;
 
         case 'Enter':
@@ -138,14 +134,8 @@ export const MentionInput: React.FC<MentionInputProps> = ({
       }}
     >
       <div className="mention-input__header">
-        <span className="mention-input__title">
-          Mention a note
-        </span>
-        {searchTerm && (
-          <span className="mention-input__search">
-            Searching: "{searchTerm}"
-          </span>
-        )}
+        <span className="mention-input__title">Mention a note</span>
+        {searchTerm && <span className="mention-input__search">Searching: "{searchTerm}"</span>}
       </div>
 
       {loading ? (
@@ -167,18 +157,14 @@ export const MentionInput: React.FC<MentionInputProps> = ({
               role="option"
               aria-selected={index === selectedIndex}
             >
-              <div className="mention-input__item-id">
-                #{highlightMatch(note.id, searchTerm)}
-              </div>
+              <div className="mention-input__item-id">#{highlightMatch(note.id, searchTerm)}</div>
               <div className="mention-input__item-content">
                 {highlightMatch(truncateContent(note.content), searchTerm)}
               </div>
               <div className="mention-input__item-meta">
                 {new Date(note.createdAt).toLocaleDateString()}
                 {note.parentId && (
-                  <span className="mention-input__item-reply">
-                    • Reply to #{note.parentId}
-                  </span>
+                  <span className="mention-input__item-reply">• Reply to #{note.parentId}</span>
                 )}
               </div>
             </div>
@@ -196,9 +182,7 @@ export const MentionInput: React.FC<MentionInputProps> = ({
           ) : (
             <>
               <p>Start typing to search for notes</p>
-              <p className="mention-input__hint">
-                Use arrow keys to navigate, Enter to select
-              </p>
+              <p className="mention-input__hint">Use arrow keys to navigate, Enter to select</p>
             </>
           )}
         </div>

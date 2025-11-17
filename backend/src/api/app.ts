@@ -13,10 +13,10 @@ const app = new Hono()
   .use('*', logger())
   .use('*', cors())
   // Routes - Order matters! Specific routes before generic ones
-  .route('/api/notes', searchRoutes)  // /search route
+  .route('/api/notes', searchRoutes) // /search route
   .route('/api/notes', mentionsRoutes) // /:id/mentions route
-  .route('/api/notes', notesRoutes)   // /:id route (must be last)
-  .route('/api/users', usersRoutes)   // /sync route
+  .route('/api/notes', notesRoutes) // /:id route (must be last)
+  .route('/api/users', usersRoutes) // /sync route
   // NOTE: Health check endpoint for monitoring
   .get('/health', (c) => {
     return c.json({ status: 'ok', timestamp: new Date().toISOString() });

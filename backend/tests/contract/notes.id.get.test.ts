@@ -23,7 +23,9 @@ describe('GET /api/notes/:id', () => {
   });
 
   it('should return note details with thread', async () => {
-    const { response, data } = await fetchJson<NoteDetailResponse>(`${API_BASE_URL}/api/notes/abc123?includeThread=true`);
+    const { response, data } = await fetchJson<NoteDetailResponse>(
+      `${API_BASE_URL}/api/notes/abc123?includeThread=true`
+    );
 
     expect(response.status).toBe(200);
     expect(data).toHaveProperty('note');
@@ -32,7 +34,9 @@ describe('GET /api/notes/:id', () => {
   });
 
   it('should return only note without thread when includeThread=false', async () => {
-    const { response, data } = await fetchJson<NoteDetailResponse>(`${API_BASE_URL}/api/notes/abc123?includeThread=false`);
+    const { response, data } = await fetchJson<NoteDetailResponse>(
+      `${API_BASE_URL}/api/notes/abc123?includeThread=false`
+    );
 
     expect(response.status).toBe(200);
     expect(data).toHaveProperty('note');

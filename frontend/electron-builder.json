@@ -5,10 +5,7 @@
     "output": "release",
     "buildResources": "resources"
   },
-  "files": [
-    "out/**/*",
-    "package.json"
-  ],
+  "files": ["out/**/*", "package.json"],
   "mac": {
     "target": ["dmg"],
     "category": "public.app-category.productivity",

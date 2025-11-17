@@ -42,7 +42,7 @@ describe('Prevent Circular References Scenario', () => {
     // This creates a valid chain: D -> C -> B -> A (no cycle)
     // Now D should also be able to mention A directly (creating a shortcut, not a cycle)
     const updated = await noteService.updateNote(noteD.id, {
-      content: `D mentions both @${noteC.id} and @${noteA.id}`
+      content: `D mentions both @${noteC.id} and @${noteA.id}`,
     });
     expect(updated).toBeDefined();
     expect(updated.content).toContain(noteA.id);

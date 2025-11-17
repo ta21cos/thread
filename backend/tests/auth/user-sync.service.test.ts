@@ -38,10 +38,7 @@ describe('UserSyncService', () => {
     expect(result.identityId).toBeTruthy();
 
     // NOTE: Verify database records
-    const [profile] = await db
-      .select()
-      .from(profiles)
-      .where(eq(profiles.id, result.profileId));
+    const [profile] = await db.select().from(profiles).where(eq(profiles.id, result.profileId));
     expect(profile.displayName).toBe('Test User');
     expect(profile.avatarUrl).toBe('https://example.com/avatar.jpg');
 
@@ -78,10 +75,7 @@ describe('UserSyncService', () => {
     expect(second.identityId).toBe(first.identityId);
 
     // NOTE: Should update displayName
-    const [profile] = await db
-      .select()
-      .from(profiles)
-      .where(eq(profiles.id, second.profileId));
+    const [profile] = await db.select().from(profiles).where(eq(profiles.id, second.profileId));
     expect(profile.displayName).toBe('New Name');
 
     // NOTE: Should update email
@@ -102,10 +96,7 @@ describe('UserSyncService', () => {
 
     expect(result.synced).toBe(true);
 
-    const [profile] = await db
-      .select()
-      .from(profiles)
-      .where(eq(profiles.id, result.profileId));
+    const [profile] = await db.select().from(profiles).where(eq(profiles.id, result.profileId));
     expect(profile.displayName).toBe('User'); // NOTE: Fallback
 
     const [identity] = await db

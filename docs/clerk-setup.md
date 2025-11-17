@@ -94,17 +94,17 @@ Visit http://localhost:5173 - you should be redirected to Clerk's sign-in page.
 
 ### Backend (`backend/.env`)
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `CLERK_SECRET_KEY` | Clerk secret key (server-side only) | `sk_test_...` |
-| `CLERK_PUBLISHABLE_KEY` | Clerk publishable key | `pk_test_...` |
-| `ALLOWED_ORIGINS` | Comma-separated allowed origins for CSRF protection | `http://localhost:5173` |
-| `APP_DOMAIN` | Your backend domain for audience validation | `localhost:3000` |
+| Variable                | Description                                         | Example                 |
+| ----------------------- | --------------------------------------------------- | ----------------------- |
+| `CLERK_SECRET_KEY`      | Clerk secret key (server-side only)                 | `sk_test_...`           |
+| `CLERK_PUBLISHABLE_KEY` | Clerk publishable key                               | `pk_test_...`           |
+| `ALLOWED_ORIGINS`       | Comma-separated allowed origins for CSRF protection | `http://localhost:5173` |
+| `APP_DOMAIN`            | Your backend domain for audience validation         | `localhost:3000`        |
 
 ### Frontend (`frontend/.env`)
 
-| Variable | Description | Example |
-|----------|-------------|---------|
+| Variable                     | Description                              | Example       |
+| ---------------------------- | ---------------------------------------- | ------------- |
 | `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (safe for browser) | `pk_test_...` |
 
 ## Production Setup
@@ -129,17 +129,20 @@ For production deployments:
 ### Backend won't start
 
 **Error**: `CLERK_SECRET_KEY is required`
+
 - **Solution**: Check `backend/.env` file exists and contains `CLERK_SECRET_KEY`
 
 ### Authentication fails with 401
 
 **Error**: `Unauthorized` with reason `token-invalid`
+
 - **Solution**: Verify `ALLOWED_ORIGINS` includes your frontend URL
 - **Solution**: Check `APP_DOMAIN` matches your backend domain
 
 ### Frontend redirect loop
 
 **Error**: Constant redirects to sign-in
+
 - **Solution**: Verify `VITE_CLERK_PUBLISHABLE_KEY` is set in `frontend/.env`
 - **Solution**: Check Clerk dashboard has correct redirect URLs
 
@@ -154,6 +157,7 @@ For production deployments:
 ## Next Steps
 
 After completing this setup:
+
 - Proceed to **Step 5**: Web frontend integration (ClerkProvider, useUserSync, etc.)
 - Test authentication flow end-to-end
 - Implement user sync endpoint (Step 2)

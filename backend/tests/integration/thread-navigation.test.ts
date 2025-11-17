@@ -27,9 +27,6 @@ describe('Navigate Thread Hierarchy Scenario', () => {
   });
 
   it('should show threaded/nested format with parent-child relationships', async () => {
-    
-    
-
     const parent = await noteService.createNote({ content: 'Parent' });
     const child1 = await noteService.createNote({
       content: 'Child 1',

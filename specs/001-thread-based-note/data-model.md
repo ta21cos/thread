@@ -7,20 +7,22 @@
 ## Entity Definitions
 
 ### Note
+
 Primary entity representing a single note in the system.
 
 ```typescript
 interface Note {
-  id: string;           // Unique 6-char ID (e.g., "a3k7m9")
-  content: string;      // Markdown text content (max 1000 chars)
-  parentId?: string;    // Reference to parent note (null for root notes)
-  createdAt: Date;      // ISO 8601 timestamp
-  updatedAt: Date;      // ISO 8601 timestamp
-  depth: number;        // Thread depth (0 for root notes)
+  id: string; // Unique 6-char ID (e.g., "a3k7m9")
+  content: string; // Markdown text content (max 1000 chars)
+  parentId?: string; // Reference to parent note (null for root notes)
+  createdAt: Date; // ISO 8601 timestamp
+  updatedAt: Date; // ISO 8601 timestamp
+  depth: number; // Thread depth (0 for root notes)
 }
 ```
 
 **Validation Rules**:
+
 - `id`: Required, unique, 6 characters alphanumeric
 - `content`: Required, 1-1000 characters, valid markdown
 - `parentId`: Optional, must reference existing note if provided
@@ -29,58 +31,66 @@ interface Note {
 - `depth`: Required, 0-100 (max thread depth)
 
 **Indexes**:
+
 - Primary: `id`
 - Secondary: `parentId`, `createdAt DESC`, `updatedAt DESC`
 
 ### Mention
+
 Represents a reference from one note to another using @ID syntax.
 
 ```typescript
 interface Mention {
-  id: string;           // Unique identifier
-  fromNoteId: string;   // Note containing the mention
-  toNoteId: string;     // Note being mentioned
-  position: number;     // Character position in content
-  createdAt: Date;      // When mention was created
+  id: string; // Unique identifier
+  fromNoteId: string; // Note containing the mention
+  toNoteId: string; // Note being mentioned
+  position: number; // Character position in content
+  createdAt: Date; // When mention was created
 }
 ```
 
 **Validation Rules**:
+
 - `fromNoteId`: Required, must reference existing note
 - `toNoteId`: Required, must reference existing note
 - `position`: Required, >= 0, < content length
 - Unique constraint on (`fromNoteId`, `toNoteId`, `position`)
 
 **Indexes**:
+
 - Primary: `id`
 - Secondary: `fromNoteId`, `toNoteId`
 
 ### SearchIndex
+
 Full-text search index for note content.
 
 ```typescript
 interface SearchIndex {
-  noteId: string;       // Reference to note
-  content: string;      // Preprocessed searchable text
-  tokens: string[];     // Tokenized content for search
-  mentions: string[];   // Extracted mention IDs
-  updatedAt: Date;      // Last index update
+  noteId: string; // Reference to note
+  content: string; // Preprocessed searchable text
+  tokens: string[]; // Tokenized content for search
+  mentions: string[]; // Extracted mention IDs
+  updatedAt: Date; // Last index update
 }
 ```
 
 **Validation Rules**:
+
 - `noteId`: Required, unique, references existing note
 - `content`: Required, lowercase, no markdown syntax
 - `tokens`: Required, array of stemmed words
 - `mentions`: Array of valid note IDs
 
 **Indexes**:
+
 - Primary: `noteId`
 - Full-text: `content`, `tokens`
 
 ## Relationships
 
 ### Parent-Child (Thread Structure)
+
 - **Type**: One-to-Many
 - **Parent**: Note (via `parentId`)
 - **Children**: Note[] (where `parentId = note.id`)
@@ -88,6 +98,7 @@ interface SearchIndex {
 - **Constraints**: No circular references
 
 ### Mention Network
+
 - **Type**: Many-to-Many
 - **From**: Note (via `Mention.fromNoteId`)
 - **To**: Note (via `Mention.toNoteId`)
@@ -97,6 +108,7 @@ interface SearchIndex {
 ## State Transitions
 
 ### Note Lifecycle
+
 ```
 DRAFT → SAVED → EDITED → DELETED
          ↑         ↓
@@ -104,6 +116,7 @@ DRAFT → SAVED → EDITED → DELETED
 ```
 
 **Transitions**:
+
 1. **Create**: `null → DRAFT → SAVED`
    - Validate content length
    - Generate unique ID
@@ -125,18 +138,21 @@ DRAFT → SAVED → EDITED → DELETED
 ## Data Integrity Rules
 
 ### Thread Integrity
+
 - Maximum depth: 100 levels
 - Circular reference prevention
 - Orphan prevention (parentId must exist)
 - Root note cannot have parentId
 
 ### Content Integrity
+
 - No empty content
 - Maximum size: 1000 characters per note
 - Valid UTF-8 encoding
 - Sanitized markdown (no scripts)
 
 ### Referential Integrity
+
 - Foreign key constraints on all IDs
 - Cascade deletes for child notes
 - Mention cleanup on note deletion
@@ -145,6 +161,7 @@ DRAFT → SAVED → EDITED → DELETED
 ## Query Patterns
 
 ### Common Queries
+
 ```sql
 -- Get thread by root note
 WITH RECURSIVE thread AS (
@@ -178,9 +195,11 @@ LIMIT ? OFFSET ?;
 ## Migration Strategy
 
 ### Drizzle ORM Schema Definition
+
 The following SQL will be managed through Drizzle ORM migrations for type safety and version control.
 
 ### Version 1.0.0 Schema
+
 ```sql
 CREATE TABLE notes (
   id TEXT PRIMARY KEY,
@@ -219,16 +238,19 @@ CREATE INDEX idx_search_content ON search_index(content);
 ## Performance Considerations
 
 ### Optimizations
+
 - Denormalized `depth` field for fast thread queries
 - Separate search index table for full-text search
 - Composite indexes for common query patterns
 - Pagination for large result sets
 
 ### Caching Strategy
+
 - LRU cache for recent notes (100 items)
 - Thread cache for expanded threads (10 threads)
 - Search result cache (5 minutes TTL)
 - Mention graph cache (on first load)
 
 ---
-*This data model supports all functional requirements while maintaining simplicity and performance.*
+
+_This data model supports all functional requirements while maintaining simplicity and performance._
