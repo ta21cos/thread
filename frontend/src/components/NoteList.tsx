@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { getRelativeTime } from '@/lib/utils';
-import NoteEditor from './NoteEditor';
+import MessageInput from './MessageInput';
 import { ThemeToggle } from './ThemeToggle';
 import { UserButton } from './UserButton';
 
@@ -39,6 +39,7 @@ export const NoteList: React.FC<NoteListProps> = ({
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedImages, setExpandedImages] = useState<Record<string, boolean>>({});
+  const [messageContent, setMessageContent] = useState('');
 
   const filteredNotes = notes.filter(
     (note) =>
@@ -322,9 +323,19 @@ export const NoteList: React.FC<NoteListProps> = ({
 
       {/* Note Editor at bottom */}
       {onCreateNote && (
-        <div className="border-t border-border p-4 flex-shrink-0">
-          <NoteEditor onSubmit={onCreateNote} placeholder="Message #notes" />
-        </div>
+        <MessageInput
+          value={messageContent}
+          onChange={setMessageContent}
+          onSubmit={async () => {
+            if (messageContent.trim()) {
+              await onCreateNote(messageContent);
+              setMessageContent('');
+            }
+          }}
+          placeholder="Message #notes"
+          autoFocus
+          data-testid="note-list-message-input"
+        />
       )}
     </div>
   );
