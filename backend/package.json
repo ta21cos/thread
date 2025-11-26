@@ -30,6 +30,7 @@
     "@hono/zod-validator": "^0.1.11",
     "drizzle-orm": "^0.44.7",
     "hono": "^4.10.4",
+    "neverthrow": "^8.1.1",
     "pino": "^8.16.2",
     "pino-pretty": "^10.2.3",
     "zod": "^3.22.4"
