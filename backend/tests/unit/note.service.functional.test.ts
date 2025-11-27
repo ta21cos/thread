@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { ok, err, ResultAsync } from 'neverthrow';
+import { ok, err, okAsync, errAsync } from 'neverthrow';
 import {
   validateContentLength,
   extractMentionIds,
@@ -42,24 +42,24 @@ const createMockNote = (overrides: Partial<Note> = {}): Note => ({
 const createMockNoteRepository = (
   overrides: Partial<NoteRepository> = {}
 ): NoteRepository => ({
-  findById: vi.fn(() => ResultAsync.fromResult(ok(undefined))),
+  findById: vi.fn(() => okAsync(undefined)),
   create: vi.fn((note: NewNote) =>
-    ResultAsync.fromResult(ok(createMockNote({ id: note.id, content: note.content })))
+    okAsync(createMockNote({ id: note.id, content: note.content }))
   ),
   update: vi.fn((id: string, content: string) =>
-    ResultAsync.fromResult(ok(createMockNote({ id, content })))
+    okAsync(createMockNote({ id, content }))
   ),
-  findRootNotes: vi.fn(() => ResultAsync.fromResult(ok([]))),
-  countRootNotes: vi.fn(() => ResultAsync.fromResult(ok(0))),
+  findRootNotes: vi.fn(() => okAsync([])),
+  countRootNotes: vi.fn(() => okAsync(0)),
   ...overrides,
 });
 
 const createMockMentionRepository = (
   overrides: Partial<MentionRepository> = {}
 ): MentionRepository => ({
-  create: vi.fn(() => ResultAsync.fromResult(ok(undefined))),
-  deleteByNoteId: vi.fn(() => ResultAsync.fromResult(ok(undefined))),
-  getAllMentions: vi.fn(() => ResultAsync.fromResult(ok(new Map()))),
+  create: vi.fn(() => okAsync(undefined)),
+  deleteByNoteId: vi.fn(() => okAsync(undefined)),
+  getAllMentions: vi.fn(() => okAsync(new Map())),
   ...overrides,
 });
 
@@ -217,7 +217,7 @@ describe('createNote (サービス関数)', () => {
 
   it('存在しない親IDはエラーを返す', async () => {
     const noteRepo = createMockNoteRepository({
-      findById: vi.fn(() => ResultAsync.fromResult(ok(undefined))),
+      findById: vi.fn(() => okAsync(undefined)),
     });
     const mentionRepo = createMockMentionRepository();
 
@@ -235,7 +235,7 @@ describe('createNote (サービス関数)', () => {
   it('深度制限を超える場合はエラーを返す', async () => {
     const parentNote = createMockNote({ id: 'parent', depth: 1 });
     const noteRepo = createMockNoteRepository({
-      findById: vi.fn(() => ResultAsync.fromResult(ok(parentNote))),
+      findById: vi.fn(() => okAsync(parentNote)),
     });
     const mentionRepo = createMockMentionRepository();
 
@@ -267,7 +267,7 @@ describe('getNoteById (サービス関数)', () => {
   it('存在するノートを返す', async () => {
     const note = createMockNote({ id: 'test123', content: 'Found' });
     const noteRepo = createMockNoteRepository({
-      findById: vi.fn(() => ResultAsync.fromResult(ok(note))),
+      findById: vi.fn(() => okAsync(note)),
     });
 
     const result = await getNoteById(noteRepo)('test123');
@@ -281,7 +281,7 @@ describe('getNoteById (サービス関数)', () => {
 
   it('存在しないノートはエラーを返す', async () => {
     const noteRepo = createMockNoteRepository({
-      findById: vi.fn(() => ResultAsync.fromResult(ok(undefined))),
+      findById: vi.fn(() => okAsync(undefined)),
     });
 
     const result = await getNoteById(noteRepo)('nonexistent');
@@ -295,9 +295,7 @@ describe('getNoteById (サービス関数)', () => {
 
   it('データベースエラーを適切にラップする', async () => {
     const noteRepo = createMockNoteRepository({
-      findById: vi.fn(() =>
-        ResultAsync.fromResult(err(databaseError('Connection failed')))
-      ),
+      findById: vi.fn(() => errAsync(databaseError('Connection failed'))),
     });
 
     const result = await getNoteById(noteRepo)('test');
@@ -316,8 +314,8 @@ describe('getRootNotes (サービス関数)', () => {
       createMockNote({ id: 'b' }),
     ];
     const noteRepo = createMockNoteRepository({
-      findRootNotes: vi.fn(() => ResultAsync.fromResult(ok(mockNotes))),
-      countRootNotes: vi.fn(() => ResultAsync.fromResult(ok(2))),
+      findRootNotes: vi.fn(() => okAsync(mockNotes)),
+      countRootNotes: vi.fn(() => okAsync(2)),
     });
 
     const result = await getRootNotes(noteRepo)(20, 0);
@@ -335,8 +333,8 @@ describe('getRootNotes (サービス関数)', () => {
       createMockNote({ id: `note${i}` })
     );
     const noteRepo = createMockNoteRepository({
-      findRootNotes: vi.fn(() => ResultAsync.fromResult(ok(mockNotes))),
-      countRootNotes: vi.fn(() => ResultAsync.fromResult(ok(50))),
+      findRootNotes: vi.fn(() => okAsync(mockNotes)),
+      countRootNotes: vi.fn(() => okAsync(50)),
     });
 
     const result = await getRootNotes(noteRepo)(20, 0);
@@ -352,10 +350,8 @@ describe('updateNote (サービス関数)', () => {
   it('ノートを更新する', async () => {
     const existingNote = createMockNote({ id: 'test', content: 'Old' });
     const noteRepo = createMockNoteRepository({
-      findById: vi.fn(() => ResultAsync.fromResult(ok(existingNote))),
-      update: vi.fn((id, content) =>
-        ResultAsync.fromResult(ok(createMockNote({ id, content })))
-      ),
+      findById: vi.fn(() => okAsync(existingNote)),
+      update: vi.fn((id, content) => okAsync(createMockNote({ id, content }))),
     });
     const mentionRepo = createMockMentionRepository();
 
@@ -372,7 +368,7 @@ describe('updateNote (サービス関数)', () => {
 
   it('存在しないノートの更新はエラー', async () => {
     const noteRepo = createMockNoteRepository({
-      findById: vi.fn(() => ResultAsync.fromResult(ok(undefined))),
+      findById: vi.fn(() => okAsync(undefined)),
     });
     const mentionRepo = createMockMentionRepository();
 

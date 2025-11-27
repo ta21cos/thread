@@ -11,7 +11,7 @@
  * 5. テスタビリティ: モック可能なインターフェース
  */
 
-import { ok, err, ResultAsync, Result } from 'neverthrow';
+import { ok, err, ResultAsync, Result, okAsync, errAsync } from 'neverthrow';
 import { eq, isNull, desc } from 'drizzle-orm';
 import { db, notes, mentions, type Note, type NewNote, type NewMention } from '../db';
 import { MAX_NOTE_LENGTH } from '@thread-note/shared/constants';
@@ -265,7 +265,7 @@ export const validateCreateNote =
     // Step 1: 同期的なバリデーション
     const contentValidation = validateContentLength(input.content);
     if (contentValidation.isErr()) {
-      return ResultAsync.fromResult(contentValidation as Result<never, NoteError>);
+      return errAsync(contentValidation.error);
     }
 
     const noteId = generateId();
@@ -274,44 +274,40 @@ export const validateCreateNote =
     // Step 2: 親ノートの取得と深度計算
     const parentResult = input.parentId
       ? noteRepo.findById(input.parentId)
-      : ResultAsync.fromResult<Note | undefined, NoteError>(ok(undefined));
+      : okAsync<Note | undefined, NoteError>(undefined);
 
     return parentResult.andThen((parent) => {
       // Step 3: 深度計算
       const depthResult = calculateDepthFromParent(parent, input.parentId);
       if (depthResult.isErr()) {
-        return ResultAsync.fromResult(depthResult as Result<never, NoteError>);
+        return errAsync(depthResult.error);
       }
 
       // Step 4: 循環参照チェック (メンションがある場合のみ)
       if (mentionIds.length === 0) {
-        return ResultAsync.fromResult<ValidatedNoteData, NoteError>(
-          ok({
-            id: noteId,
-            content: input.content,
-            parentId: input.parentId,
-            depth: depthResult.value,
-            mentionIds: [],
-          })
-        );
+        return okAsync<ValidatedNoteData, NoteError>({
+          id: noteId,
+          content: input.content,
+          parentId: input.parentId,
+          depth: depthResult.value,
+          mentionIds: [],
+        });
       }
 
       // メンショングラフを取得して循環チェック
       return mentionRepo.getAllMentions().andThen((graph) => {
         const cycleCheck = detectCircularReference(graph, noteId, mentionIds);
         if (cycleCheck.isErr()) {
-          return ResultAsync.fromResult(cycleCheck as Result<never, NoteError>);
+          return errAsync(cycleCheck.error);
         }
 
-        return ResultAsync.fromResult<ValidatedNoteData, NoteError>(
-          ok({
-            id: noteId,
-            content: input.content,
-            parentId: input.parentId,
-            depth: depthResult.value,
-            mentionIds,
-          })
-        );
+        return okAsync<ValidatedNoteData, NoteError>({
+          id: noteId,
+          content: input.content,
+          parentId: input.parentId,
+          depth: depthResult.value,
+          mentionIds,
+        });
       });
     });
   };
@@ -337,7 +333,7 @@ export const persistNote =
     return noteRepo.create(newNote).andThen((createdNote) => {
       // メンションがない場合はそのまま返す
       if (data.mentionIds.length === 0) {
-        return ResultAsync.fromResult<Note, NoteError>(ok(createdNote));
+        return okAsync<Note, NoteError>(createdNote);
       }
 
       // 全メンションを保存
@@ -378,9 +374,9 @@ export const getNoteById =
   (id: string): ResultAsync<Note, NoteError> => {
     return noteRepo.findById(id).andThen((note) => {
       if (!note) {
-        return ResultAsync.fromResult<Note, NoteError>(err(noteNotFoundError(id)));
+        return errAsync<Note, NoteError>(noteNotFoundError(id));
       }
-      return ResultAsync.fromResult<Note, NoteError>(ok(note));
+      return okAsync<Note, NoteError>(note);
     });
   };
 
@@ -411,13 +407,13 @@ export const updateNote =
     // Step 1: コンテンツのバリデーション
     const contentValidation = validateContentLength(input.content);
     if (contentValidation.isErr()) {
-      return ResultAsync.fromResult(contentValidation as Result<never, NoteError>);
+      return errAsync(contentValidation.error);
     }
 
     // Step 2: 既存ノートの確認
     return noteRepo.findById(id).andThen((existing) => {
       if (!existing) {
-        return ResultAsync.fromResult<Note, NoteError>(err(noteNotFoundError(id)));
+        return errAsync<Note, NoteError>(noteNotFoundError(id));
       }
 
       const mentionIds = extractMentionIds(input.content);
@@ -425,11 +421,14 @@ export const updateNote =
       // Step 3: 循環参照チェック
       const checkCycle = (): ResultAsync<void, NoteError> => {
         if (mentionIds.length === 0) {
-          return ResultAsync.fromResult(ok(undefined));
+          return okAsync(undefined);
         }
         return mentionRepo.getAllMentions().andThen((graph) => {
           const cycleCheck = detectCircularReference(graph, id, mentionIds);
-          return ResultAsync.fromResult(cycleCheck);
+          if (cycleCheck.isErr()) {
+            return errAsync(cycleCheck.error);
+          }
+          return okAsync(undefined);
         });
       };
 
@@ -439,7 +438,7 @@ export const updateNote =
         .andThen((updated) => {
           // Step 6: 新しいメンションを作成
           if (mentionIds.length === 0) {
-            return ResultAsync.fromResult<Note, NoteError>(ok(updated));
+            return okAsync<Note, NoteError>(updated);
           }
 
           const mentionPromises = mentionIds.flatMap((mentionId) => {
