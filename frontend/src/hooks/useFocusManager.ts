@@ -20,7 +20,8 @@ export const useFocusManager = ({
   priority = 0,
   restoreOnUnmount = false,
 }: UseFocusManagerOptions) => {
-  const { registerInput, unregisterInput, focusInput, setFocusedId, restoreLastFocus } = useFocusContext();
+  const { registerInput, unregisterInput, focusInput, setFocusedId, restoreLastFocus } =
+    useFocusContext();
 
   // Register input on mount
   useEffect(() => {
@@ -36,7 +37,17 @@ export const useFocusManager = ({
         restoreLastFocus();
       }
     };
-  }, [id, ref, priority, autoFocus, registerInput, unregisterInput, focusInput, restoreOnUnmount, restoreLastFocus]);
+  }, [
+    id,
+    ref,
+    priority,
+    autoFocus,
+    registerInput,
+    unregisterInput,
+    focusInput,
+    restoreOnUnmount,
+    restoreLastFocus,
+  ]);
 
   // Track focus/blur events
   useEffect(() => {

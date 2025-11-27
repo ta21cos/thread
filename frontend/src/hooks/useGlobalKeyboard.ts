@@ -1,5 +1,4 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { useFocusContext } from '@/contexts/FocusContext';
 
 export interface KeyboardShortcut {
   key: string;
@@ -28,7 +27,6 @@ export const useGlobalKeyboard = ({
   disableWhenInputFocused = true,
 }: UseGlobalKeyboardOptions) => {
   const shortcutsRef = useRef(shortcuts);
-  const { getFocusedId } = useFocusContext();
 
   // Update shortcuts ref when they change
   useEffect(() => {
@@ -42,9 +40,7 @@ export const useGlobalKeyboard = ({
       // Check if user is typing in an input field
       const target = event.target as HTMLElement;
       const isInputFocused =
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable;
+        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
       // Skip if input is focused and shortcuts are disabled for inputs
       // Exception: Allow Escape key to work even in inputs
@@ -69,7 +65,7 @@ export const useGlobalKeyboard = ({
         }
       }
     },
-    [enabled, disableWhenInputFocused, getFocusedId]
+    [enabled, disableWhenInputFocused]
   );
 
   useEffect(() => {

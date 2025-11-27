@@ -176,11 +176,11 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   }, [onMentionInsert, insertMention]);
 
   // Dynamic placeholder based on context
-  const dynamicPlaceholder = placeholder || (
-    parentNote
+  const dynamicPlaceholder =
+    placeholder ||
+    (parentNote
       ? 'Reply... @ID to mention • Ctrl+Enter to send'
-      : 'Start a new thread... @ID to mention • Ctrl+Enter to send'
-  );
+      : 'Start a new thread... @ID to mention • Ctrl+Enter to send');
 
   // Adjust rows based on compact mode and focus state
   const textareaRows = compactMode ? (isFocused ? 3 : 1) : 3;

@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useFocusContext } from '@/contexts/FocusContext';
 import { useGlobalKeyboard, createCommonShortcuts } from '@/hooks/useGlobalKeyboard';
 
@@ -37,17 +36,8 @@ export const GlobalKeyboardShortcuts = () => {
     disableWhenInputFocused: true,
   });
 
-  // Add keyboard shortcut hints to document
-  useEffect(() => {
-    // This could be used to show a keyboard shortcuts help modal
-    // For now, we'll just log that shortcuts are active
-    console.log('Global keyboard shortcuts active:', {
-      'n': 'New note',
-      '/': 'Search',
-      'Escape': 'Clear focus',
-      'r': 'Reply to thread',
-    });
-  }, []);
+  // NOTE: Keyboard shortcuts are registered via useGlobalKeyboard hook
+  // Future enhancement: Add a help modal to display available shortcuts
 
   // This component doesn't render anything
   return null;

@@ -9,6 +9,7 @@ import {
   Edit,
   Pin,
   ArrowLeft,
+  Smile,
 } from 'lucide-react';
 import { Note } from '../../../shared/types';
 import { Button } from '@/components/ui/button';
