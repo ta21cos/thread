@@ -49,6 +49,7 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: backend
           command: deploy --env staging
+          environment: staging
           secrets: |
             CLERK_SECRET_KEY
             CLERK_PUBLISHABLE_KEY
