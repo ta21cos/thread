@@ -4,18 +4,20 @@ import { NoteService } from './note.service';
 import { generateId } from '../utils/id-generator';
 
 describe('NoteService', () => {
-  let noteService: NoteService;
+  const prepareServices = async () => {
+    const noteService = new NoteService();
+    return { noteService };
+  };
 
   beforeEach(async () => {
-    // Clean database before each test
     await db.delete(mentions);
     await db.delete(notes);
-    noteService = new NoteService();
   });
 
   describe('getNoteById', () => {
     it('should return a note when it exists', async () => {
-      // Arrange: Insert a note directly into the database
+      const { noteService } = await prepareServices();
+
       const noteId = generateId();
       const now = new Date();
       await db.insert(notes).values({
@@ -27,10 +29,8 @@ describe('NoteService', () => {
         updatedAt: now,
       });
 
-      // Act
       const result = await noteService.getNoteById(noteId);
 
-      // Assert
       expect(result).toBeDefined();
       expect(result!.id).toBe(noteId);
       expect(result!.content).toBe('Test note content');
@@ -39,15 +39,16 @@ describe('NoteService', () => {
     });
 
     it('should return undefined when note does not exist', async () => {
-      // Act
+      const { noteService } = await prepareServices();
+
       const result = await noteService.getNoteById('notexist');
 
-      // Assert
       expect(result).toBeUndefined();
     });
 
     it('should return a child note with correct parentId and depth', async () => {
-      // Arrange: Create parent and child notes
+      const { noteService } = await prepareServices();
+
       const parentId = generateId();
       const childId = generateId();
       const now = new Date();
@@ -70,10 +71,8 @@ describe('NoteService', () => {
         updatedAt: now,
       });
 
-      // Act
       const result = await noteService.getNoteById(childId);
 
-      // Assert
       expect(result).toBeDefined();
       expect(result!.id).toBe(childId);
       expect(result!.parentId).toBe(parentId);
@@ -83,17 +82,18 @@ describe('NoteService', () => {
 
   describe('getRootNotes', () => {
     it('should return empty result when no notes exist', async () => {
-      // Act
+      const { noteService } = await prepareServices();
+
       const result = await noteService.getRootNotes();
 
-      // Assert
       expect(result.notes).toEqual([]);
       expect(result.total).toBe(0);
       expect(result.hasMore).toBe(false);
     });
 
     it('should return only root notes (depth=0)', async () => {
-      // Arrange: Create root notes and child notes
+      const { noteService } = await prepareServices();
+
       const rootId1 = generateId();
       const rootId2 = generateId();
       const childId = generateId();
@@ -126,17 +126,16 @@ describe('NoteService', () => {
         },
       ]);
 
-      // Act
       const result = await noteService.getRootNotes();
 
-      // Assert
       expect(result.notes).toHaveLength(2);
       expect(result.total).toBe(2);
       expect(result.notes.every((n) => n.parentId === null)).toBe(true);
     });
 
     it('should include replyCount for each root note', async () => {
-      // Arrange: Create a root note with 2 replies
+      const { noteService } = await prepareServices();
+
       const rootId = generateId();
       const now = new Date();
 
@@ -168,15 +167,14 @@ describe('NoteService', () => {
         },
       ]);
 
-      // Act
       const result = await noteService.getRootNotes();
 
-      // Assert
       expect(result.notes).toHaveLength(1);
       expect(result.notes[0].replyCount).toBe(2);
     });
 
     it('should respect limit parameter', async () => {
+      const { noteService } = await prepareServices();
       // Arrange: Create 5 root notes
       const now = new Date();
       for (let i = 0; i < 5; i++) {
@@ -190,16 +188,15 @@ describe('NoteService', () => {
         });
       }
 
-      // Act
       const result = await noteService.getRootNotes(3);
 
-      // Assert
       expect(result.notes).toHaveLength(3);
       expect(result.total).toBe(5);
       expect(result.hasMore).toBe(true);
     });
 
     it('should respect offset parameter', async () => {
+      const { noteService } = await prepareServices();
       // Arrange: Create 5 root notes with different timestamps
       const now = new Date();
       const noteIds: string[] = [];
@@ -216,16 +213,15 @@ describe('NoteService', () => {
         });
       }
 
-      // Act: Get notes with offset 2
       const result = await noteService.getRootNotes(10, 2);
 
-      // Assert
       expect(result.notes).toHaveLength(3);
       expect(result.hasMore).toBe(false);
     });
 
     it('should order notes by createdAt descending', async () => {
-      // Arrange: Create notes with different timestamps
+      const { noteService } = await prepareServices();
+
       const now = new Date();
       const oldNoteId = generateId();
       const newNoteId = generateId();
@@ -249,10 +245,8 @@ describe('NoteService', () => {
         },
       ]);
 
-      // Act
       const result = await noteService.getRootNotes();
 
-      // Assert
       expect(result.notes[0].id).toBe(newNoteId);
       expect(result.notes[1].id).toBe(oldNoteId);
     });

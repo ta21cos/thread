@@ -1,6 +1,7 @@
 import { eq, isNull, desc, asc } from 'drizzle-orm';
 import { db, notes, type Note, type NewNote, type NoteWithReplyCount } from '../db';
 
+// TODO: Dependency Injection
 // NOTE: Repository for Note CRUD operations
 export class NoteRepository {
   async create(note: NewNote): Promise<Note> {
