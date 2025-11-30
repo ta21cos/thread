@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { db, profiles, externalIdentities } from '../db';
-import { UserSyncService } from './user-sync.service';
+import { UserSyncService, type SyncUserDto } from './user-sync.service';
 import { generateId } from '../utils/id-generator';
+import { eq, and } from 'drizzle-orm';
 
 describe('UserSyncService', () => {
   const prepareServices = async () => {
@@ -10,6 +11,11 @@ describe('UserSyncService', () => {
   };
 
   beforeEach(async () => {
+    await db.delete(externalIdentities);
+    await db.delete(profiles);
+  });
+
+  afterEach(async () => {
     await db.delete(externalIdentities);
     await db.delete(profiles);
   });
@@ -167,6 +173,134 @@ describe('UserSyncService', () => {
       const [identity] = await db.select().from(externalIdentities).limit(1);
       expect(identity.providerCreatedAt).toBeDefined();
       expect(identity.providerUpdatedAt).toBeDefined();
+    });
+
+    it('should not create duplicate users for same provider and providerUserId', async () => {
+      const { userSyncService } = await prepareServices();
+
+      await userSyncService.syncUser({
+        provider: 'CLERK',
+        providerUserId: 'user_test789',
+        displayName: 'User One',
+      });
+
+      await userSyncService.syncUser({
+        provider: 'CLERK',
+        providerUserId: 'user_test789',
+        displayName: 'User Two',
+      });
+
+      const identities = await db
+        .select()
+        .from(externalIdentities)
+        .where(
+          and(
+            eq(externalIdentities.provider, 'CLERK'),
+            eq(externalIdentities.providerUserId, 'user_test789')
+          )
+        );
+      expect(identities.length).toBe(1);
+
+      const allProfiles = await db.select().from(profiles);
+      expect(allProfiles.length).toBe(1);
+    });
+
+    it('should allow same providerUserId for different providers', async () => {
+      const { userSyncService } = await prepareServices();
+
+      const clerk = await userSyncService.syncUser({
+        provider: 'CLERK',
+        providerUserId: 'user_abc',
+        displayName: 'Clerk User',
+      });
+
+      const google = await userSyncService.syncUser({
+        provider: 'GOOGLE',
+        providerUserId: 'user_abc',
+        displayName: 'Google User',
+      });
+
+      expect(clerk.profileId).not.toBe(google.profileId);
+      expect(clerk.identityId).not.toBe(google.identityId);
+
+      const identities = await db
+        .select()
+        .from(externalIdentities)
+        .where(eq(externalIdentities.providerUserId, 'user_abc'));
+      expect(identities.length).toBe(2);
+    });
+
+    it('should handle all supported providers', async () => {
+      const { userSyncService } = await prepareServices();
+
+      const providers: SyncUserDto['provider'][] = ['CLERK', 'AUTH0', 'GOOGLE', 'GITHUB'];
+
+      for (const provider of providers) {
+        const result = await userSyncService.syncUser({
+          provider,
+          providerUserId: `user_${provider.toLowerCase()}`,
+          displayName: `${provider} User`,
+        });
+
+        expect(result.synced).toBe(true);
+        expect(result.profileId).toBeTruthy();
+        expect(result.identityId).toBeTruthy();
+      }
+
+      const allProfiles = await db.select().from(profiles);
+      expect(allProfiles.length).toBe(4);
+
+      const allIdentities = await db.select().from(externalIdentities);
+      expect(allIdentities.length).toBe(4);
+    });
+
+    it('should handle provider timestamps as Date objects', async () => {
+      const { userSyncService } = await prepareServices();
+
+      const providerCreatedAt = '2024-01-01T00:00:00Z';
+      const providerUpdatedAt = '2024-06-01T00:00:00Z';
+
+      const result = await userSyncService.syncUser({
+        provider: 'CLERK',
+        providerUserId: 'user_with_timestamps',
+        providerCreatedAt,
+        providerUpdatedAt,
+      });
+      expect(result.synced).toBe(true);
+
+      const allIdentities = await db.select().from(externalIdentities);
+      expect(allIdentities.length).toBe(1);
+      expect(allIdentities[0].providerCreatedAt).toEqual(new Date(providerCreatedAt));
+      expect(allIdentities[0].providerUpdatedAt).toEqual(new Date(providerUpdatedAt));
+    });
+
+    it('should create separate profiles for different providers with same email', async () => {
+      const { userSyncService } = await prepareServices();
+
+      const email = 'shared@example.com';
+
+      const clerkResult = await userSyncService.syncUser({
+        provider: 'CLERK',
+        providerUserId: 'clerk_user',
+        email,
+        displayName: 'Clerk User',
+      });
+
+      const googleResult = await userSyncService.syncUser({
+        provider: 'GOOGLE',
+        providerUserId: 'google_user',
+        email,
+        displayName: 'Google User',
+      });
+
+      expect(googleResult.profileId).not.toBe(clerkResult.profileId);
+      expect(googleResult.identityId).not.toBe(clerkResult.identityId);
+
+      const allProfiles = await db.select().from(profiles);
+      expect(allProfiles.length).toBe(2);
+
+      const allIdentities = await db.select().from(externalIdentities);
+      expect(allIdentities.length).toBe(2);
     });
   });
 
