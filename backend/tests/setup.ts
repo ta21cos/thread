@@ -1,3 +1,7 @@
+/**
+ * NOTE: Used for playwright
+ */
+
 import { drizzle } from 'drizzle-orm/bun-sqlite';
 import { Database } from 'bun:sqlite';
 import { setDb } from '../src/db';
