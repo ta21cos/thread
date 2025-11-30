@@ -43,6 +43,26 @@ describe('SearchService', () => {
       expect(result[0].id).toBe(noteId);
     });
 
+    it('should be case-insensitive', async () => {
+      const { searchService } = await prepareServices();
+
+      const noteId = generateId();
+      const now = new Date();
+      await db.insert(notes).values({
+        id: noteId,
+        content: 'JavaScript Tutorial',
+        parentId: null,
+        depth: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      const result = await searchService.searchByContent('javascript');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe(noteId);
+    });
+
     it('should find multiple notes matching query', async () => {
       const { searchService } = await prepareServices();
 
