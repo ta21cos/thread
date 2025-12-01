@@ -1,10 +1,16 @@
 import { NoteRepository } from '../repositories/note.repository';
 import { MentionRepository } from '../repositories/mention.repository';
+import type { Database } from '../db';
 
 // NOTE: Service for cascade deletion logic (application-level)
 export class DeleteService {
-  private noteRepo = new NoteRepository();
-  private mentionRepo = new MentionRepository();
+  private noteRepo: NoteRepository;
+  private mentionRepo: MentionRepository;
+
+  constructor({ db }: { db: Database }) {
+    this.noteRepo = new NoteRepository({ db });
+    this.mentionRepo = new MentionRepository({ db });
+  }
 
   async deleteNote(id: string): Promise<void> {
     const note = await this.noteRepo.findById(id);
@@ -31,5 +37,3 @@ export class DeleteService {
     await this.noteRepo.delete(id);
   }
 }
-
-export const deleteService = new DeleteService();

@@ -1,9 +1,14 @@
 import { Hono } from 'hono';
-import { mentionService } from '../../services/mention.service';
+import { MentionService } from '../../services/mention.service';
+import { NoteService } from '../../services/note.service';
+import { db } from '../../db';
 import { validateNoteId } from '../middleware/validation';
 import { requireAuth } from '../../auth/middleware/auth.middleware';
 import type { MentionsResponse } from '@thread-note/shared/types';
 import { serialize } from '../../types/api';
+
+const mentionService = new MentionService({ db });
+const noteService = new NoteService({ db });
 
 const app = new Hono()
   // GET /api/notes/:id/mentions - Get notes mentioning this note
@@ -11,7 +16,6 @@ const app = new Hono()
     const { id } = c.req.valid('param');
 
     // NOTE: Check if note exists first
-    const { noteService } = await import('../../services/note.service');
     const note = await noteService.getNoteById(id);
     if (!note) {
       return c.json({ error: 'Not Found', message: 'Note not found' }, 404);

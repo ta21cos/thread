@@ -6,7 +6,7 @@ import { eq, and } from 'drizzle-orm';
 
 describe('UserSyncService', () => {
   const prepareServices = async () => {
-    const userSyncService = new UserSyncService();
+    const userSyncService = new UserSyncService({ db });
     return { userSyncService };
   };
 

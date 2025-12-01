@@ -1,9 +1,13 @@
 import { MentionRepository } from '../repositories/mention.repository';
-import type { Mention } from '../db';
+import type { Mention, Database } from '../db';
 
 // NOTE: Service for mention tracking with circular reference detection (DFS)
 export class MentionService {
-  private mentionRepo = new MentionRepository();
+  private mentionRepo: MentionRepository;
+
+  constructor({ db }: { db: Database }) {
+    this.mentionRepo = new MentionRepository({ db });
+  }
 
   async getMentions(toNoteId: string): Promise<Mention[]> {
     return this.mentionRepo.findByToNoteId(toNoteId);
@@ -55,5 +59,3 @@ export class MentionService {
     }
   }
 }
-
-export const mentionService = new MentionService();

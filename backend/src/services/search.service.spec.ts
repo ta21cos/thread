@@ -5,7 +5,7 @@ import { generateId } from '../utils/id-generator';
 
 describe('SearchService', () => {
   const prepareServices = async () => {
-    const searchService = new SearchService();
+    const searchService = new SearchService({ db });
     return { searchService };
   };
 
