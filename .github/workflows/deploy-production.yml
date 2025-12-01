@@ -1,0 +1,68 @@
+name: Deploy to Production
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # Frontend: Cloudflare Pages
+      - name: Create Frontend .env.production
+        working-directory: frontend
+        run: |
+          echo "VITE_BACKEND_API_ENDPOINT=${{ vars.VITE_BACKEND_API_ENDPOINT_PRODUCTION }}" > .env.production
+          echo "VITE_CLERK_PUBLISHABLE_KEY=${{ vars.VITE_CLERK_PUBLISHABLE_KEY_PRODUCTION }}" >> .env.production
+
+      - name: Deploy Frontend to Production
+        working-directory: frontend
+        run: bun run deploy:production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # Backend: D1 Migration
+      - name: Run Database Migrations
+        working-directory: backend
+        run: bun run db:migrate:production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # Backend: Deploy Worker with Secrets
+      - name: Deploy Backend to Production
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: backend
+          command: deploy --env production
+          environment: production
+          secrets: |
+            CLERK_SECRET_KEY
+            CLERK_PUBLISHABLE_KEY
+            ALLOWED_ORIGINS
+            APP_DOMAIN
+        env:
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY_PRODUCTION }}
+          CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY_PRODUCTION }}
+          ALLOWED_ORIGINS: ${{ vars.ALLOWED_ORIGINS_PRODUCTION }}
+          APP_DOMAIN: ${{ vars.APP_DOMAIN_PRODUCTION }}
