@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { Note } from '../../../shared/types';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   DropdownMenu,
@@ -52,7 +52,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   const [replyContent, setReplyContent] = useState('');
   const [expandedImages, setExpandedImages] = useState<Record<string, boolean>>({});
   const isMobile = !useMediaQuery('(min-width: 1024px)');
-  const replyInputRef = useRef<HTMLInputElement>(null);
+  const replyInputRef = useRef<HTMLTextAreaElement>(null);
   const { registerInput, unregisterInput } = useFocus();
 
   // NOTE: Register reply input with FocusContext
@@ -466,7 +466,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
       <div className="border-t border-border p-4 flex-shrink-0" data-testid="thread-reply-input">
         <div className="flex items-end gap-2">
           <div className="flex-1 rounded-lg border border-input bg-card">
-            <Input
+            <Textarea
               ref={replyInputRef}
               placeholder="Reply... (Cmd/Ctrl+Enter to send)"
               value={replyContent}
@@ -477,7 +477,8 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                   handleReply();
                 }
               }}
-              className="border-0 bg-transparent focus-visible:ring-0"
+              className="border-0 bg-transparent focus-visible:ring-0 min-h-[40px] max-h-[120px] resize-none"
+              rows={1}
               data-testid="thread-reply-textarea"
             />
             <div className="flex items-center gap-1 px-3 pb-2">
