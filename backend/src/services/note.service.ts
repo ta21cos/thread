@@ -1,3 +1,4 @@
+import { ResultAsync, ok, err } from 'neverthrow';
 import { NoteRepository } from '../repositories/note.repository';
 import { MentionRepository } from '../repositories/mention.repository';
 import { MentionService } from './mention.service';
@@ -5,6 +6,11 @@ import { generateId } from '../utils/id-generator';
 import { extractMentions, getMentionPositions } from '../utils/mention-parser';
 import { MAX_NOTE_LENGTH } from '@thread-note/shared/constants';
 import type { Database, Note } from '../db';
+import {
+  type NoteError,
+  noteNotFoundError,
+  databaseError,
+} from '../errors/domain-errors';
 
 export class NoteService {
   private noteRepo: NoteRepository;
@@ -81,6 +87,22 @@ export class NoteService {
 
   async getNoteById(id: string): Promise<Note | undefined> {
     return this.noteRepo.findById(id);
+  }
+
+  /**
+   * Get note by ID with Result type for type-safe error handling.
+   * Returns NoteNotFoundError if note doesn't exist.
+   */
+  getNoteByIdResult(id: string): ResultAsync<Note, NoteError> {
+    return ResultAsync.fromPromise(
+      this.noteRepo.findById(id),
+      (error) => databaseError('Failed to fetch note', error)
+    ).andThen((note) => {
+      if (!note) {
+        return err(noteNotFoundError(id));
+      }
+      return ok(note);
+    });
   }
 
   async getRootNotes(limit: number = 20, offset: number = 0) {
