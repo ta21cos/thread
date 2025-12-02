@@ -5,7 +5,7 @@ import { generateId } from '../utils/id-generator';
 
 describe('ThreadService', () => {
   const prepareServices = async () => {
-    const threadService = new ThreadService();
+    const threadService = new ThreadService({ db });
     return { threadService };
   };
 

@@ -1,11 +1,16 @@
 import { SearchRepository } from '../repositories/search.repository';
 import { MentionRepository } from '../repositories/mention.repository';
-import type { Note } from '../db';
+import type { Note, Database } from '../db';
 
 // NOTE: Service for content search
 export class SearchService {
-  private searchRepo = new SearchRepository();
-  private mentionRepo = new MentionRepository();
+  private searchRepo: SearchRepository;
+  private mentionRepo: MentionRepository;
+
+  constructor({ db }: { db: Database }) {
+    this.searchRepo = new SearchRepository({ db });
+    this.mentionRepo = new MentionRepository({ db });
+  }
 
   async searchByContent(query: string, limit: number = 20): Promise<Note[]> {
     return this.searchRepo.searchByContent(query, limit);
@@ -16,5 +21,3 @@ export class SearchService {
     return mentionsWithNotes.map((m) => m.notes);
   }
 }
-
-export const searchService = new SearchService();

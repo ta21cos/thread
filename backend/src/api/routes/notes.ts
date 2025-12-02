@@ -1,6 +1,7 @@
-import { noteService } from '../../services/note.service';
-import { threadService } from '../../services/thread.service';
-import { deleteService } from '../../services/delete.service';
+import { NoteService } from '../../services/note.service';
+import { ThreadService } from '../../services/thread.service';
+import { DeleteService } from '../../services/delete.service';
+import { db } from '../../db';
 import {
   validateCreateNote,
   validateUpdateNote,
@@ -11,6 +12,10 @@ import { requireAuth } from '../../auth/middleware/auth.middleware';
 import type { NoteListResponse, NoteDetailResponse } from '@thread-note/shared/types';
 import { serialize } from '../../types/api';
 import { Hono } from 'hono';
+
+const noteService = new NoteService({ db });
+const threadService = new ThreadService({ db });
+const deleteService = new DeleteService({ db });
 
 const app = new Hono()
   // GET /api/notes - List root notes

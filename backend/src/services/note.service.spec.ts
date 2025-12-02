@@ -6,7 +6,7 @@ import { MAX_NOTE_LENGTH } from '@thread-note/shared/constants';
 
 describe('NoteService', () => {
   const prepareServices = async () => {
-    const noteService = new NoteService();
+    const noteService = new NoteService({ db });
     return { noteService };
   };
 

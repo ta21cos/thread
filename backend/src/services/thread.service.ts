@@ -1,9 +1,13 @@
 import { NoteRepository } from '../repositories/note.repository';
-import type { Note } from '../db';
+import type { Note, Database } from '../db';
 
 // NOTE: Service for thread hierarchy management
 export class ThreadService {
-  private noteRepo = new NoteRepository();
+  private noteRepo: NoteRepository;
+
+  constructor({ db }: { db: Database }) {
+    this.noteRepo = new NoteRepository({ db });
+  }
 
   async getThread(noteId: string): Promise<Note[]> {
     const note = await this.noteRepo.findById(noteId);
@@ -30,5 +34,3 @@ export class ThreadService {
     return this.noteRepo.findByParentId(noteId);
   }
 }
-
-export const threadService = new ThreadService();

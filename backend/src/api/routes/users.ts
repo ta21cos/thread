@@ -1,9 +1,10 @@
 import { Hono } from 'hono';
 import { UserSyncService, type SyncUserDto } from '../../services/user-sync.service';
+import { db } from '../../db';
 import { requireAuth } from '../../auth/middleware/auth.middleware';
 
 const users = new Hono();
-const userSyncService = new UserSyncService();
+const userSyncService = new UserSyncService({ db });
 
 // NOTE: Protected endpoint - requires authentication
 users.post('/sync', requireAuth, async (c) => {
