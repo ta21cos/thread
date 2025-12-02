@@ -32,6 +32,8 @@ jobs:
 
       - name: Run lint
         run: bun run lint
+        env:
+          ESLINT_USE_FLAT_CONFIG: false
 
   typecheck:
     name: TypeScript Check
