@@ -1,9 +1,12 @@
 import { Hono } from 'hono';
-import { searchService } from '../../services/search.service';
+import { SearchService } from '../../services/search.service';
+import { db } from '../../db';
 import { validateSearch } from '../middleware/validation';
 import { requireAuth } from '../../auth/middleware/auth.middleware';
 import type { SearchResponse } from '@thread-note/shared/types';
 import { serialize } from '../../types/api';
+
+const searchService = new SearchService({ db });
 
 const app = new Hono()
   // GET /api/notes/search - Search notes

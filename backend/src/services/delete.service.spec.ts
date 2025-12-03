@@ -5,7 +5,7 @@ import { generateId } from '../utils/id-generator';
 
 describe('DeleteService', () => {
   const prepareServices = async () => {
-    const deleteService = new DeleteService();
+    const deleteService = new DeleteService({ db });
     return { deleteService };
   };
 

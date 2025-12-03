@@ -1,8 +1,8 @@
-import { db } from '../db';
 import { profiles } from '../models/profile.schema';
 import { externalIdentities } from '../models/external-identity.schema';
 import { eq, and } from 'drizzle-orm';
 import { generateId } from '../utils/id-generator';
+import type { Database } from '../db';
 
 export interface SyncUserDto {
   provider: 'CLERK' | 'AUTH0' | 'GOOGLE' | 'GITHUB';
@@ -23,9 +23,15 @@ export interface SyncResult {
 }
 
 export class UserSyncService {
+  private db: Database;
+
+  constructor({ db: _db }: { db: Database }) {
+    this.db = _db;
+  }
+
   async syncUser(dto: SyncUserDto): Promise<SyncResult> {
     // NOTE: Find existing identity by provider and providerUserId
-    const [existingIdentity] = await db
+    const [existingIdentity] = await this.db
       .select()
       .from(externalIdentities)
       .where(
@@ -40,7 +46,7 @@ export class UserSyncService {
 
     if (existingIdentity) {
       // NOTE: Update existing identity and profile
-      await db
+      await this.db
         .update(externalIdentities)
         .set({
           email: dto.email,
@@ -59,7 +65,7 @@ export class UserSyncService {
         if (dto.displayName) updateData.displayName = dto.displayName;
         if (dto.avatarUrl) updateData.avatarUrl = dto.avatarUrl;
 
-        await db
+        await this.db
           .update(profiles)
           .set(updateData)
           .where(eq(profiles.id, existingIdentity.profileId));
@@ -76,7 +82,7 @@ export class UserSyncService {
     const profileId = generateId();
     const identityId = generateId();
 
-    await db.insert(profiles).values({
+    await this.db.insert(profiles).values({
       id: profileId,
       displayName: dto.displayName || 'User',
       bio: null,
@@ -86,7 +92,7 @@ export class UserSyncService {
       updatedAt: now,
     });
 
-    await db.insert(externalIdentities).values({
+    await this.db.insert(externalIdentities).values({
       id: identityId,
       provider: dto.provider,
       providerUserId: dto.providerUserId,
@@ -113,7 +119,7 @@ export class UserSyncService {
     provider: string;
     providerUserId: string;
   }) {
-    const [identity] = await db
+    const [identity] = await this.db
       .select()
       .from(externalIdentities)
       .where(
@@ -126,7 +132,7 @@ export class UserSyncService {
 
     if (!identity) return null;
 
-    const [profile] = await db
+    const [profile] = await this.db
       .select()
       .from(profiles)
       .where(eq(profiles.id, identity.profileId))

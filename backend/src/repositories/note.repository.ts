@@ -1,22 +1,27 @@
 import { eq, isNull, desc, asc } from 'drizzle-orm';
-import { db, notes, type Note, type NewNote, type NoteWithReplyCount } from '../db';
+import { notes, type Note, type NewNote, type NoteWithReplyCount, Database } from '../db';
 
-// TODO: Dependency Injection
 // NOTE: Repository for Note CRUD operations
 export class NoteRepository {
+  private db: Database;
+
+  constructor({ db: _db }: { db: Database }) {
+    this.db = _db;
+  }
+
   async create(note: NewNote): Promise<Note> {
-    const [created] = await db.insert(notes).values(note).returning();
+    const [created] = await this.db.insert(notes).values(note).returning();
     return created;
   }
 
   async findById(id: string): Promise<Note | undefined> {
-    const [note] = await db.select().from(notes).where(eq(notes.id, id));
+    const [note] = await this.db.select().from(notes).where(eq(notes.id, id));
     return note;
   }
 
   async findRootNotes(limit: number, offset: number): Promise<NoteWithReplyCount[]> {
     // NOTE: Get all root notes
-    const rootNotes = await db
+    const rootNotes = await this.db
       .select()
       .from(notes)
       .where(isNull(notes.parentId))
@@ -27,7 +32,7 @@ export class NoteRepository {
     // NOTE: Get reply counts for each root note
     const notesWithCounts: NoteWithReplyCount[] = await Promise.all(
       rootNotes.map(async (note) => {
-        const replies = await db.select().from(notes).where(eq(notes.parentId, note.id));
+        const replies = await this.db.select().from(notes).where(eq(notes.parentId, note.id));
         return {
           ...note,
           replyCount: replies.length,
@@ -39,12 +44,12 @@ export class NoteRepository {
   }
 
   async countRootNotes(): Promise<number> {
-    const result = await db.select().from(notes).where(isNull(notes.parentId));
+    const result = await this.db.select().from(notes).where(isNull(notes.parentId));
     return result.length;
   }
 
   async update(id: string, content: string): Promise<Note> {
-    const [updated] = await db
+    const [updated] = await this.db
       .update(notes)
       .set({ content, updatedAt: new Date() })
       .where(eq(notes.id, id))
@@ -53,11 +58,11 @@ export class NoteRepository {
   }
 
   async delete(id: string): Promise<void> {
-    await db.delete(notes).where(eq(notes.id, id));
+    await this.db.delete(notes).where(eq(notes.id, id));
   }
 
   async findByParentId(parentId: string): Promise<Note[]> {
-    return db.select().from(notes).where(eq(notes.parentId, parentId));
+    return this.db.select().from(notes).where(eq(notes.parentId, parentId));
   }
 
   async getThreadRecursive(rootId: string): Promise<Note[]> {
@@ -77,7 +82,7 @@ export class NoteRepository {
       visited.add(currentId);
 
       // Fetch current note
-      const [currentNote] = await db.select().from(notes).where(eq(notes.id, currentId));
+      const [currentNote] = await this.db.select().from(notes).where(eq(notes.id, currentId));
 
       if (!currentNote) {
         continue;
@@ -87,7 +92,7 @@ export class NoteRepository {
       result.push(currentNote);
 
       // Fetch children and add to queue
-      const children = await db
+      const children = await this.db
         .select()
         .from(notes)
         .where(eq(notes.parentId, currentId))

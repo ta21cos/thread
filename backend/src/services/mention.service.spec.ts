@@ -5,7 +5,7 @@ import { generateId } from '../utils/id-generator';
 
 describe('MentionService', () => {
   const prepareServices = async () => {
-    const mentionService = new MentionService();
+    const mentionService = new MentionService({ db });
     return { mentionService };
   };
 

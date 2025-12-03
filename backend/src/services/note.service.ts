@@ -5,18 +5,23 @@ import { MentionService } from './mention.service';
 import { generateId } from '../utils/id-generator';
 import { extractMentions, getMentionPositions } from '../utils/mention-parser';
 import { MAX_NOTE_LENGTH } from '@thread-note/shared/constants';
-import type { Note } from '../db';
+import type { Database, Note } from '../db';
 import {
   type NoteError,
   noteNotFoundError,
   databaseError,
 } from '../errors/domain-errors';
 
-// NOTE: Service layer for Note business logic with 1000 char validation
 export class NoteService {
-  private noteRepo = new NoteRepository();
-  private mentionRepo = new MentionRepository();
-  private mentionService = new MentionService();
+  private noteRepo: NoteRepository;
+  private mentionRepo: MentionRepository;
+  private mentionService: MentionService;
+
+  constructor({ db }: { db: Database }) {
+    this.noteRepo = new NoteRepository({ db });
+    this.mentionRepo = new MentionRepository({ db });
+    this.mentionService = new MentionService({ db });
+  }
 
   async createNote(data: {
     content: string;
@@ -148,5 +153,3 @@ export class NoteService {
     return updated;
   }
 }
-
-export const noteService = new NoteService();

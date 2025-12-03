@@ -97,13 +97,6 @@ bun run desktop:package
       <a href="https://playwright.dev/">Playwright</a>
     </td>
   </tr>
-  <tr>
-    <td><strong>Security</strong></td>
-    <td>
-      <a href="https://github.com/cure53/DOMPurify">DOMPurify</a> •
-      CSP Headers
-    </td>
-  </tr>
 </table>
 
 ## 📂 Project Structure
@@ -206,32 +199,6 @@ bun run test:load
 - 🔍 Search results: **<150ms**
 - 📄 Page load: **<1s**
 - 📚 Support: **1000+ notes**
-
-## 🔒 Security
-
-- 🛡️ Content sanitization with DOMPurify
-- 🔐 CSP headers enabled
-- ✅ Input validation on all endpoints
-- 🚫 SQL injection prevention
-- 🔒 XSS protection in markdown rendering
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these guidelines:
-
-1. **Feature branches**: `NNN-feature-name`
-2. **Conventional commits**: Use semantic commit messages
-3. **Tests required**: Maintain >80% coverage
-4. **PR workflow**: All changes require pull request review
-
-```bash
-# Example workflow
-git checkout -b 001-add-dark-mode
-# Make changes, write tests
-bun test
-git commit -m "feat: add dark mode support"
-git push origin 001-add-dark-mode
-```
 
 ## 🙏 Acknowledgments
 

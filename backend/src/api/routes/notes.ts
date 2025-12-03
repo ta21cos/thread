@@ -1,6 +1,7 @@
-import { noteService } from '../../services/note.service';
-import { threadService } from '../../services/thread.service';
-import { deleteService } from '../../services/delete.service';
+import { NoteService } from '../../services/note.service';
+import { ThreadService } from '../../services/thread.service';
+import { DeleteService } from '../../services/delete.service';
+import { db } from '../../db';
 import {
   validateCreateNote,
   validateUpdateNote,
@@ -18,6 +19,10 @@ const toErrorResponse = (error: NoteError): ErrorResponse => ({
   error: error._tag,
   message: error.message,
 });
+
+const noteService = new NoteService({ db });
+const threadService = new ThreadService({ db });
+const deleteService = new DeleteService({ db });
 
 const app = new Hono()
   // GET /api/notes - List root notes
