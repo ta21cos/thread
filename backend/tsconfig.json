@@ -2,7 +2,7 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "types": ["@types/bun", "vitest/globals", "@cloudflare/workers-types"]
+    "types": []
   },
   "include": ["src/**/*", "tests/**/*", "../shared/**/*"],
   "exclude": ["node_modules", "dist"]

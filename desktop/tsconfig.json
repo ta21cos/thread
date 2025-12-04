@@ -4,7 +4,7 @@
     "composite": true,
     "baseUrl": ".",
     "outDir": "dist",
-    "types": ["node"],
+    "types": [],
     "paths": {
       "@thread-note/shared/constants": ["../shared/constants/index.ts"],
       "@thread-note/shared/types": ["../shared/types/index.ts"]

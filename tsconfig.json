@@ -11,7 +11,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["@types/bun"],
+    "types": [],
     "paths": {
       "@thread-note/shared/constants": ["./shared/constants/index.ts"],
       "@thread-note/shared/types": ["./shared/types/index.ts"]
