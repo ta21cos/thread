@@ -132,7 +132,7 @@ export const isClientError = (error: NoteError): boolean =>
   error._tag === 'DepthLimitExceededError';
 
 // HTTP status code mapping
-export const errorToStatusCode = (error: NoteError): number => {
+export const errorToStatusCode = (error: NoteError): 400 | 404 | 500 => {
   switch (error._tag) {
     case 'NoteNotFoundError':
     case 'ParentNoteNotFoundError':

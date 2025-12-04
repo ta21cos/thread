@@ -7,8 +7,9 @@
  */
 
 import { Hono } from 'hono';
+import type { ResultAsync } from 'neverthrow';
 import { functionalNoteService } from '../../services/note.service.functional';
-import { threadService } from '../../services/thread.service';
+import { ThreadService } from '../../services/thread.service';
 import { errorToStatusCode, type NoteError } from '../../errors/domain-errors';
 import {
   validateCreateNote,
@@ -19,6 +20,7 @@ import {
 import { requireAuth } from '../../auth/middleware/auth.middleware';
 import type { NoteListResponse, NoteDetailResponse, ErrorResponse } from '@thread-note/shared/types';
 import { serialize } from '../../types/api';
+import { db } from '../../db';
 
 /**
  * NoteError を ErrorResponse に変換
@@ -35,17 +37,17 @@ const toErrorResponse = (error: NoteError): ErrorResponse => ({
  */
 const handleResult = async <T>(
   c: { json: (body: unknown, status?: number) => Response },
-  resultAsync: Promise<{ isOk(): boolean; isErr(): boolean; value?: T; error?: NoteError }>,
-  onSuccess: (value: T) => { body: unknown; status?: number }
+  resultAsync: ResultAsync<T, NoteError>,
+  onSuccess: (value: T) => { body: unknown; status?: number } | Promise<{ body: unknown; status?: number }>
 ) => {
   const result = await resultAsync;
 
   if (result.isOk()) {
-    const { body, status } = onSuccess(result.value as T);
-    return c.json(body, status);
+    const response = await onSuccess(result.value);
+    return c.json(response.body, response.status);
   }
 
-  const error = result.error as NoteError;
+  const error = result.error;
   return c.json(toErrorResponse(error), errorToStatusCode(error));
 };
 
@@ -80,6 +82,7 @@ const app = new Hono()
     const includeThread = c.req.query('includeThread') !== 'false';
 
     return handleResult(c, functionalNoteService.getNoteById(id), async (note) => {
+      const threadService = new ThreadService({ db });
       const thread = includeThread ? await threadService.getThread(id) : [];
 
       const response: NoteDetailResponse = {
