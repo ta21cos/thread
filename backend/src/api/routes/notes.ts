@@ -9,9 +9,16 @@ import {
   validatePagination,
 } from '../middleware/validation';
 import { requireAuth } from '../../auth/middleware/auth.middleware';
-import type { NoteListResponse, NoteDetailResponse } from '@thread-note/shared/types';
+import type { NoteListResponse, NoteDetailResponse, ErrorResponse } from '@thread-note/shared/types';
 import { serialize } from '../../types/api';
 import { Hono } from 'hono';
+import { errorToStatusCode, type NoteError } from '../../errors/domain-errors';
+
+/** Convert NoteError to ErrorResponse */
+const toErrorResponse = (error: NoteError): ErrorResponse => ({
+  error: error._tag,
+  message: error.message,
+});
 
 const noteService = new NoteService({ db });
 const threadService = new ThreadService({ db });
@@ -38,15 +45,19 @@ const app = new Hono()
     return c.json(serialize(note), 201);
   })
   // GET /api/notes/:id - Get note with thread
+  // Uses neverthrow Result type for type-safe error handling
   .get('/:id', validateNoteId, async (c) => {
     const { id } = c.req.valid('param');
     const includeThread = c.req.query('includeThread') !== 'false';
 
-    const note = await noteService.getNoteById(id);
-    if (!note) {
-      return c.json({ error: 'Not Found', message: 'Note not found' }, 404);
+    const result = await noteService.getNoteByIdResult(id);
+
+    if (result.isErr()) {
+      const error = result.error;
+      return c.json(toErrorResponse(error), errorToStatusCode(error));
     }
 
+    const note = result.value;
     const thread = includeThread ? await threadService.getThread(id) : [];
 
     const response: NoteDetailResponse = {
