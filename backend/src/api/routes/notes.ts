@@ -1,4 +1,4 @@
-import type { ResultAsync } from 'neverthrow';
+import { ok, type ResultAsync } from 'neverthrow';
 import { createNoteService } from '../../services/note.service';
 import { ThreadService } from '../../services/thread.service';
 import { errorToStatusCode, type NoteError } from '../../errors/domain-errors';
@@ -10,7 +10,6 @@ import {
 } from '../../middleware/validation';
 import { requireAuth } from '../../middleware/auth.middleware';
 import type {
-  NoteListResponse,
   NoteDetailResponse,
   ErrorResponse,
 } from '@thread-note/shared/types';
@@ -61,16 +60,24 @@ const functionalNoteService = createNoteService({ db });
 const app = createRouter()
   // GET /api/notes - List root notes
   .get('/', requireAuth, validatePagination, async (c) => {
+    const db = c.get('db');
+    const noteService = createNoteService({ db });
+
     const { limit, offset } = c.req.valid('query');
 
-    return handleResult(c, functionalNoteService.getRootNotes(limit, offset), (data) => {
-      const response: NoteListResponse = {
-        notes: data.notes.map(serialize),
-        total: data.total,
-        hasMore: data.hasMore,
-      };
-      return { body: response };
-    });
+    return await noteService
+      .getRootNotes(limit, offset)
+      .andThen((d) =>
+        ok({
+          notes: d.notes.map(serialize),
+          total: d.total,
+          hasMore: d.hasMore,
+        })
+      )
+      .match(
+        (data) => c.json(data),
+        (error) => c.json(toErrorResponse(error), errorToStatusCode(error))
+      );
   })
 
   // POST /api/notes - Create note
