@@ -40,7 +40,10 @@ export const requireAuth = createMiddleware<{
   );
 
   if (!isAuthenticated) {
-    console.warn('Authentication failed:', { reason, message });
+    // Only log authentication failures in non-test environments
+    if (process.env.NODE_ENV !== 'test') {
+      console.warn('Authentication failed:', { reason, message });
+    }
     return c.json(
       {
         error: 'Unauthorized',
