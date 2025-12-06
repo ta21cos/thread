@@ -12,16 +12,7 @@
  */
 
 import { ok, err, ResultAsync, Result, okAsync, errAsync } from 'neverthrow';
-import { eq, isNull, desc } from 'drizzle-orm';
-import {
-  notes,
-  mentions,
-  type Note,
-  type NewNote,
-  type NewMention,
-  type NoteWithReplyCount,
-  type Database,
-} from '../db';
+import { type Note, type NewNote, type NoteWithReplyCount, type Database } from '../db';
 import { MAX_NOTE_LENGTH } from '@thread-note/shared/constants';
 import { generateId } from '../utils/id-generator';
 import { extractMentions, getMentionPositions } from '../utils/mention-parser';
@@ -33,8 +24,12 @@ import {
   depthLimitExceededError,
   circularReferenceError,
   noteNotFoundError,
-  databaseError,
 } from '../errors/domain-errors';
+import { type NoteRepository, createNoteRepository } from '../repositories/note.repository';
+import {
+  type MentionRepository,
+  createMentionRepository,
+} from '../repositories/mention.repository';
 
 // ==========================================
 // Types
@@ -58,23 +53,6 @@ interface ValidatedNoteData {
   readonly parentId?: string;
   readonly depth: number;
   readonly mentionIds: string[];
-}
-
-/** リポジトリインターフェース (依存性注入用) */
-export interface FunctionalNoteRepository {
-  findById: (id: string) => ResultAsync<Note | undefined, NoteError>;
-  create: (note: NewNote) => ResultAsync<Note, NoteError>;
-  update: (id: string, content: string) => ResultAsync<Note, NoteError>;
-  findRootNotes: (limit: number, offset: number) => ResultAsync<NoteWithReplyCount[], NoteError>;
-  countRootNotes: () => ResultAsync<number, NoteError>;
-  findByParentId: (parentId: string) => ResultAsync<Note[], NoteError>;
-  delete: (id: string) => ResultAsync<void, NoteError>;
-}
-
-export interface FunctionalMentionRepository {
-  create: (mention: NewMention) => ResultAsync<void, NoteError>;
-  deleteByNoteId: (noteId: string) => ResultAsync<void, NoteError>;
-  getAllMentions: () => ResultAsync<Map<string, string[]>, NoteError>;
 }
 
 // ==========================================
@@ -106,143 +84,10 @@ export const extractMentionIds = (content: string): string[] => {
 // ==========================================
 // Repository Implementation (Default)
 // ==========================================
-
-/**
- * デフォルトのノートリポジトリ実装
- * データベース操作を ResultAsync でラップ
- */
-export const createFunctionalNoteRepository = ({
-  db,
-}: {
-  db: Database;
-}): FunctionalNoteRepository => ({
-  findById: (id: string): ResultAsync<Note | undefined, NoteError> =>
-    ResultAsync.fromPromise(
-      db
-        .select()
-        .from(notes)
-        .where(eq(notes.id, id))
-        .then(([note]) => note),
-      (error) => databaseError('Failed to find note', error)
-    ),
-
-  create: (note: NewNote): ResultAsync<Note, NoteError> =>
-    ResultAsync.fromPromise(
-      db
-        .insert(notes)
-        .values(note)
-        .returning()
-        .then(([created]) => created),
-      (error) => databaseError('Failed to create note', error)
-    ),
-
-  update: (id: string, content: string): ResultAsync<Note, NoteError> =>
-    ResultAsync.fromPromise(
-      db
-        .update(notes)
-        .set({ content, updatedAt: new Date() })
-        .where(eq(notes.id, id))
-        .returning()
-        .then(([updated]) => updated),
-      (error) => databaseError('Failed to update note', error)
-    ),
-
-  findRootNotes: (limit: number, offset: number): ResultAsync<NoteWithReplyCount[], NoteError> =>
-    ResultAsync.fromPromise(
-      (async () => {
-        const rootNotes = await db
-          .select()
-          .from(notes)
-          .where(isNull(notes.parentId))
-          .orderBy(desc(notes.createdAt))
-          .limit(limit)
-          .offset(offset);
-
-        // Calculate replyCount for each root note
-        const notesWithCounts: NoteWithReplyCount[] = await Promise.all(
-          rootNotes.map(async (note) => {
-            const replies = await db.select().from(notes).where(eq(notes.parentId, note.id));
-            return {
-              ...note,
-              replyCount: replies.length,
-            };
-          })
-        );
-
-        return notesWithCounts;
-      })(),
-      (error) => databaseError('Failed to find root notes', error)
-    ),
-
-  countRootNotes: (): ResultAsync<number, NoteError> =>
-    ResultAsync.fromPromise(
-      db
-        .select()
-        .from(notes)
-        .where(isNull(notes.parentId))
-        .then((result) => result.length),
-      (error) => databaseError('Failed to count root notes', error)
-    ),
-
-  findByParentId: (parentId: string): ResultAsync<Note[], NoteError> =>
-    ResultAsync.fromPromise(db.select().from(notes).where(eq(notes.parentId, parentId)), (error) =>
-      databaseError('Failed to find notes by parent id', error)
-    ),
-
-  delete: (id: string): ResultAsync<void, NoteError> =>
-    ResultAsync.fromPromise(
-      db
-        .delete(notes)
-        .where(eq(notes.id, id))
-        .then(() => undefined),
-      (error) => databaseError('Failed to delete note', error)
-    ),
-});
-
-/**
- * デフォルトのメンションリポジトリ実装
- */
-export const createFunctionalMentionRepository = ({
-  db,
-}: {
-  db: Database;
-}): FunctionalMentionRepository => ({
-  create: (mention: NewMention): ResultAsync<void, NoteError> =>
-    ResultAsync.fromPromise(
-      db
-        .insert(mentions)
-        .values(mention)
-        .then(() => undefined),
-      (error) => databaseError('Failed to create mention', error)
-    ),
-
-  deleteByNoteId: (noteId: string): ResultAsync<void, NoteError> =>
-    ResultAsync.fromPromise(
-      db
-        .delete(mentions)
-        .where(eq(mentions.fromNoteId, noteId))
-        .then(() => undefined),
-      (error) => databaseError('Failed to delete mentions', error)
-    ),
-
-  getAllMentions: (): ResultAsync<Map<string, string[]>, NoteError> =>
-    ResultAsync.fromPromise(
-      db
-        .select()
-        .from(mentions)
-        .then((allMentions) => {
-          const graph = new Map<string, string[]>();
-          for (const mention of allMentions) {
-            if (!graph.has(mention.fromNoteId)) {
-              graph.set(mention.fromNoteId, []);
-            }
-            graph.get(mention.fromNoteId)!.push(mention.toNoteId);
-          }
-          return graph;
-        }),
-      (error) => databaseError('Failed to get mentions', error)
-    ),
-});
+// リポジトリ実装は note.repository.ts と mention.repository.ts に移動
+// 再エクスポート
+export { createNoteRepository } from '../repositories/note.repository';
+export { createMentionRepository } from '../repositories/mention.repository';
 
 // ==========================================
 // Business Logic (Pure Functions)
@@ -326,8 +171,8 @@ const calculateDepthFromParent = (
  * 4. 親ノートの取得と深度計算
  * 5. 循環参照の検証
  */
-export const validateCreateNote =
-  (noteRepo: FunctionalNoteRepository, mentionRepo: FunctionalMentionRepository) =>
+const validateCreateNote =
+  (noteRepo: NoteRepository, mentionRepo: MentionRepository) =>
   (input: CreateNoteInput): ResultAsync<ValidatedNoteData, NoteError> => {
     // Step 1: 同期的なバリデーション
     const contentValidation = validateContentLength(input.content);
@@ -384,8 +229,8 @@ export const validateCreateNote =
  *
  * バリデーション済みデータからノートとメンションを作成
  */
-export const persistNote =
-  (noteRepo: FunctionalNoteRepository, mentionRepo: FunctionalMentionRepository) =>
+const persistNote =
+  (noteRepo: NoteRepository, mentionRepo: MentionRepository) =>
   (data: ValidatedNoteData): ResultAsync<Note, NoteError> => {
     const newNote: NewNote = {
       id: data.id,
@@ -427,8 +272,8 @@ export const persistNote =
  *
  * バリデーションと永続化を合成したパイプライン
  */
-export const createNote =
-  (noteRepo: FunctionalNoteRepository, mentionRepo: FunctionalMentionRepository) =>
+const createNote =
+  (noteRepo: NoteRepository, mentionRepo: MentionRepository) =>
   (input: CreateNoteInput): ResultAsync<Note, NoteError> => {
     return validateCreateNote(
       noteRepo,
@@ -439,8 +284,8 @@ export const createNote =
 /**
  * IDでノートを取得
  */
-export const getNoteById =
-  (noteRepo: FunctionalNoteRepository) =>
+const getNoteById =
+  (noteRepo: NoteRepository) =>
   (id: string): ResultAsync<Note, NoteError> => {
     return noteRepo.findById(id).andThen((note) => {
       if (!note) {
@@ -453,8 +298,8 @@ export const getNoteById =
 /**
  * ルートノートのリストを取得
  */
-export const getRootNotes =
-  (noteRepo: FunctionalNoteRepository) =>
+const getRootNotes =
+  (noteRepo: NoteRepository) =>
   (
     limit: number = 20,
     offset: number = 0
@@ -472,8 +317,8 @@ export const getRootNotes =
 /**
  * ノートを更新
  */
-export const updateNote =
-  (noteRepo: FunctionalNoteRepository, mentionRepo: FunctionalMentionRepository) =>
+const updateNote =
+  (noteRepo: NoteRepository, mentionRepo: MentionRepository) =>
   (id: string, input: UpdateNoteInput): ResultAsync<Note, NoteError> => {
     // Step 1: コンテンツのバリデーション
     const contentValidation = validateContentLength(input.content);
@@ -540,8 +385,8 @@ export const updateNote =
  * 4. 子ノートを削除
  * 5. 親ノートを削除
  */
-export const deleteNote =
-  (noteRepo: FunctionalNoteRepository, mentionRepo: FunctionalMentionRepository) =>
+const deleteNote =
+  (noteRepo: NoteRepository, mentionRepo: MentionRepository) =>
   (id: string): ResultAsync<void, NoteError> => {
     // Step 1: ノートが存在するか確認
     return noteRepo.findById(id).andThen((note) => {
@@ -583,8 +428,8 @@ export const deleteNote =
  * @note.service.ts と同様に db を引数として受け取る
  */
 export const createNoteService = ({ db }: { db: Database }) => {
-  const noteRepo = createFunctionalNoteRepository({ db });
-  const mentionRepo = createFunctionalMentionRepository({ db });
+  const noteRepo = createNoteRepository({ db });
+  const mentionRepo = createMentionRepository({ db });
 
   return {
     createNote: createNote(noteRepo, mentionRepo),

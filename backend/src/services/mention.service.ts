@@ -1,4 +1,7 @@
-import { MentionRepository } from '../repositories/mention.repository';
+import {
+  createMentionRepository,
+  type MentionRepository,
+} from '../repositories/mention.repository';
 import type { Mention, Database } from '../db';
 
 // NOTE: Service for mention tracking with circular reference detection (DFS)
@@ -6,20 +9,32 @@ export class MentionService {
   private mentionRepo: MentionRepository;
 
   constructor({ db }: { db: Database }) {
-    this.mentionRepo = new MentionRepository({ db });
+    this.mentionRepo = createMentionRepository({ db });
   }
 
   async getMentions(toNoteId: string): Promise<Mention[]> {
-    return this.mentionRepo.findByToNoteId(toNoteId);
+    const result = await this.mentionRepo.findByToNoteId(toNoteId);
+    if (result.isErr()) {
+      throw new Error(result.error.message);
+    }
+    return result.value;
   }
 
   async getMentionsWithNotes(toNoteId: string) {
-    return this.mentionRepo.getMentionsWithNotes(toNoteId);
+    const result = await this.mentionRepo.getMentionsWithNotes(toNoteId);
+    if (result.isErr()) {
+      throw new Error(result.error.message);
+    }
+    return result.value;
   }
 
   // NOTE: DFS cycle detection (from clarifications: prevent circular references)
   async validateMentions(fromNoteId: string, toNoteIds: string[]): Promise<void> {
-    const graph = await this.mentionRepo.getAllMentions();
+    const graphResult = await this.mentionRepo.getAllMentions();
+    if (graphResult.isErr()) {
+      throw new Error(graphResult.error.message);
+    }
+    const graph = graphResult.value;
 
     // Add proposed mentions temporarily
     if (!graph.has(fromNoteId)) {
