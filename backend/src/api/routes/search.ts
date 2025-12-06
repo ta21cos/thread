@@ -1,16 +1,19 @@
-import { Hono } from 'hono';
 import { SearchService } from '../../services/search.service';
-import { db } from '../../db';
 import { validateSearch } from '../../middleware/validation';
 import { requireAuth } from '../../middleware/auth.middleware';
 import type { SearchResponse } from '@thread-note/shared/types';
 import { serialize } from '../../types/api';
+import { createRouter } from './router';
 
-const searchService = new SearchService({ db });
 
-const app = new Hono()
+
+const app = createRouter()
   // GET /api/notes/search - Search notes
   .get('/search', requireAuth, validateSearch, async (c) => {
+    const db = c.get('db');
+
+    const searchService = new SearchService({ db });
+    
     const { q, type, limit } = c.req.valid('query');
 
     let results;
