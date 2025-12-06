@@ -1,0 +1,84 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "authorId",
+    "bunfig",
+    "cascade",
+    "clerk",
+    "dompurify",
+    "drizzle",
+    "fromNoteId",
+    "hono",
+    "lucide",
+    "marked",
+    "neverthrow",
+    "note-taking",
+    "noteId",
+    "parentId",
+    "playwright",
+    "radix",
+    "sonner",
+    "tanstack",
+    "thread-based",
+    "toNoteId",
+    "userId",
+    "vitest",
+    "wrangler"
+  ],
+  "ignoreWords": [],
+  "dictionaries": ["typescript", "node", "npm", "html", "css", "bash", "markdown"],
+  "dictionaryDefinitions": [],
+  "ignorePaths": [
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    "coverage/**",
+    "*.lock",
+    "*.log",
+    ".git/**",
+    "bun.lock"
+  ],
+  "overrides": [
+    {
+      "filename": "**/*.md",
+      "languageSettings": [
+        {
+          "languageId": "markdown",
+          "locale": "en"
+        }
+      ]
+    },
+    {
+      "filename": "**/*.ts",
+      "languageSettings": [
+        {
+          "languageId": "typescript",
+          "locale": "en"
+        }
+      ]
+    },
+    {
+      "filename": "**/*.tsx",
+      "languageSettings": [
+        {
+          "languageId": "typescriptreact",
+          "locale": "en"
+        }
+      ]
+    }
+  ],
+  "flagWords": [],
+  "enabled": true,
+  "enableFiletypes": [
+    "typescript",
+    "typescriptreact",
+    "javascript",
+    "javascriptreact",
+    "json",
+    "jsonc",
+    "markdown",
+    "yaml",
+    "yml"
+  ]
+}

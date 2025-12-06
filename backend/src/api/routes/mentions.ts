@@ -1,18 +1,21 @@
-import { Hono } from 'hono';
 import { MentionService } from '../../services/mention.service';
-import { NoteService } from '../../services/note.service';
-import { db } from '../../db';
-import { validateNoteId } from '../middleware/validation';
-import { requireAuth } from '../../auth/middleware/auth.middleware';
+import { createNoteService } from '../../services/note.service';
+
+import { validateNoteId } from '../../middleware/validation';
+import { requireAuth } from '../../middleware/auth.middleware';
 import type { MentionsResponse } from '@thread-note/shared/types';
 import { serialize } from '../../types/api';
+import { createRouter } from './router';
 
-const mentionService = new MentionService({ db });
-const noteService = new NoteService({ db });
-
-const app = new Hono()
+const app = createRouter()
   // GET /api/notes/:id/mentions - Get notes mentioning this note
   .get('/:id/mentions', requireAuth, validateNoteId, async (c) => {
+    const db = c.get('db');
+
+    const noteService = createNoteService({ db });
+
+    const mentionService = new MentionService({ db });
+
     const { id } = c.req.valid('param');
 
     // NOTE: Check if note exists first

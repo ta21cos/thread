@@ -5,7 +5,7 @@ import notesRoutes from './routes/notes';
 import searchRoutes from './routes/search';
 import mentionsRoutes from './routes/mentions';
 import usersRoutes from './routes/users';
-import { errorHandler } from './middleware/error';
+import { errorHandler } from '../middleware/error';
 
 // NOTE: Hono app instance and router setup with method chaining for proper type inference
 const app = new Hono()

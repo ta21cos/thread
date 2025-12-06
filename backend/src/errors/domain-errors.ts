@@ -74,7 +74,10 @@ export const validationError = (message: string, field?: string): ValidationErro
   field,
 });
 
-export const contentTooLongError = (maxLength: number, actualLength: number): ContentTooLongError => ({
+export const contentTooLongError = (
+  maxLength: number,
+  actualLength: number
+): ContentTooLongError => ({
   _tag: 'ContentTooLongError',
   message: `Note content must be at most ${maxLength} characters (got ${actualLength})`,
   maxLength,
@@ -86,7 +89,10 @@ export const contentEmptyError = (): ContentEmptyError => ({
   message: 'Note content cannot be empty',
 });
 
-export const circularReferenceError = (fromNoteId: string, toNoteIds: string[]): CircularReferenceError => ({
+export const circularReferenceError = (
+  fromNoteId: string,
+  toNoteIds: string[]
+): CircularReferenceError => ({
   _tag: 'CircularReferenceError',
   message: 'Circular reference detected in mentions',
   fromNoteId,

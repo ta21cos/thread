@@ -3,7 +3,10 @@ import type { ErrorResponse } from '@thread-note/shared/types';
 
 // NOTE: Error handling middleware
 export function errorHandler(err: Error, c: Context) {
-  console.error('Error:', err);
+  // Only log errors in non-test environments to reduce noise in test output
+  if (process.env.NODE_ENV !== 'test') {
+    console.error('Error:', err);
+  }
 
   const response: ErrorResponse = {
     error: err.name || 'Error',

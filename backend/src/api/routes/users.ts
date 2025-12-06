@@ -1,12 +1,9 @@
-import { Hono } from 'hono';
 import { UserSyncService, type SyncUserDto } from '../../services/user-sync.service';
 import { db } from '../../db';
-import { requireAuth } from '../../auth/middleware/auth.middleware';
+import { requireAuth } from '../../middleware/auth.middleware';
+import { createRouter } from './router';
 
-const users = new Hono();
-
-// NOTE: Protected endpoint - requires authentication
-users.post('/sync', requireAuth, async (c) => {
+const users = createRouter().post('/sync', requireAuth, async (c) => {
   try {
     const body = await c.req.json<SyncUserDto>();
 
