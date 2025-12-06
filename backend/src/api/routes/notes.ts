@@ -9,7 +9,11 @@ import {
   validatePagination,
 } from '../../middleware/validation';
 import { requireAuth } from '../../middleware/auth.middleware';
-import type { NoteListResponse, NoteDetailResponse, ErrorResponse } from '@thread-note/shared/types';
+import type {
+  NoteListResponse,
+  NoteDetailResponse,
+  ErrorResponse,
+} from '@thread-note/shared/types';
 import { serialize } from '../../types/api';
 import { db } from '../../db';
 import { createRouter } from './router';
@@ -28,9 +32,14 @@ const toErrorResponse = (error: NoteError): ErrorResponse => ({
  * この関数により、ルートハンドラ内で一貫したエラーハンドリングが可能
  */
 const handleResult = async <T>(
-  c: { json: (body: unknown, status?: number) => Response; body: (body: unknown, status?: number) => Response },
+  c: {
+    json: (body: unknown, status?: number) => Response;
+    body: (body: unknown, status?: number) => Response;
+  },
   resultAsync: ResultAsync<T, NoteError>,
-  onSuccess: (value: T) => { body: unknown; status?: number } | Promise<{ body: unknown; status?: number }>
+  onSuccess: (
+    value: T
+  ) => { body: unknown; status?: number } | Promise<{ body: unknown; status?: number }>
 ) => {
   const result = await resultAsync;
 

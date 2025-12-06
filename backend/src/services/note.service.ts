@@ -106,16 +106,28 @@ export const extractMentionIds = (content: string): string[] => {
  * デフォルトのノートリポジトリ実装
  * データベース操作を ResultAsync でラップ
  */
-export const createFunctionalNoteRepository = ({ db }: { db: Database }): FunctionalNoteRepository => ({
+export const createFunctionalNoteRepository = ({
+  db,
+}: {
+  db: Database;
+}): FunctionalNoteRepository => ({
   findById: (id: string): ResultAsync<Note | undefined, NoteError> =>
     ResultAsync.fromPromise(
-      db.select().from(notes).where(eq(notes.id, id)).then(([note]) => note),
+      db
+        .select()
+        .from(notes)
+        .where(eq(notes.id, id))
+        .then(([note]) => note),
       (error) => databaseError('Failed to find note', error)
     ),
 
   create: (note: NewNote): ResultAsync<Note, NoteError> =>
     ResultAsync.fromPromise(
-      db.insert(notes).values(note).returning().then(([created]) => created),
+      db
+        .insert(notes)
+        .values(note)
+        .returning()
+        .then(([created]) => created),
       (error) => databaseError('Failed to create note', error)
     ),
 
@@ -153,14 +165,16 @@ export const createFunctionalNoteRepository = ({ db }: { db: Database }): Functi
     ),
 
   findByParentId: (parentId: string): ResultAsync<Note[], NoteError> =>
-    ResultAsync.fromPromise(
-      db.select().from(notes).where(eq(notes.parentId, parentId)),
-      (error) => databaseError('Failed to find notes by parent id', error)
+    ResultAsync.fromPromise(db.select().from(notes).where(eq(notes.parentId, parentId)), (error) =>
+      databaseError('Failed to find notes by parent id', error)
     ),
 
   delete: (id: string): ResultAsync<void, NoteError> =>
     ResultAsync.fromPromise(
-      db.delete(notes).where(eq(notes.id, id)).then(() => undefined),
+      db
+        .delete(notes)
+        .where(eq(notes.id, id))
+        .then(() => undefined),
       (error) => databaseError('Failed to delete note', error)
     ),
 });
@@ -168,31 +182,44 @@ export const createFunctionalNoteRepository = ({ db }: { db: Database }): Functi
 /**
  * デフォルトのメンションリポジトリ実装
  */
-export const createFunctionalMentionRepository = ({ db }: { db: Database }): FunctionalMentionRepository => ({
+export const createFunctionalMentionRepository = ({
+  db,
+}: {
+  db: Database;
+}): FunctionalMentionRepository => ({
   create: (mention: NewMention): ResultAsync<void, NoteError> =>
     ResultAsync.fromPromise(
-      db.insert(mentions).values(mention).then(() => undefined),
+      db
+        .insert(mentions)
+        .values(mention)
+        .then(() => undefined),
       (error) => databaseError('Failed to create mention', error)
     ),
 
   deleteByNoteId: (noteId: string): ResultAsync<void, NoteError> =>
     ResultAsync.fromPromise(
-      db.delete(mentions).where(eq(mentions.fromNoteId, noteId)).then(() => undefined),
+      db
+        .delete(mentions)
+        .where(eq(mentions.fromNoteId, noteId))
+        .then(() => undefined),
       (error) => databaseError('Failed to delete mentions', error)
     ),
 
   getAllMentions: (): ResultAsync<Map<string, string[]>, NoteError> =>
     ResultAsync.fromPromise(
-      db.select().from(mentions).then((allMentions) => {
-        const graph = new Map<string, string[]>();
-        for (const mention of allMentions) {
-          if (!graph.has(mention.fromNoteId)) {
-            graph.set(mention.fromNoteId, []);
+      db
+        .select()
+        .from(mentions)
+        .then((allMentions) => {
+          const graph = new Map<string, string[]>();
+          for (const mention of allMentions) {
+            if (!graph.has(mention.fromNoteId)) {
+              graph.set(mention.fromNoteId, []);
+            }
+            graph.get(mention.fromNoteId)!.push(mention.toNoteId);
           }
-          graph.get(mention.fromNoteId)!.push(mention.toNoteId);
-        }
-        return graph;
-      }),
+          return graph;
+        }),
       (error) => databaseError('Failed to get mentions', error)
     ),
 });
@@ -245,7 +272,10 @@ export const detectCircularReference = (
 /**
  * 親ノートから深度を計算し、制約をチェック
  */
-const calculateDepthFromParent = (parent: Note | undefined, parentId?: string): Result<number, NoteError> => {
+const calculateDepthFromParent = (
+  parent: Note | undefined,
+  parentId?: string
+): Result<number, NoteError> => {
   if (!parentId) {
     return ok(0); // ルートノート
   }
@@ -380,7 +410,10 @@ export const persistNote =
 export const createNote =
   (noteRepo: FunctionalNoteRepository, mentionRepo: FunctionalMentionRepository) =>
   (input: CreateNoteInput): ResultAsync<Note, NoteError> => {
-    return validateCreateNote(noteRepo, mentionRepo)(input).andThen(persistNote(noteRepo, mentionRepo));
+    return validateCreateNote(
+      noteRepo,
+      mentionRepo
+    )(input).andThen(persistNote(noteRepo, mentionRepo));
   };
 
 /**
@@ -406,13 +439,14 @@ export const getRootNotes =
     limit: number = 20,
     offset: number = 0
   ): ResultAsync<{ notes: Note[]; total: number; hasMore: boolean }, NoteError> => {
-    return ResultAsync.combine([noteRepo.findRootNotes(limit, offset), noteRepo.countRootNotes()]).map(
-      ([foundNotes, total]) => ({
-        notes: foundNotes,
-        total,
-        hasMore: offset + foundNotes.length < total,
-      })
-    );
+    return ResultAsync.combine([
+      noteRepo.findRootNotes(limit, offset),
+      noteRepo.countRootNotes(),
+    ]).map(([foundNotes, total]) => ({
+      notes: foundNotes,
+      total,
+      hasMore: offset + foundNotes.length < total,
+    }));
   };
 
 /**
@@ -507,7 +541,9 @@ export const deleteNote =
           .andThen(() => deleteChildrenMentions)
           .andThen(() => {
             // Step 4: 子ノートを削除
-            const deleteChildren = ResultAsync.combine(children.map((child) => noteRepo.delete(child.id)));
+            const deleteChildren = ResultAsync.combine(
+              children.map((child) => noteRepo.delete(child.id))
+            );
 
             return deleteChildren.andThen(() => {
               // Step 5: 親ノートを削除
@@ -630,9 +666,8 @@ export class NoteService {
    * Returns NoteNotFoundError if note doesn't exist.
    */
   getNoteByIdResult(id: string): ResultAsync<Note, NoteError> {
-    return ResultAsync.fromPromise(
-      this.noteRepo.findById(id),
-      (error) => databaseError('Failed to fetch note', error)
+    return ResultAsync.fromPromise(this.noteRepo.findById(id), (error) =>
+      databaseError('Failed to fetch note', error)
     ).andThen((note) => {
       if (!note) {
         return err(noteNotFoundError(id));

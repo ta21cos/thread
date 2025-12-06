@@ -27,15 +27,7 @@
     "wrangler"
   ],
   "ignoreWords": [],
-  "dictionaries": [
-    "typescript",
-    "node",
-    "npm",
-    "html",
-    "css",
-    "bash",
-    "markdown"
-  ],
+  "dictionaries": ["typescript", "node", "npm", "html", "css", "bash", "markdown"],
   "dictionaryDefinitions": [],
   "ignorePaths": [
     "node_modules/**",

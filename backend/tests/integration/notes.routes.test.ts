@@ -227,7 +227,12 @@ describe('Notes Routes Integration Tests', () => {
       });
 
       expect(res.status).toBe(201);
-      const body = (await res.json()) as { id: string; content: string; parentId: string | null; depth: number };
+      const body = (await res.json()) as {
+        id: string;
+        content: string;
+        parentId: string | null;
+        depth: number;
+      };
       expect(body).toMatchObject({
         content: 'Reply note',
         parentId: parentId,

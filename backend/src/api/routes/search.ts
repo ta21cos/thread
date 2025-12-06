@@ -5,15 +5,13 @@ import type { SearchResponse } from '@thread-note/shared/types';
 import { serialize } from '../../types/api';
 import { createRouter } from './router';
 
-
-
 const app = createRouter()
   // GET /api/notes/search - Search notes
   .get('/search', requireAuth, validateSearch, async (c) => {
     const db = c.get('db');
 
     const searchService = new SearchService({ db });
-    
+
     const { q, type, limit } = c.req.valid('query');
 
     let results;
