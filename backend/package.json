@@ -23,7 +23,8 @@
     "db:migrate:staging": "wrangler d1 migrations apply thread-notes-db-staging --env=staging --remote",
     "db:migrate:production": "wrangler d1 migrations apply thread-notes-db-production --env=production --remote",
     "lint": "eslint src --ext .ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@clerk/backend": "^2.20.0",
