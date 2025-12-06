@@ -2,8 +2,8 @@ import { Hono } from 'hono';
 import { MentionService } from '../../services/mention.service';
 import { NoteService } from '../../services/note.service';
 import { db } from '../../db';
-import { validateNoteId } from '../middleware/validation';
-import { requireAuth } from '../../auth/middleware/auth.middleware';
+import { validateNoteId } from '../../middleware/validation';
+import { requireAuth } from '../../middleware/auth.middleware';
 import type { MentionsResponse } from '@thread-note/shared/types';
 import { serialize } from '../../types/api';
 

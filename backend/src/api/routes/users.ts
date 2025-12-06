@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { UserSyncService, type SyncUserDto } from '../../services/user-sync.service';
 import { db } from '../../db';
-import { requireAuth } from '../../auth/middleware/auth.middleware';
+import { requireAuth } from '../../middleware/auth.middleware';
 
 const users = new Hono();
 

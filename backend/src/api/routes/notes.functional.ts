@@ -16,8 +16,8 @@ import {
   validateUpdateNote,
   validateNoteId,
   validatePagination,
-} from '../middleware/validation';
-import { requireAuth } from '../../auth/middleware/auth.middleware';
+} from '../../middleware/validation';
+import { requireAuth } from '../../middleware/auth.middleware';
 import type { NoteListResponse, NoteDetailResponse, ErrorResponse } from '@thread-note/shared/types';
 import { serialize } from '../../types/api';
 import { db } from '../../db';
@@ -67,7 +67,7 @@ const app = new Hono()
   })
 
   // POST /api/notes - Create note
-  .post('/', validateCreateNote, async (c) => {
+  .post('/', requireAuth, validateCreateNote, async (c) => {
     const data = c.req.valid('json');
 
     return handleResult(c, functionalNoteService.createNote(data), (note) => ({
@@ -77,7 +77,7 @@ const app = new Hono()
   })
 
   // GET /api/notes/:id - Get note with thread
-  .get('/:id', validateNoteId, async (c) => {
+  .get('/:id', requireAuth, validateNoteId, async (c) => {
     const { id } = c.req.valid('param');
     const includeThread = c.req.query('includeThread') !== 'false';
 

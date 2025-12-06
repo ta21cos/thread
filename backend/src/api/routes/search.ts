@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { SearchService } from '../../services/search.service';
 import { db } from '../../db';
-import { validateSearch } from '../middleware/validation';
-import { requireAuth } from '../../auth/middleware/auth.middleware';
+import { validateSearch } from '../../middleware/validation';
+import { requireAuth } from '../../middleware/auth.middleware';
 import type { SearchResponse } from '@thread-note/shared/types';
 import { serialize } from '../../types/api';
 

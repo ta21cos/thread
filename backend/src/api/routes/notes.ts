@@ -7,8 +7,8 @@ import {
   validateUpdateNote,
   validateNoteId,
   validatePagination,
-} from '../middleware/validation';
-import { requireAuth } from '../../auth/middleware/auth.middleware';
+} from '../../middleware/validation';
+import { requireAuth } from '../../middleware/auth.middleware';
 import type { NoteListResponse, NoteDetailResponse, ErrorResponse } from '@thread-note/shared/types';
 import { serialize } from '../../types/api';
 import { Hono } from 'hono';

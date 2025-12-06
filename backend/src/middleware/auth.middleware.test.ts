@@ -18,7 +18,7 @@ vi.mock('../../src/auth/clerk', () => ({
   getClerkClient: () => mockClerkClient,
 }));
 
-import { requireAuth } from './auth.middleware';
+import { requireAuth } from '../middleware/auth.middleware';
 
 type Variables = {
   userId?: string;
