@@ -9,7 +9,8 @@
     "build": "bun build src/index.ts --outdir dist --target bun",
     "build:worker": "wrangler deploy --dry-run",
     "start": "bun dist/index.js",
-    "test": "NODE_ENV=test bun test",
+    "test": "NODE_ENV=test bun test src tests/preload.ts tests/setup.ts",
+    "test:integration": "NODE_ENV=test vitest --config vitest.config.ts",
     "test:load": "k6 run tests/load/load-test.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -37,6 +38,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.5",
     "@cloudflare/workers-types": "^4.20241127.0",
     "@types/bun": "latest",
     "@typescript-eslint/eslint-plugin": "^6.14.0",
@@ -45,7 +47,7 @@
     "drizzle-kit": "^0.31.5",
     "eslint": "^8.55.0",
     "typescript": "^5.3.3",
-    "vitest": "^1.0.4",
+    "vitest": "2.0",
     "wrangler": "^4.45.0"
   }
 }
