@@ -1,10 +1,10 @@
 import { UserSyncService, type SyncUserDto } from '../../services/user-sync.service';
-import { db } from '../../db';
 import { requireAuth } from '../../middleware/auth.middleware';
 import { createRouter } from './router';
 
 const users = createRouter().post('/sync', requireAuth, async (c) => {
   try {
+    const db = c.get('db');
     const body = await c.req.json<SyncUserDto>();
 
     // NOTE: Validate required fields
