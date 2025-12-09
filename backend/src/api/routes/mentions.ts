@@ -18,10 +18,15 @@ const app = createRouter()
 
     const { id } = c.req.valid('param');
 
-    // NOTE: Check if note exists first
-    const note = await noteService.getNoteById(id);
-    if (!note) {
-      return c.json({ error: 'Not Found', message: 'Note not found' }, 404);
+    // NOTE: Check if note exists first using ResultAsync
+    const noteResult = await noteService.getNoteById(id);
+
+    if (noteResult.isErr()) {
+      const error = noteResult.error;
+      if (error._tag === 'NoteNotFoundError') {
+        return c.json({ error: 'Not Found', message: 'Note not found' }, 404);
+      }
+      return c.json({ error: error._tag, message: error.message }, 500);
     }
 
     const mentionsWithNotes = await mentionService.getMentionsWithNotes(id);
