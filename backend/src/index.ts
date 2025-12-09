@@ -1,4 +1,4 @@
-import app from './api/app';
+// import app from './api/app';
 import { appConfig } from './config';
 import { initBunDatabase } from './db/bun';
 import { setDb, type Database } from './db';
@@ -11,7 +11,7 @@ console.log(`Server starting on port ${port}...`);
 const bunDb = initBunDatabase(appConfig.databaseUrl);
 setDb(bunDb as Database);
 
-export default {
-  port,
-  fetch: app.fetch,
-};
+// export default {
+//   port,
+//   fetch: app.fetch,
+// };

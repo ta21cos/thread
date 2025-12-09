@@ -1,12 +1,69 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+// NOTE: Initialize database before importing db
+import '../../tests/preload';
 import { db, notes, mentions } from '../db';
-import { NoteService } from './note.service';
+
 import { generateId } from '../utils/id-generator';
 import { MAX_NOTE_LENGTH } from '@thread-note/shared/constants';
+import { createNoteService } from './note.service';
 
 describe('NoteService', () => {
   const prepareServices = async () => {
-    const noteService = new NoteService({ db });
+    const service = createNoteService({ db });
+
+    // ResultAsyncをPromiseに変換するラッパー
+    const noteService = {
+      createNote: async (input: { content: string; parentId?: string }) => {
+        const result = await service.createNote(input);
+        return result.match(
+          (note) => note,
+          (error) => {
+            throw new Error(error.message);
+          }
+        );
+      },
+      getNoteById: async (id: string) => {
+        const result = await service.getNoteById(id);
+        return result.match(
+          (note) => note,
+          (error) => {
+            // NoteNotFoundErrorの場合はundefinedを返す（テストの期待に合わせる）
+            if (error._tag === 'NoteNotFoundError') {
+              return undefined;
+            }
+            throw new Error(error.message);
+          }
+        );
+      },
+      getRootNotes: async (limit?: number, offset?: number) => {
+        const result = await service.getRootNotes(limit, offset);
+        return result.match(
+          (data) => data,
+          (error) => {
+            throw new Error(error.message);
+          }
+        );
+      },
+      updateNote: async (id: string, input: { content: string }) => {
+        const result = await service.updateNote(id, input);
+        return result.match(
+          (note) => note,
+          (error) => {
+            throw new Error(error.message);
+          }
+        );
+      },
+      deleteNote: async (id: string) => {
+        const result = await service.deleteNote(id);
+        return result.match(
+          () => undefined,
+          (error) => {
+            throw new Error(error.message);
+          }
+        );
+      },
+    };
+
     return { noteService };
   };
 
@@ -58,7 +115,7 @@ describe('NoteService', () => {
       const { noteService } = await prepareServices();
 
       await expect(noteService.createNote({ content: '' })).rejects.toThrow(
-        `Note content must be between 1 and ${MAX_NOTE_LENGTH} characters`
+        'Note content cannot be empty'
       );
     });
 
@@ -68,7 +125,7 @@ describe('NoteService', () => {
       const longContent = 'a'.repeat(MAX_NOTE_LENGTH + 1);
 
       await expect(noteService.createNote({ content: longContent })).rejects.toThrow(
-        `Note content must be between 1 and ${MAX_NOTE_LENGTH} characters`
+        `Note content must be at most ${MAX_NOTE_LENGTH} characters (got ${MAX_NOTE_LENGTH + 1})`
       );
     });
 
@@ -91,7 +148,7 @@ describe('NoteService', () => {
           content: 'Child note',
           parentId: 'nonexistent',
         })
-      ).rejects.toThrow('Parent note not found');
+      ).rejects.toThrow("Parent note with id 'nonexistent' not found");
     });
 
     it('should enforce 2-level constraint - cannot create child of child', async () => {
@@ -125,7 +182,7 @@ describe('NoteService', () => {
           content: 'Grandchild note',
           parentId: childId,
         })
-      ).rejects.toThrow('Cannot create child for a note that is already a child');
+      ).rejects.toThrow('Cannot create child for a note that is already at maximum depth (1)');
     });
 
     it('should create mentions when content contains @mentions', async () => {
@@ -481,7 +538,7 @@ describe('NoteService', () => {
 
       await expect(
         noteService.updateNote('nonexistent', { content: 'New content' })
-      ).rejects.toThrow('Note not found');
+      ).rejects.toThrow("Note with id 'nonexistent' not found");
     });
 
     it('should throw error when content is empty', async () => {
@@ -499,7 +556,7 @@ describe('NoteService', () => {
       });
 
       await expect(noteService.updateNote(noteId, { content: '' })).rejects.toThrow(
-        `Note content must be between 1 and ${MAX_NOTE_LENGTH} characters`
+        'Note content cannot be empty'
       );
     });
 
@@ -520,7 +577,7 @@ describe('NoteService', () => {
       const longContent = 'a'.repeat(MAX_NOTE_LENGTH + 1);
 
       await expect(noteService.updateNote(noteId, { content: longContent })).rejects.toThrow(
-        `Note content must be between 1 and ${MAX_NOTE_LENGTH} characters`
+        `Note content must be at most ${MAX_NOTE_LENGTH} characters (got ${MAX_NOTE_LENGTH + 1})`
       );
     });
 
