@@ -32,6 +32,14 @@ import {
 } from '../repositories/mention.repository';
 
 // ==========================================
+// Helpers
+// ==========================================
+
+// NOTE: neverthrow には fromResult() がないため自前で定義
+const fromResult = <T, E>(result: Result<T, E>): ResultAsync<T, E> =>
+  result.isOk() ? okAsync(result.value) : errAsync(result.error);
+
+// ==========================================
 // Types
 // ==========================================
 
@@ -162,66 +170,78 @@ const calculateDepthFromParent = (
 // ==========================================
 
 /**
+ * 循環参照をチェック（ResultAsync版）
+ * メンショングラフを取得し、循環参照がないか検証する
+ */
+const validateCircularReference =
+  (mentionRepo: MentionRepository) =>
+  (noteId: string, mentionIds: string[]): ResultAsync<void, NoteError> =>
+    mentionRepo
+      .getAllMentions()
+      .andThen((graph) => fromResult(detectCircularReference(graph, noteId, mentionIds)));
+
+/**
  * ノート作成のためのバリデーションパイプライン
  *
  * 処理フロー:
  * 1. コンテンツ長の検証
- * 2. IDの生成
- * 3. メンションIDの抽出
- * 4. 親ノートの取得と深度計算
- * 5. 循環参照の検証
+ * 2. 親ノートの取得と深度計算
+ * 3. 循環参照の検証（メンションがある場合のみ）
+ *
+ * 完全なパイプライン - isErr() チェックなし
  */
 const validateCreateNote =
   (noteRepo: NoteRepository, mentionRepo: MentionRepository) =>
   (input: CreateNoteInput): ResultAsync<ValidatedNoteData, NoteError> => {
-    // Step 1: 同期的なバリデーション
-    const contentValidation = validateContentLength(input.content);
-    if (contentValidation.isErr()) {
-      return errAsync(contentValidation.error);
-    }
-
     const noteId = generateId();
     const mentionIds = extractMentionIds(input.content);
 
-    // Step 2: 親ノートの取得と深度計算
-    const parentResult = input.parentId
-      ? noteRepo.findById(input.parentId)
-      : okAsync<Note | undefined, NoteError>(undefined);
+    return fromResult(validateContentLength(input.content))
+      .andThen(() => (input.parentId ? noteRepo.findById(input.parentId) : okAsync(undefined)))
+      .andThen((parent) => fromResult(calculateDepthFromParent(parent, input.parentId)))
+      .andThen((depth) =>
+        mentionIds.length === 0
+          ? okAsync({
+              id: noteId,
+              content: input.content,
+              parentId: input.parentId,
+              depth,
+              mentionIds: [],
+            })
+          : validateCircularReference(mentionRepo)(noteId, mentionIds).map(() => ({
+              id: noteId,
+              content: input.content,
+              parentId: input.parentId,
+              depth,
+              mentionIds,
+            }))
+      );
+  };
 
-    return parentResult.andThen((parent) => {
-      // Step 3: 深度計算
-      const depthResult = calculateDepthFromParent(parent, input.parentId);
-      if (depthResult.isErr()) {
-        return errAsync(depthResult.error);
-      }
+/**
+ * メンションを作成するヘルパー
+ */
+const createMentions =
+  (mentionRepo: MentionRepository) =>
+  (noteId: string, content: string, mentionIds: string[]): ResultAsync<void, NoteError> => {
+    if (mentionIds.length === 0) {
+      return okAsync(undefined);
+    }
 
-      // Step 4: 循環参照チェック (メンションがある場合のみ)
-      if (mentionIds.length === 0) {
-        return okAsync<ValidatedNoteData, NoteError>({
-          id: noteId,
-          content: input.content,
-          parentId: input.parentId,
-          depth: depthResult.value,
-          mentionIds: [],
-        });
-      }
-
-      // メンショングラフを取得して循環チェック
-      return mentionRepo.getAllMentions().andThen((graph) => {
-        const cycleCheck = detectCircularReference(graph, noteId, mentionIds);
-        if (cycleCheck.isErr()) {
-          return errAsync(cycleCheck.error);
-        }
-
-        return okAsync<ValidatedNoteData, NoteError>({
-          id: noteId,
-          content: input.content,
-          parentId: input.parentId,
-          depth: depthResult.value,
-          mentionIds,
-        });
-      });
+    const mentionPromises = mentionIds.flatMap((mentionId) => {
+      const positions = getMentionPositions(content, mentionId);
+      return positions.map((position) =>
+        mentionRepo.create({
+          id: generateId(),
+          fromNoteId: noteId,
+          toNoteId: mentionId,
+          position,
+          createdAt: new Date(),
+        })
+      );
     });
+
+    return ResultAsync.combine(mentionPromises).map(() => undefined);
   };
 
 /**
@@ -241,30 +261,11 @@ const persistNote =
       updatedAt: new Date(),
     };
 
-    // ノート作成後、メンションを保存
-    return noteRepo.create(newNote).andThen((createdNote) => {
-      // メンションがない場合はそのまま返す
-      if (data.mentionIds.length === 0) {
-        return okAsync<Note, NoteError>(createdNote);
-      }
-
-      // 全メンションを保存
-      const mentionPromises = data.mentionIds.flatMap((mentionId) => {
-        const positions = getMentionPositions(data.content, mentionId);
-        return positions.map((position) =>
-          mentionRepo.create({
-            id: generateId(),
-            fromNoteId: data.id,
-            toNoteId: mentionId,
-            position,
-            createdAt: new Date(),
-          })
-        );
-      });
-
-      // 全メンションの保存を待つ
-      return ResultAsync.combine(mentionPromises).map(() => createdNote);
-    });
+    return noteRepo
+      .create(newNote)
+      .andThen((createdNote) =>
+        createMentions(mentionRepo)(data.id, data.content, data.mentionIds).map(() => createdNote)
+      );
   };
 
 /**
@@ -282,18 +283,20 @@ const createNote =
   };
 
 /**
+ * ノート存在確認ヘルパー
+ */
+const ensureNoteExists =
+  (id: string) =>
+  (note: Note | undefined): ResultAsync<Note, NoteError> =>
+    note ? okAsync(note) : errAsync(noteNotFoundError(id));
+
+/**
  * IDでノートを取得
  */
 const getNoteById =
   (noteRepo: NoteRepository) =>
-  (id: string): ResultAsync<Note, NoteError> => {
-    return noteRepo.findById(id).andThen((note) => {
-      if (!note) {
-        return errAsync<Note, NoteError>(noteNotFoundError(id));
-      }
-      return okAsync<Note, NoteError>(note);
-    });
-  };
+  (id: string): ResultAsync<Note, NoteError> =>
+    noteRepo.findById(id).andThen(ensureNoteExists(id));
 
 /**
  * ルートノートのリストを取得
@@ -316,108 +319,80 @@ const getRootNotes =
 
 /**
  * ノートを更新
+ *
+ * 完全なパイプライン - isErr() チェックなし
  */
 const updateNote =
   (noteRepo: NoteRepository, mentionRepo: MentionRepository) =>
   (id: string, input: UpdateNoteInput): ResultAsync<Note, NoteError> => {
-    // Step 1: コンテンツのバリデーション
-    const contentValidation = validateContentLength(input.content);
-    if (contentValidation.isErr()) {
-      return errAsync(contentValidation.error);
-    }
+    const mentionIds = extractMentionIds(input.content);
 
-    // Step 2: 既存ノートの確認
-    return noteRepo.findById(id).andThen((existing) => {
-      if (!existing) {
-        return errAsync<Note, NoteError>(noteNotFoundError(id));
-      }
+    // 循環参照チェック（メンションがある場合のみ）
+    const checkCycle =
+      mentionIds.length === 0
+        ? okAsync(undefined)
+        : validateCircularReference(mentionRepo)(id, mentionIds);
 
-      const mentionIds = extractMentionIds(input.content);
-
-      // Step 3: 循環参照チェック
-      const checkCycle = (): ResultAsync<void, NoteError> => {
-        if (mentionIds.length === 0) {
-          return okAsync(undefined);
-        }
-        return mentionRepo.getAllMentions().andThen((graph) => {
-          const cycleCheck = detectCircularReference(graph, id, mentionIds);
-          if (cycleCheck.isErr()) {
-            return errAsync(cycleCheck.error);
-          }
-          return okAsync(undefined);
-        });
-      };
-
-      return checkCycle()
-        .andThen(() => mentionRepo.deleteByNoteId(id)) // Step 4: 古いメンションを削除
-        .andThen(() => noteRepo.update(id, input.content)) // Step 5: ノート更新
-        .andThen((updated) => {
-          // Step 6: 新しいメンションを作成
-          if (mentionIds.length === 0) {
-            return okAsync<Note, NoteError>(updated);
-          }
-
-          const mentionPromises = mentionIds.flatMap((mentionId) => {
-            const positions = getMentionPositions(input.content, mentionId);
-            return positions.map((position) =>
-              mentionRepo.create({
-                id: generateId(),
-                fromNoteId: id,
-                toNoteId: mentionId,
-                position,
-                createdAt: new Date(),
-              })
-            );
-          });
-
-          return ResultAsync.combine(mentionPromises).map(() => updated);
-        });
-    });
+    return fromResult(validateContentLength(input.content))
+      .andThen(() => noteRepo.findById(id))
+      .andThen(ensureNoteExists(id))
+      .andThen(() => checkCycle)
+      .andThen(() => mentionRepo.deleteByNoteId(id))
+      .andThen(() => noteRepo.update(id, input.content))
+      .andThen((updated) =>
+        createMentions(mentionRepo)(id, input.content, mentionIds).map(() => updated)
+      );
   };
+
+/**
+ * 複数ノートのメンションを一括削除
+ */
+const deleteMentionsFor =
+  (mentionRepo: MentionRepository) =>
+  (noteIds: string[]): ResultAsync<void, NoteError> =>
+    noteIds.length === 0
+      ? okAsync(undefined)
+      : ResultAsync.combine(noteIds.map((nid) => mentionRepo.deleteByNoteId(nid))).map(
+          () => undefined
+        );
+
+/**
+ * 複数ノートを一括削除
+ */
+const deleteNotes =
+  (noteRepo: NoteRepository) =>
+  (noteIds: string[]): ResultAsync<void, NoteError> =>
+    noteIds.length === 0
+      ? okAsync(undefined)
+      : ResultAsync.combine(noteIds.map((nid) => noteRepo.delete(nid))).map(() => undefined);
 
 /**
  * ノートを削除 (カスケード削除)
  *
- * DeleteService を参考にした実装:
+ * 処理フロー:
  * 1. ノートが存在するか確認
  * 2. 子ノートを取得 (2レベル制約により1レベルのみ)
  * 3. 親と子のメンションを削除
  * 4. 子ノートを削除
  * 5. 親ノートを削除
+ *
+ * フラットなパイプライン - ネスト最小化
  */
 const deleteNote =
   (noteRepo: NoteRepository, mentionRepo: MentionRepository) =>
-  (id: string): ResultAsync<void, NoteError> => {
-    // Step 1: ノートが存在するか確認
-    return noteRepo.findById(id).andThen((note) => {
-      if (!note) {
-        return errAsync<void, NoteError>(noteNotFoundError(id));
-      }
+  (id: string): ResultAsync<void, NoteError> =>
+    noteRepo
+      .findById(id)
+      .andThen(ensureNoteExists(id))
+      .andThen(() => noteRepo.findByParentId(id))
+      .andThen((children) => {
+        const allNoteIds = [id, ...children.map((child) => child.id)];
+        const childIds = children.map((child) => child.id);
 
-      // Step 2: 子ノートを取得 (2レベル制約により1レベルのみ)
-      return noteRepo.findByParentId(id).andThen((children) => {
-        // Step 3: 親と子のメンションを削除
-        const deleteParentMentions = mentionRepo.deleteByNoteId(id);
-        const deleteChildrenMentions = ResultAsync.combine(
-          children.map((child) => mentionRepo.deleteByNoteId(child.id))
-        );
-
-        return deleteParentMentions
-          .andThen(() => deleteChildrenMentions)
-          .andThen(() => {
-            // Step 4: 子ノートを削除
-            const deleteChildren = ResultAsync.combine(
-              children.map((child) => noteRepo.delete(child.id))
-            );
-
-            return deleteChildren.andThen(() => {
-              // Step 5: 親ノートを削除
-              return noteRepo.delete(id);
-            });
-          });
+        return deleteMentionsFor(mentionRepo)(allNoteIds)
+          .andThen(() => deleteNotes(noteRepo)(childIds))
+          .andThen(() => noteRepo.delete(id));
       });
-    });
-  };
 
 // ==========================================
 // Default Instance (Convenience Export)

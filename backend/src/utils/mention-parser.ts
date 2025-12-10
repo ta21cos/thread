@@ -10,7 +10,7 @@ export function extractMentions(content: string): string[] {
     mentions.push(match[1]);
   }
 
-  return [...new Set(mentions)]; // Remove duplicates
+  return Array.from(new Set(mentions)); // Remove duplicates
 }
 
 // NOTE: Get positions of mentions in content

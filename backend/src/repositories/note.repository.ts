@@ -5,10 +5,33 @@
  * ResultAsync を使用して型安全なエラーハンドリングを提供。
  */
 
-import { ResultAsync } from 'neverthrow';
+import { ResultAsync, okAsync } from 'neverthrow';
 import { eq, isNull, desc, asc } from 'drizzle-orm';
 import { notes, type Note, type NewNote, type NoteWithReplyCount, type Database } from '../db';
 import { databaseError, type NoteError } from '../errors/domain-errors';
+
+// ==========================================
+// Pure Helper Functions
+// ==========================================
+
+/**
+ * ノートを depth と createdAt でソート
+ */
+const sortByDepthAndCreatedAt = (noteList: Note[]): Note[] =>
+  [...noteList].sort((a, b) => {
+    if (a.depth !== b.depth) {
+      return a.depth - b.depth;
+    }
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
+
+/**
+ * ノートに replyCount を付与
+ */
+const attachReplyCount = (note: Note, replyCount: number): NoteWithReplyCount => ({
+  ...note,
+  replyCount,
+});
 
 /** リポジトリインターフェース (依存性注入用) */
 export interface NoteRepository {
@@ -58,32 +81,27 @@ export const createNoteRepository = ({ db }: { db: Database }): NoteRepository =
       (error) => databaseError('Failed to update note', error)
     ),
 
-  findRootNotes: (limit: number, offset: number): ResultAsync<NoteWithReplyCount[], NoteError> =>
-    ResultAsync.fromPromise(
-      (async () => {
-        const rootNotes = await db
-          .select()
-          .from(notes)
-          .where(isNull(notes.parentId))
-          .orderBy(desc(notes.createdAt))
-          .limit(limit)
-          .offset(offset);
-
-        // Calculate replyCount for each root note
-        const notesWithCounts: NoteWithReplyCount[] = await Promise.all(
-          rootNotes.map(async (note) => {
-            const replies = await db.select().from(notes).where(eq(notes.parentId, note.id));
-            return {
-              ...note,
-              replyCount: replies.length,
-            };
-          })
-        );
-
-        return notesWithCounts;
-      })(),
+  findRootNotes: (limit: number, offset: number): ResultAsync<NoteWithReplyCount[], NoteError> => {
+    // ルートノートを取得
+    const fetchRootNotes = ResultAsync.fromPromise(
+      db
+        .select()
+        .from(notes)
+        .where(isNull(notes.parentId))
+        .orderBy(desc(notes.createdAt))
+        .limit(limit)
+        .offset(offset),
       (error) => databaseError('Failed to find root notes', error)
-    ),
+    );
+
+    // 各ノートの返信数を取得して付与
+    const countReplies = (note: Note): ResultAsync<NoteWithReplyCount, NoteError> =>
+      ResultAsync.fromPromise(db.select().from(notes).where(eq(notes.parentId, note.id)), (error) =>
+        databaseError('Failed to count replies', error)
+      ).map((replies) => attachReplyCount(note, replies.length));
+
+    return fetchRootNotes.andThen((rootNotes) => ResultAsync.combine(rootNotes.map(countReplies)));
+  },
 
   countRootNotes: (): ResultAsync<number, NoteError> =>
     ResultAsync.fromPromise(
@@ -109,58 +127,39 @@ export const createNoteRepository = ({ db }: { db: Database }): NoteRepository =
       (error) => databaseError('Failed to delete note', error)
     ),
 
-  getThreadRecursive: (rootId: string): ResultAsync<Note[], NoteError> =>
-    ResultAsync.fromPromise(
-      (async () => {
-        // Use breadth-first traversal to build the thread
-        const result: Note[] = [];
-        const queue: string[] = [rootId];
-        const visited = new Set<string>();
+  getThreadRecursive: (rootId: string): ResultAsync<Note[], NoteError> => {
+    // 単一ノートを取得
+    const fetchNote = (id: string): ResultAsync<Note | undefined, NoteError> =>
+      ResultAsync.fromPromise(
+        db
+          .select()
+          .from(notes)
+          .where(eq(notes.id, id))
+          .then(([note]) => note),
+        (error) => databaseError('Failed to fetch note', error)
+      );
 
-        while (queue.length > 0) {
-          const currentId = queue.shift()!;
+    // 子ノートを取得
+    const fetchChildren = (parentId: string): ResultAsync<Note[], NoteError> =>
+      ResultAsync.fromPromise(
+        db.select().from(notes).where(eq(notes.parentId, parentId)).orderBy(asc(notes.createdAt)),
+        (error) => databaseError('Failed to fetch children', error)
+      );
 
-          // Skip if already processed
-          if (visited.has(currentId)) {
-            continue;
-          }
-          visited.add(currentId);
+    // ノートとその子孫を再帰的に取得
+    const fetchWithDescendants = (id: string): ResultAsync<Note[], NoteError> =>
+      fetchNote(id).andThen((note) =>
+        note
+          ? fetchChildren(id)
+              .andThen((children) =>
+                children.length === 0
+                  ? okAsync<Note[][], NoteError>([])
+                  : ResultAsync.combine(children.map((child) => fetchWithDescendants(child.id)))
+              )
+              .map((nestedChildren) => [note, ...nestedChildren.flat()])
+          : okAsync([])
+      );
 
-          // Fetch current note
-          const [currentNote] = await db.select().from(notes).where(eq(notes.id, currentId));
-
-          if (!currentNote) {
-            continue;
-          }
-
-          // Add to result
-          result.push(currentNote);
-
-          // Fetch children and add to queue
-          const children = await db
-            .select()
-            .from(notes)
-            .where(eq(notes.parentId, currentId))
-            .orderBy(asc(notes.createdAt));
-
-          // Add children to queue
-          for (const child of children) {
-            queue.push(child.id);
-          }
-        }
-
-        // Sort by depth and createdAt to maintain order
-        result.sort((a, b) => {
-          if (a.depth !== b.depth) {
-            return a.depth - b.depth;
-          }
-          const aTime = new Date(a.createdAt).getTime();
-          const bTime = new Date(b.createdAt).getTime();
-          return aTime - bTime;
-        });
-
-        return result;
-      })(),
-      (error) => databaseError('Failed to get thread recursive', error)
-    ),
+    return fetchWithDescendants(rootId).map(sortByDepthAndCreatedAt);
+  },
 });

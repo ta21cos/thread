@@ -1,4 +1,4 @@
-import { ok, ResultAsync } from 'neverthrow';
+import { ResultAsync } from 'neverthrow';
 import { createNoteService } from '../../services/note.service';
 import { ThreadService } from '../../services/thread.service';
 import { errorToStatusCode, databaseError, type NoteError } from '../../errors/domain-errors';
@@ -31,13 +31,11 @@ const app = createRouter()
 
     return await noteService
       .getRootNotes(limit, offset)
-      .andThen((d) =>
-        ok({
-          notes: d.notes.map(serialize),
-          total: d.total,
-          hasMore: d.hasMore,
-        })
-      )
+      .map((d) => ({
+        notes: d.notes.map(serialize),
+        total: d.total,
+        hasMore: d.hasMore,
+      }))
       .match(
         (data) => c.json(data),
         (error: NoteError) => c.json(toErrorResponse(error), errorToStatusCode(error))
@@ -52,7 +50,7 @@ const app = createRouter()
 
     return await noteService
       .createNote(data)
-      .andThen((note) => ok(serialize(note)))
+      .map(serialize)
       .match(
         (data) => c.json(data, 201),
         (error: NoteError) => c.json(toErrorResponse(error), errorToStatusCode(error))
@@ -96,7 +94,7 @@ const app = createRouter()
 
     return await noteService
       .updateNote(id, data)
-      .andThen((note) => ok(serialize(note)))
+      .map(serialize)
       .match(
         (data) => c.json(data),
         (error: NoteError) => c.json(toErrorResponse(error), errorToStatusCode(error))
@@ -109,13 +107,10 @@ const app = createRouter()
     const noteService = createNoteService({ db });
     const { id } = c.req.valid('param');
 
-    return await noteService
-      .deleteNote(id)
-      .andThen(() => ok(null))
-      .match(
-        () => c.body(null, 204),
-        (error: NoteError) => c.json(toErrorResponse(error), errorToStatusCode(error))
-      );
+    return await noteService.deleteNote(id).match(
+      () => c.body(null, 204),
+      (error: NoteError) => c.json(toErrorResponse(error), errorToStatusCode(error))
+    );
   });
 
 export default app;
