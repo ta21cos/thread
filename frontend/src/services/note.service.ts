@@ -18,6 +18,7 @@ interface NoteWithThreadResponse {
     createdAt: string;
     updatedAt: string;
     depth: number;
+    isHidden: boolean;
     replyCount?: number;
   };
   thread: Array<{
@@ -27,6 +28,7 @@ interface NoteWithThreadResponse {
     createdAt: string;
     updatedAt: string;
     depth: number;
+    isHidden: boolean;
     replyCount?: number;
   }>;
 }
@@ -34,6 +36,7 @@ interface NoteWithThreadResponse {
 interface CreateNoteDto {
   content: string;
   parentId?: string;
+  isHidden?: boolean;
 }
 
 interface UpdateNoteDto {
