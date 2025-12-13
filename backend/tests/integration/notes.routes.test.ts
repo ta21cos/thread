@@ -46,17 +46,19 @@ describe('Notes Routes Integration Tests', () => {
     content: string;
     parentId: string | null;
     depth: number;
+    isHidden?: boolean;
     createdAt: Date;
     updatedAt: Date;
   }) => {
     await env.DB.prepare(
-      'INSERT INTO notes (id, content, parent_id, depth, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT INTO notes (id, content, parent_id, depth, is_hidden, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
     )
       .bind(
         note.id,
         note.content,
         note.parentId,
         note.depth,
+        note.isHidden ? 1 : 0,
         note.createdAt.toISOString(),
         note.updatedAt.toISOString()
       )
@@ -601,6 +603,200 @@ describe('Notes Routes Integration Tests', () => {
       });
 
       expect(res.status).toBe(401);
+    });
+  });
+
+  describe('isHidden functionality', () => {
+    describe('POST /api/notes with isHidden', () => {
+      it('should create a root note with isHidden=true', async () => {
+        const res = await requestWithEnv('/api/notes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: 'Hidden note',
+            isHidden: true,
+          }),
+        });
+
+        expect(res.status).toBe(201);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data = (await res.json()) as any;
+        expect(data.isHidden).toBe(true);
+        expect(data.content).toBe('Hidden note');
+      });
+
+      it('should create a root note with isHidden=false by default', async () => {
+        const res = await requestWithEnv('/api/notes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: 'Visible note',
+          }),
+        });
+
+        expect(res.status).toBe(201);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data = (await res.json()) as any;
+        expect(data.isHidden).toBe(false);
+      });
+
+      it('should return 400 when trying to set isHidden=true on a reply', async () => {
+        const parentId = generateId();
+        await insertNote({
+          id: parentId,
+          content: 'Parent note',
+          parentId: null,
+          depth: 0,
+          isHidden: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        const res = await requestWithEnv('/api/notes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: 'Child note',
+            parentId: parentId,
+            isHidden: true,
+          }),
+        });
+
+        expect(res.status).toBe(400);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data = (await res.json()) as any;
+        expect(data.error).toBe('InvalidHiddenReplyError');
+      });
+
+      it('should inherit parent isHidden status for replies', async () => {
+        const parentId = generateId();
+        await insertNote({
+          id: parentId,
+          content: 'Hidden parent',
+          parentId: null,
+          depth: 0,
+          isHidden: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        const res = await requestWithEnv('/api/notes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: 'Child note',
+            parentId: parentId,
+          }),
+        });
+
+        expect(res.status).toBe(201);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data = (await res.json()) as any;
+        expect(data.isHidden).toBe(true);
+        expect(data.parentId).toBe(parentId);
+      });
+    });
+
+    describe('GET /api/notes with includeHidden', () => {
+      it('should filter out hidden notes by default', async () => {
+        const now = new Date();
+        await insertNote({
+          id: generateId(),
+          content: 'Visible note 1',
+          parentId: null,
+          depth: 0,
+          isHidden: false,
+          createdAt: now,
+          updatedAt: now,
+        });
+        await insertNote({
+          id: generateId(),
+          content: 'Hidden note',
+          parentId: null,
+          depth: 0,
+          isHidden: true,
+          createdAt: new Date(now.getTime() + 1000),
+          updatedAt: now,
+        });
+        await insertNote({
+          id: generateId(),
+          content: 'Visible note 2',
+          parentId: null,
+          depth: 0,
+          isHidden: false,
+          createdAt: new Date(now.getTime() + 2000),
+          updatedAt: now,
+        });
+
+        const res = await requestWithEnv('/api/notes?limit=10&offset=0');
+
+        expect(res.status).toBe(200);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data = (await res.json()) as any;
+        expect(data.notes).toHaveLength(2);
+        expect(data.total).toBe(2);
+        expect(data.notes.every((n: { isHidden: boolean }) => n.isHidden === false)).toBe(true);
+      });
+
+      it('should include hidden notes when includeHidden=true', async () => {
+        const now = new Date();
+        await insertNote({
+          id: generateId(),
+          content: 'Visible note',
+          parentId: null,
+          depth: 0,
+          isHidden: false,
+          createdAt: now,
+          updatedAt: now,
+        });
+        await insertNote({
+          id: generateId(),
+          content: 'Hidden note',
+          parentId: null,
+          depth: 0,
+          isHidden: true,
+          createdAt: new Date(now.getTime() + 1000),
+          updatedAt: now,
+        });
+
+        const res = await requestWithEnv('/api/notes?limit=10&offset=0&includeHidden=true');
+
+        expect(res.status).toBe(200);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data = (await res.json()) as any;
+        expect(data.notes).toHaveLength(2);
+        expect(data.total).toBe(2);
+      });
+
+      it('should exclude hidden notes when includeHidden=false explicitly', async () => {
+        const now = new Date();
+        await insertNote({
+          id: generateId(),
+          content: 'Visible note',
+          parentId: null,
+          depth: 0,
+          isHidden: false,
+          createdAt: now,
+          updatedAt: now,
+        });
+        await insertNote({
+          id: generateId(),
+          content: 'Hidden note',
+          parentId: null,
+          depth: 0,
+          isHidden: true,
+          createdAt: new Date(now.getTime() + 1000),
+          updatedAt: now,
+        });
+
+        const res = await requestWithEnv('/api/notes?limit=10&offset=0&includeHidden=false');
+
+        expect(res.status).toBe(200);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data = (await res.json()) as any;
+        expect(data.notes).toHaveLength(1);
+        expect(data.notes[0].isHidden).toBe(false);
+      });
     });
   });
 });
