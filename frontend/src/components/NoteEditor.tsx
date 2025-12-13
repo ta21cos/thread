@@ -2,7 +2,6 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Note } from '../../../shared/types';
 import { Button } from '@/components/ui/button';
 import { TextInput } from '@/components/ui/text-input';
-import { cn } from '@/lib/utils';
 import { useFocus } from '@/store/focus.context';
 
 interface NoteEditorProps {

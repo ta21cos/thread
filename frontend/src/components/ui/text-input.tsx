@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect, forwardRef } from 'react';
+import React, { useRef, useCallback, useEffect, forwardRef } from 'react';
 import { Paperclip, Smile, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
