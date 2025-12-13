@@ -1,5 +1,5 @@
 import { ResultAsync } from 'neverthrow';
-import { createNoteService } from '../../services/note.service';
+import { createNoteService } from '../../services/note/note.service';
 import { ThreadService } from '../../services/thread.service';
 import { errorToStatusCode, databaseError, type NoteError } from '../../errors/domain-errors';
 import {
