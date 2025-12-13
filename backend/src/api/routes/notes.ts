@@ -1,7 +1,7 @@
-import { ok, ResultAsync } from 'neverthrow';
-import { createNoteService } from '../../services/note.service';
-import { ThreadService } from '../../services/thread.service';
-import { errorToStatusCode, databaseError, type NoteError } from '../../errors/domain-errors';
+import { okAsync } from 'neverthrow';
+import { createNoteService } from '../../services/note';
+import { createThreadService } from '../../services/thread';
+import { errorToStatusCode, type NoteError } from '../../errors/domain-errors';
 import {
   validateCreateNote,
   validateUpdateNote,
@@ -31,13 +31,11 @@ const app = createRouter()
 
     return await noteService
       .getRootNotes(limit, offset)
-      .andThen((d) =>
-        ok({
-          notes: d.notes.map(serialize),
-          total: d.total,
-          hasMore: d.hasMore,
-        })
-      )
+      .map((d) => ({
+        notes: d.notes.map(serialize),
+        total: d.total,
+        hasMore: d.hasMore,
+      }))
       .match(
         (data) => c.json(data),
         (error: NoteError) => c.json(toErrorResponse(error), errorToStatusCode(error))
@@ -52,7 +50,7 @@ const app = createRouter()
 
     return await noteService
       .createNote(data)
-      .andThen((note) => ok(serialize(note)))
+      .map(serialize)
       .match(
         (data) => c.json(data, 201),
         (error: NoteError) => c.json(toErrorResponse(error), errorToStatusCode(error))
@@ -63,24 +61,21 @@ const app = createRouter()
   .get('/:id', requireAuth, validateNoteId, async (c) => {
     const db = c.get('db');
     const noteService = createNoteService({ db });
-    const threadService = new ThreadService({ db });
+    const threadService = createThreadService({ db });
     const { id } = c.req.valid('param');
     const includeThread = c.req.query('includeThread') !== 'false';
 
     return await noteService
       .getNoteById(id)
-      .andThen((note) => {
-        return ResultAsync.fromPromise(
-          includeThread ? threadService.getThread(id) : Promise.resolve([]),
-          (error) => databaseError('Failed to get thread', error)
-        ).map((thread) => {
+      .andThen((note) =>
+        (includeThread ? threadService.getThread(id) : okAsync([])).map((thread) => {
           const response: NoteDetailResponse = {
             note: serialize(note),
             thread: thread.map(serialize),
           };
           return response;
-        });
-      })
+        })
+      )
       .match(
         (data) => c.json(data),
         (error: NoteError) => c.json(toErrorResponse(error), errorToStatusCode(error))
@@ -96,7 +91,7 @@ const app = createRouter()
 
     return await noteService
       .updateNote(id, data)
-      .andThen((note) => ok(serialize(note)))
+      .map(serialize)
       .match(
         (data) => c.json(data),
         (error: NoteError) => c.json(toErrorResponse(error), errorToStatusCode(error))
@@ -109,13 +104,10 @@ const app = createRouter()
     const noteService = createNoteService({ db });
     const { id } = c.req.valid('param');
 
-    return await noteService
-      .deleteNote(id)
-      .andThen(() => ok(null))
-      .match(
-        () => c.body(null, 204),
-        (error: NoteError) => c.json(toErrorResponse(error), errorToStatusCode(error))
-      );
+    return await noteService.deleteNote(id).match(
+      () => c.body(null, 204),
+      (error: NoteError) => c.json(toErrorResponse(error), errorToStatusCode(error))
+    );
   });
 
 export default app;

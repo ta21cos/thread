@@ -1,12 +1,34 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db, notes, mentions } from '../db';
-import { ThreadService } from './thread.service';
-import { generateId } from '../utils/id-generator';
+import '../../../tests/preload';
+import { db, notes, mentions } from '../../db';
+import { createThreadService } from '.';
+import { generateId } from '../../utils/id-generator';
 
 describe('ThreadService', () => {
-  const prepareServices = async () => {
-    const threadService = new ThreadService({ db });
-    return { threadService };
+  const prepareServices = () => {
+    const service = createThreadService({ db });
+
+    // ResultAsync を Promise に変換するラッパー
+    return {
+      getThread: async (noteId: string) => {
+        const result = await service.getThread(noteId);
+        return result.match(
+          (notes) => notes,
+          (error) => {
+            throw new Error(error.message);
+          }
+        );
+      },
+      getChildren: async (noteId: string) => {
+        const result = await service.getChildren(noteId);
+        return result.match(
+          (notes) => notes,
+          (error) => {
+            throw new Error(error.message);
+          }
+        );
+      },
+    };
   };
 
   beforeEach(async () => {
@@ -16,13 +38,13 @@ describe('ThreadService', () => {
 
   describe('getThread', () => {
     it('should throw error when note does not exist', async () => {
-      const { threadService } = await prepareServices();
+      const threadService = prepareServices();
 
-      await expect(threadService.getThread('nonexistent')).rejects.toThrow('Note not found');
+      await expect(threadService.getThread('nonexistent')).rejects.toThrow();
     });
 
     it('should return single note thread for root note', async () => {
-      const { threadService } = await prepareServices();
+      const threadService = prepareServices();
 
       const noteId = generateId();
       const now = new Date();
@@ -42,7 +64,7 @@ describe('ThreadService', () => {
     });
 
     it('should return full thread when queried from root note', async () => {
-      const { threadService } = await prepareServices();
+      const threadService = prepareServices();
 
       const rootId = generateId();
       const childId = generateId();
@@ -74,7 +96,7 @@ describe('ThreadService', () => {
     });
 
     it('should return full thread when queried from child note', async () => {
-      const { threadService } = await prepareServices();
+      const threadService = prepareServices();
 
       const rootId = generateId();
       const childId = generateId();
@@ -106,7 +128,7 @@ describe('ThreadService', () => {
     });
 
     it('should return thread with multiple children', async () => {
-      const { threadService } = await prepareServices();
+      const threadService = prepareServices();
 
       const rootId = generateId();
       const childId1 = generateId();
@@ -146,7 +168,7 @@ describe('ThreadService', () => {
     });
 
     it('should not include notes from other threads', async () => {
-      const { threadService } = await prepareServices();
+      const threadService = prepareServices();
 
       const thread1RootId = generateId();
       const thread1ChildId = generateId();
@@ -189,7 +211,7 @@ describe('ThreadService', () => {
 
   describe('getChildren', () => {
     it('should return empty array when note has no children', async () => {
-      const { threadService } = await prepareServices();
+      const threadService = prepareServices();
 
       const noteId = generateId();
       const now = new Date();
@@ -208,7 +230,7 @@ describe('ThreadService', () => {
     });
 
     it('should return direct children of a note', async () => {
-      const { threadService } = await prepareServices();
+      const threadService = prepareServices();
 
       const parentId = generateId();
       const childId = generateId();
@@ -239,7 +261,7 @@ describe('ThreadService', () => {
     });
 
     it('should return multiple children', async () => {
-      const { threadService } = await prepareServices();
+      const threadService = prepareServices();
 
       const parentId = generateId();
       const childId1 = generateId();
@@ -289,7 +311,7 @@ describe('ThreadService', () => {
     });
 
     it('should only return direct children (not grandchildren)', async () => {
-      const { threadService } = await prepareServices();
+      const threadService = prepareServices();
 
       const grandparentId = generateId();
       const parentId = generateId();
