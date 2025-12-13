@@ -3,9 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useFocus } from '@/store/focus.context';
 import {
   X,
-  Send,
-  Smile,
-  Paperclip,
   MoreVertical,
   Trash2,
   Bookmark,
@@ -13,10 +10,10 @@ import {
   Edit,
   Pin,
   ArrowLeft,
+  MessageSquare,
 } from 'lucide-react';
 import { Note } from '../../../shared/types';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   DropdownMenu,
@@ -27,6 +24,7 @@ import {
 import { getRelativeTime } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import NoteEditor from './NoteEditor';
+import { TextInput } from '@/components/ui/text-input';
 
 interface ThreadViewProps {
   rootNote: Note;
@@ -87,13 +85,17 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
 
   const handleReply = async () => {
     if (!replyContent.trim()) return;
-    await onReply(rootNote.id, replyContent);
-    setReplyContent('');
+    try {
+      await onReply(rootNote.id, replyContent);
+      setReplyContent('');
 
-    // NOTE: Smart auto-focus - re-focus for next reply
-    setTimeout(() => {
-      replyInputRef.current?.focus();
-    }, 0);
+      // NOTE: Smart auto-focus - re-focus for next reply
+      setTimeout(() => {
+        replyInputRef.current?.focus();
+      }, 0);
+    } catch (error) {
+      console.error('Failed to reply:', error);
+    }
   };
 
   const handleEdit = async (noteId: string, content: string) => {
@@ -316,7 +318,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
             {replies.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <div className="mb-4 rounded-full bg-accent p-4">
-                  <Smile className="h-8 w-8 text-muted-foreground/50" />
+                  <MessageSquare className="h-8 w-8 text-muted-foreground/50" />
                 </div>
                 <p className="font-medium text-foreground text-sm">No replies yet</p>
                 <p className="text-muted-foreground text-xs">Be the first to reply to this note</p>
@@ -464,41 +466,14 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
 
       {/* Reply Input */}
       <div className="border-t border-border p-4 flex-shrink-0" data-testid="thread-reply-input">
-        <div className="flex items-end gap-2">
-          <div className="flex-1 rounded-lg border border-input bg-card">
-            <Textarea
-              ref={replyInputRef}
-              placeholder="Reply... (Cmd/Ctrl+Enter to send)"
-              value={replyContent}
-              onChange={(e) => setReplyContent(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                  e.preventDefault();
-                  handleReply();
-                }
-              }}
-              className="border-0 bg-transparent focus-visible:ring-0 min-h-[40px] max-h-[120px] resize-none"
-              rows={1}
-              data-testid="thread-reply-textarea"
-            />
-            <div className="flex items-center gap-1 px-3 pb-2">
-              <Button size="icon" variant="ghost" className="h-7 w-7">
-                <Paperclip className="h-4 w-4" />
-              </Button>
-              <Button size="icon" variant="ghost" className="h-7 w-7">
-                <Smile className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          <Button
-            size="icon"
-            className="h-10 w-10 shrink-0"
-            onClick={handleReply}
-            data-testid="thread-reply-submit"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
+        <TextInput
+          ref={replyInputRef}
+          value={replyContent}
+          onChange={setReplyContent}
+          onSubmit={handleReply}
+          placeholder="Reply... (Cmd/Ctrl+Enter to send)"
+          autoFocus={false}
+        />
       </div>
     </div>
   );

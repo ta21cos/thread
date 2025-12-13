@@ -1,8 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Note } from '../../../shared/types';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
+import { TextInput } from '@/components/ui/text-input';
 import { useFocus } from '@/store/focus.context';
 
 interface NoteEditorProps {
@@ -61,9 +60,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   }, [autoFocus, initialContent]);
 
   const handleContentChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      const newContent = e.target.value;
-
+    (newContent: string) => {
       if (newContent.length > maxLength) {
         setError(`Content exceeds ${maxLength} characters`);
         return;
@@ -71,22 +68,28 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
       setContent(newContent);
       setError(null);
-      setCursorPosition(e.target.selectionStart);
 
-      // NOTE: Detect @ mention trigger
-      if (onMentionTrigger) {
-        const beforeCursor = newContent.slice(0, e.target.selectionStart);
-        const mentionMatch = beforeCursor.match(/@(\w*)$/);
-        if (mentionMatch) {
-          onMentionTrigger(mentionMatch[1]);
+      // NOTE: Get cursor position from textarea ref
+      if (textareaRef.current) {
+        setCursorPosition(textareaRef.current.selectionStart);
+
+        // NOTE: Detect @ mention trigger
+        if (onMentionTrigger) {
+          const beforeCursor = newContent.slice(0, textareaRef.current.selectionStart);
+          const mentionMatch = beforeCursor.match(/@(\w*)$/);
+          if (mentionMatch) {
+            onMentionTrigger(mentionMatch[1]);
+          }
         }
       }
     },
     [maxLength, onMentionTrigger]
   );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
 
     if (!content.trim()) {
       setError('Note content cannot be empty');
@@ -121,19 +124,13 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      // NOTE: Submit with Cmd/Ctrl + Enter
-      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        handleSubmit(e as React.FormEvent);
-      }
-
       // NOTE: Cancel with Escape
       if (e.key === 'Escape' && onCancel) {
         e.preventDefault();
         onCancel();
       }
     },
-    [handleSubmit, onCancel]
+    [onCancel]
   );
 
   const insertMention = useCallback(
@@ -183,65 +180,38 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="space-y-2">
-          <Textarea
-            ref={textareaRef}
-            value={content}
-            onChange={handleContentChange}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            className={cn(
-              'min-h-20 resize-none',
-              error && 'border-destructive focus-visible:ring-destructive'
-            )}
-            disabled={isSubmitting}
-            rows={3}
-            data-testid="note-editor-textarea"
-          />
+      <form onSubmit={handleSubmit}>
+        <TextInput
+          ref={textareaRef}
+          value={content}
+          onChange={handleContentChange}
+          onSubmit={handleSubmit}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={isSubmitting}
+          autoFocus={autoFocus}
+        />
 
-          <div className="flex items-center justify-between">
-            <div className="text-muted-foreground text-xs" data-testid="note-editor-char-count">
-              <span className={cn(content.length > maxLength * 0.9 && 'text-warning')}>
-                {content.length} / {maxLength}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {onCancel && (
-                <Button
-                  type="button"
-                  onClick={onCancel}
-                  variant="outline"
-                  size="sm"
-                  disabled={isSubmitting}
-                  data-testid="note-editor-cancel"
-                >
-                  Cancel
-                </Button>
-              )}
-
-              <Button
-                type="submit"
-                size="sm"
-                disabled={isSubmitting || !content.trim() || content.length > maxLength}
-                data-testid="note-editor-submit"
-              >
-                {isSubmitting ? 'Saving...' : parentNote ? 'Reply' : 'Create Note'}
-              </Button>
-            </div>
+        {onCancel && (
+          <div className="flex items-center gap-2 mt-2">
+            <Button
+              type="button"
+              onClick={onCancel}
+              variant="outline"
+              size="sm"
+              disabled={isSubmitting}
+              data-testid="note-editor-cancel"
+            >
+              Cancel
+            </Button>
           </div>
+        )}
 
-          {error && (
-            <div className="text-destructive text-sm" data-testid="note-editor-error">
-              {error}
-            </div>
-          )}
-        </div>
-
-        <div className="text-muted-foreground text-xs">
-          <span>Tip: Use @ID to mention other notes • Press Cmd/Ctrl+Enter to submit</span>
-        </div>
+        {error && (
+          <div className="text-destructive text-sm mt-2" data-testid="note-editor-error">
+            {error}
+          </div>
+        )}
       </form>
     </div>
   );
