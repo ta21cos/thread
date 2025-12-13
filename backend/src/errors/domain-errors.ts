@@ -39,6 +39,10 @@ export interface DepthLimitExceededError extends DomainError {
   readonly maxDepth: number;
 }
 
+export interface InvalidHiddenReplyError extends DomainError {
+  readonly _tag: 'InvalidHiddenReplyError';
+}
+
 // Not Found Errors (404 Not Found)
 export interface NoteNotFoundError extends DomainError {
   readonly _tag: 'NoteNotFoundError';
@@ -63,6 +67,7 @@ export type NoteError =
   | ContentEmptyError
   | CircularReferenceError
   | DepthLimitExceededError
+  | InvalidHiddenReplyError
   | NoteNotFoundError
   | ParentNoteNotFoundError
   | DatabaseError;
@@ -105,6 +110,11 @@ export const depthLimitExceededError = (maxDepth: number): DepthLimitExceededErr
   maxDepth,
 });
 
+export const invalidHiddenReplyError = (): InvalidHiddenReplyError => ({
+  _tag: 'InvalidHiddenReplyError',
+  message: 'Only root notes can be marked as hidden. Replies inherit hidden status from parent.',
+});
+
 export const noteNotFoundError = (noteId: string): NoteNotFoundError => ({
   _tag: 'NoteNotFoundError',
   message: `Note with id '${noteId}' not found`,
@@ -135,7 +145,8 @@ export const isClientError = (error: NoteError): boolean =>
   error._tag === 'ContentTooLongError' ||
   error._tag === 'ContentEmptyError' ||
   error._tag === 'CircularReferenceError' ||
-  error._tag === 'DepthLimitExceededError';
+  error._tag === 'DepthLimitExceededError' ||
+  error._tag === 'InvalidHiddenReplyError';
 
 // HTTP status code mapping
 export const errorToStatusCode = (error: NoteError): 400 | 404 | 500 => {
@@ -148,6 +159,7 @@ export const errorToStatusCode = (error: NoteError): 400 | 404 | 500 => {
     case 'ContentEmptyError':
     case 'CircularReferenceError':
     case 'DepthLimitExceededError':
+    case 'InvalidHiddenReplyError':
       return 400;
     case 'DatabaseError':
       return 500;

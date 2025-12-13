@@ -18,6 +18,7 @@ export const notes = sqliteTable('notes', {
     .notNull()
     .default(sql`(unixepoch())`),
   depth: integer('depth').notNull().default(0),
+  isHidden: integer('is_hidden', { mode: 'boolean' }).notNull().default(false),
 });
 
 export type Note = typeof notes.$inferSelect;

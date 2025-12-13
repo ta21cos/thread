@@ -26,6 +26,7 @@ import {
   extractMentionIds,
   detectCircularReference,
   calculateDepthFromParent,
+  validateIsHidden,
 } from './validation';
 
 // ==========================================
@@ -64,9 +65,18 @@ export const createNoteService = ({ db }: { db: Database }): NoteServiceHandle =
     const mentionIds = extractMentionIds(input.content);
 
     return fromResult(validateContentLength(input.content))
+      .andThen(() => fromResult(validateIsHidden(input.isHidden, input.parentId)))
       .andThen(() => (input.parentId ? noteRepo.findById(input.parentId) : okAsync(undefined)))
-      .andThen((parent) => fromResult(calculateDepthFromParent(parent, input.parentId)))
-      .andThen((depth) =>
+      .andThen((parent) => {
+        const depth = input.parentId && parent ? parent.depth + 1 : 0;
+        const isHidden = input.parentId && parent ? parent.isHidden : (input.isHidden ?? false);
+
+        return fromResult(calculateDepthFromParent(parent, input.parentId)).map(() => ({
+          depth,
+          isHidden,
+        }));
+      })
+      .andThen(({ depth, isHidden }) =>
         mentionIds.length === 0
           ? okAsync({
               id: noteId,
@@ -74,6 +84,7 @@ export const createNoteService = ({ db }: { db: Database }): NoteServiceHandle =
               parentId: input.parentId,
               depth,
               mentionIds: [],
+              isHidden,
             })
           : validateCircularReference(noteId, mentionIds).map(() => ({
               id: noteId,
@@ -81,6 +92,7 @@ export const createNoteService = ({ db }: { db: Database }): NoteServiceHandle =
               parentId: input.parentId,
               depth,
               mentionIds,
+              isHidden,
             }))
       );
   };
@@ -116,6 +128,7 @@ export const createNoteService = ({ db }: { db: Database }): NoteServiceHandle =
       content: data.content,
       parentId: data.parentId,
       depth: data.depth,
+      isHidden: data.isHidden,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -153,14 +166,15 @@ export const createNoteService = ({ db }: { db: Database }): NoteServiceHandle =
 
     getNoteById: (id) => noteRepo.findById(id).andThen(ensureNoteExists(id)),
 
-    getRootNotes: (limit = 20, offset = 0) =>
-      ResultAsync.combine([noteRepo.findRootNotes(limit, offset), noteRepo.countRootNotes()]).map(
-        ([notes, total]) => ({
-          notes,
-          total,
-          hasMore: offset + notes.length < total,
-        })
-      ),
+    getRootNotes: (limit = 20, offset = 0, includeHidden = false) =>
+      ResultAsync.combine([
+        noteRepo.findRootNotes(limit, offset, includeHidden),
+        noteRepo.countRootNotes(includeHidden),
+      ]).map(([notes, total]) => ({
+        notes,
+        total,
+        hasMore: offset + notes.length < total,
+      })),
 
     updateNote: (id, input) => {
       const mentionIds = extractMentionIds(input.content);

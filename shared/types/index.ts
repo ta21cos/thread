@@ -8,6 +8,7 @@ export interface Note {
   createdAt: string; // ISO 8601 string
   updatedAt: string; // ISO 8601 string
   depth: number; // Thread depth (0 for root)
+  isHidden: boolean; // Whether note is hidden (only shown when setting enabled)
   replyCount?: number; // Number of direct replies (optional, included in list views)
   tags?: string[]; // Optional tags for categorization (UI-only for now)
   images?: string[]; // Optional image URLs (UI-only for now)
@@ -35,6 +36,7 @@ export interface SearchIndex {
 export interface CreateNoteRequest {
   content: string;
   parentId?: string;
+  isHidden?: boolean;
 }
 
 export interface UpdateNoteRequest {
