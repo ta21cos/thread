@@ -15,6 +15,7 @@ import {
   parentNoteNotFoundError,
   depthLimitExceededError,
   circularReferenceError,
+  invalidHiddenReplyError,
 } from '../../errors/domain-errors';
 
 // ==========================================
@@ -96,4 +97,18 @@ export const calculateDepthFromParent = (
   if (!parent) return err(parentNoteNotFoundError(parentId));
   if (parent.depth >= 1) return err(depthLimitExceededError(1));
   return ok(1);
+};
+
+/**
+ * isHiddenフィールドのバリデーション
+ * リプライ（parentIdあり）でisHidden=trueを設定しようとした場合はエラー
+ */
+export const validateIsHidden = (
+  isHidden: boolean | undefined,
+  parentId?: string
+): Result<void, NoteError> => {
+  if (isHidden === true && parentId !== undefined) {
+    return err(invalidHiddenReplyError());
+  }
+  return ok(undefined);
 };

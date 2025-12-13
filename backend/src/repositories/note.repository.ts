@@ -6,7 +6,7 @@
  */
 
 import { ResultAsync, okAsync } from 'neverthrow';
-import { eq, isNull, desc, asc } from 'drizzle-orm';
+import { eq, isNull, desc, asc, and } from 'drizzle-orm';
 import { notes, type Note, type NewNote, type NoteWithReplyCount, type Database } from '../db';
 import type { NoteError } from '../errors/domain-errors';
 import { dbQuery, dbQueryFirst } from './helpers';
@@ -45,9 +45,10 @@ export interface NoteRepository {
   readonly update: (id: string, content: string) => ResultAsync<Note, NoteError>;
   readonly findRootNotes: (
     limit: number,
-    offset: number
+    offset: number,
+    includeHidden?: boolean
   ) => ResultAsync<NoteWithReplyCount[], NoteError>;
-  readonly countRootNotes: () => ResultAsync<number, NoteError>;
+  readonly countRootNotes: (includeHidden?: boolean) => ResultAsync<number, NoteError>;
   readonly findByParentId: (parentId: string) => ResultAsync<Note[], NoteError>;
   readonly delete: (id: string) => ResultAsync<void, NoteError>;
   readonly getThreadRecursive: (rootId: string) => ResultAsync<Note[], NoteError>;
@@ -115,27 +116,37 @@ export const createNoteRepository = ({ db }: { db: Database }): NoteRepository =
         'Failed to update note'
       ),
 
-    findRootNotes: (limit, offset) =>
-      dbQuery(
+    findRootNotes: (limit, offset, includeHidden = false) => {
+      const condition = includeHidden
+        ? isNull(notes.parentId)
+        : and(isNull(notes.parentId), eq(notes.isHidden, false));
+
+      return dbQuery(
         db
           .select()
           .from(notes)
-          .where(isNull(notes.parentId))
+          .where(condition)
           .orderBy(desc(notes.createdAt))
           .limit(limit)
           .offset(offset),
         'Failed to find root notes'
-      ).andThen((rootNotes) => ResultAsync.combine(rootNotes.map(countReplies))),
+      ).andThen((rootNotes) => ResultAsync.combine(rootNotes.map(countReplies)));
+    },
 
-    countRootNotes: () =>
-      dbQuery(
+    countRootNotes: (includeHidden = false) => {
+      const condition = includeHidden
+        ? isNull(notes.parentId)
+        : and(isNull(notes.parentId), eq(notes.isHidden, false));
+
+      return dbQuery(
         db
           .select()
           .from(notes)
-          .where(isNull(notes.parentId))
+          .where(condition)
           .then((result) => result.length),
         'Failed to count root notes'
-      ),
+      );
+    },
 
     findByParentId: (parentId) =>
       dbQuery(

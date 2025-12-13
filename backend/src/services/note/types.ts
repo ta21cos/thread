@@ -16,6 +16,7 @@ import type { NoteError } from '../../errors/domain-errors';
 export interface CreateNoteInput {
   readonly content: string;
   readonly parentId?: string;
+  readonly isHidden?: boolean;
 }
 
 /** ノート更新のための入力データ */
@@ -45,6 +46,7 @@ export interface ValidatedNoteData {
   readonly parentId?: string;
   readonly depth: number;
   readonly mentionIds: string[];
+  readonly isHidden: boolean;
 }
 
 // ==========================================
@@ -66,7 +68,8 @@ export interface NoteServiceHandle {
   /** ルートノートを取得 */
   readonly getRootNotes: (
     limit?: number,
-    offset?: number
+    offset?: number,
+    includeHidden?: boolean
   ) => ResultAsync<PaginatedNotes, NoteError>;
   /** ノートを更新 */
   readonly updateNote: (id: string, input: UpdateNoteInput) => ResultAsync<Note, NoteError>;

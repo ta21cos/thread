@@ -28,9 +28,10 @@ const app = createRouter()
     const noteService = createNoteService({ db });
 
     const { limit, offset } = c.req.valid('query');
+    const includeHidden = c.req.query('includeHidden') === 'true';
 
     return await noteService
-      .getRootNotes(limit, offset)
+      .getRootNotes(limit, offset, includeHidden)
       .map((d) => ({
         notes: d.notes.map(serialize),
         total: d.total,

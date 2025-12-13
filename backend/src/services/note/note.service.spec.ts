@@ -13,7 +13,7 @@ describe('NoteService', () => {
 
     // ResultAsyncをPromiseに変換するラッパー
     const noteService = {
-      createNote: async (input: { content: string; parentId?: string }) => {
+      createNote: async (input: { content: string; parentId?: string; isHidden?: boolean }) => {
         const result = await service.createNote(input);
         return result.match(
           (note) => note,
@@ -35,8 +35,8 @@ describe('NoteService', () => {
           }
         );
       },
-      getRootNotes: async (limit?: number, offset?: number) => {
-        const result = await service.getRootNotes(limit, offset);
+      getRootNotes: async (limit?: number, offset?: number, includeHidden?: boolean) => {
+        const result = await service.getRootNotes(limit, offset, includeHidden);
         return result.match(
           (data) => data,
           (error) => {
@@ -765,6 +765,179 @@ describe('NoteService', () => {
 
       expect(result.parentId).toBe(parentId);
       expect(result.depth).toBe(1);
+    });
+  });
+
+  describe('isHidden functionality', () => {
+    it('should create a root note with isHidden=true', async () => {
+      const { noteService } = await prepareServices();
+
+      const result = await noteService.createNote({
+        content: 'Hidden note',
+        isHidden: true,
+      });
+
+      expect(result).toBeDefined();
+      expect(result.content).toBe('Hidden note');
+      expect(result.isHidden).toBe(true);
+      expect(result.parentId).toBeNull();
+    });
+
+    it('should create a root note with isHidden=false by default', async () => {
+      const { noteService } = await prepareServices();
+
+      const result = await noteService.createNote({
+        content: 'Visible note',
+      });
+
+      expect(result).toBeDefined();
+      expect(result.isHidden).toBe(false);
+    });
+
+    it('should throw error when trying to set isHidden=true on a reply', async () => {
+      const { noteService } = await prepareServices();
+
+      const parentId = generateId();
+      const now = new Date();
+      await db.insert(notes).values({
+        id: parentId,
+        content: 'Parent note',
+        parentId: null,
+        depth: 0,
+        isHidden: false,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      await expect(
+        noteService.createNote({
+          content: 'Child note',
+          parentId: parentId,
+          isHidden: true,
+        })
+      ).rejects.toThrow('Only root notes can be marked as hidden. Replies inherit hidden status from parent.');
+    });
+
+    it('should inherit parent isHidden status for replies', async () => {
+      const { noteService } = await prepareServices();
+
+      const parentId = generateId();
+      const now = new Date();
+      await db.insert(notes).values({
+        id: parentId,
+        content: 'Hidden parent',
+        parentId: null,
+        depth: 0,
+        isHidden: true,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      const result = await noteService.createNote({
+        content: 'Child note',
+        parentId: parentId,
+      });
+
+      expect(result).toBeDefined();
+      expect(result.isHidden).toBe(true);
+      expect(result.parentId).toBe(parentId);
+    });
+
+    it('should filter out hidden notes by default in getRootNotes', async () => {
+      const { noteService } = await prepareServices();
+
+      const now = new Date();
+      await db.insert(notes).values([
+        {
+          id: generateId(),
+          content: 'Visible note 1',
+          parentId: null,
+          depth: 0,
+          isHidden: false,
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: generateId(),
+          content: 'Hidden note',
+          parentId: null,
+          depth: 0,
+          isHidden: true,
+          createdAt: new Date(now.getTime() + 1000),
+          updatedAt: now,
+        },
+        {
+          id: generateId(),
+          content: 'Visible note 2',
+          parentId: null,
+          depth: 0,
+          isHidden: false,
+          createdAt: new Date(now.getTime() + 2000),
+          updatedAt: now,
+        },
+      ]);
+
+      const result = await noteService.getRootNotes();
+
+      expect(result.notes).toHaveLength(2);
+      expect(result.total).toBe(2);
+      expect(result.notes.every((n) => n.isHidden === false)).toBe(true);
+    });
+
+    it('should include hidden notes when includeHidden=true', async () => {
+      const { noteService } = await prepareServices();
+
+      const now = new Date();
+      await db.insert(notes).values([
+        {
+          id: generateId(),
+          content: 'Visible note',
+          parentId: null,
+          depth: 0,
+          isHidden: false,
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: generateId(),
+          content: 'Hidden note',
+          parentId: null,
+          depth: 0,
+          isHidden: true,
+          createdAt: new Date(now.getTime() + 1000),
+          updatedAt: now,
+        },
+      ]);
+
+      const result = await noteService.getRootNotes(20, 0, true);
+
+      expect(result.notes).toHaveLength(2);
+      expect(result.total).toBe(2);
+    });
+
+    it('should allow isHidden=false explicitly on replies', async () => {
+      const { noteService } = await prepareServices();
+
+      const parentId = generateId();
+      const now = new Date();
+      await db.insert(notes).values({
+        id: parentId,
+        content: 'Parent note',
+        parentId: null,
+        depth: 0,
+        isHidden: false,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      const result = await noteService.createNote({
+        content: 'Child note',
+        parentId: parentId,
+        isHidden: false,
+      });
+
+      expect(result).toBeDefined();
+      expect(result.isHidden).toBe(false);
     });
   });
 });

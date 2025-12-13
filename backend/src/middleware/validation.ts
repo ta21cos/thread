@@ -9,6 +9,7 @@ export const createNoteSchema = z.object({
     .string()
     .regex(new RegExp(`^[A-Za-z0-9]{${ID_LENGTH}}$`))
     .optional(),
+  isHidden: z.boolean().optional(),
 });
 
 export const updateNoteSchema = z.object({
