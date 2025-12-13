@@ -1,5 +1,5 @@
 import { MentionService } from '../../services/mention.service';
-import { createNoteService } from '../../services/note/note.service';
+import { createNoteService } from '../../services/note';
 
 import { validateNoteId } from '../../middleware/validation';
 import { requireAuth } from '../../middleware/auth.middleware';

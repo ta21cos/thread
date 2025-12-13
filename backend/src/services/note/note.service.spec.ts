@@ -5,7 +5,7 @@ import { db, notes, mentions } from '../../db';
 
 import { generateId } from '../../utils/id-generator';
 import { MAX_NOTE_LENGTH } from '@thread-note/shared/constants';
-import { createNoteService } from './note.service';
+import { createNoteService } from '.';
 
 describe('NoteService', () => {
   const prepareServices = async () => {
