@@ -1,12 +1,34 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db, notes, mentions } from '../db';
-import { SearchService } from './search.service';
-import { generateId } from '../utils/id-generator';
+import '../../../tests/preload';
+import { db, notes, mentions } from '../../db';
+import { createSearchService } from '.';
+import { generateId } from '../../utils/id-generator';
 
 describe('SearchService', () => {
-  const prepareServices = async () => {
-    const searchService = new SearchService({ db });
-    return { searchService };
+  const prepareServices = () => {
+    const service = createSearchService({ db });
+
+    // ResultAsync を Promise に変換するラッパー
+    return {
+      searchByContent: async (query: string, limit?: number) => {
+        const result = await service.searchByContent(query, limit);
+        return result.match(
+          (notes) => notes,
+          (error) => {
+            throw new Error(error.message);
+          }
+        );
+      },
+      searchByMention: async (noteId: string) => {
+        const result = await service.searchByMention(noteId);
+        return result.match(
+          (notes) => notes,
+          (error) => {
+            throw new Error(error.message);
+          }
+        );
+      },
+    };
   };
 
   beforeEach(async () => {
@@ -16,7 +38,7 @@ describe('SearchService', () => {
 
   describe('searchByContent', () => {
     it('should return empty array when no notes match', async () => {
-      const { searchService } = await prepareServices();
+      const searchService = prepareServices();
 
       const result = await searchService.searchByContent('nonexistent');
 
@@ -24,7 +46,7 @@ describe('SearchService', () => {
     });
 
     it('should find notes containing search query', async () => {
-      const { searchService } = await prepareServices();
+      const searchService = prepareServices();
 
       const noteId = generateId();
       const now = new Date();
@@ -44,7 +66,7 @@ describe('SearchService', () => {
     });
 
     it('should be case-insensitive', async () => {
-      const { searchService } = await prepareServices();
+      const searchService = prepareServices();
 
       const noteId = generateId();
       const now = new Date();
@@ -64,7 +86,7 @@ describe('SearchService', () => {
     });
 
     it('should find multiple notes matching query', async () => {
-      const { searchService } = await prepareServices();
+      const searchService = prepareServices();
 
       const now = new Date();
       await db.insert(notes).values([
@@ -100,7 +122,7 @@ describe('SearchService', () => {
     });
 
     it('should respect limit parameter', async () => {
-      const { searchService } = await prepareServices();
+      const searchService = prepareServices();
 
       const now = new Date();
       for (let i = 0; i < 10; i++) {
@@ -120,7 +142,7 @@ describe('SearchService', () => {
     });
 
     it('should use default limit of 20', async () => {
-      const { searchService } = await prepareServices();
+      const searchService = prepareServices();
 
       const now = new Date();
       for (let i = 0; i < 25; i++) {
@@ -142,7 +164,7 @@ describe('SearchService', () => {
 
   describe('searchByMention', () => {
     it('should return empty array when note has no mentions', async () => {
-      const { searchService } = await prepareServices();
+      const searchService = prepareServices();
 
       const noteId = generateId();
       const now = new Date();
@@ -161,7 +183,7 @@ describe('SearchService', () => {
     });
 
     it('should find notes that mention the target note', async () => {
-      const { searchService } = await prepareServices();
+      const searchService = prepareServices();
 
       const targetNoteId = generateId();
       const sourceNoteId = generateId();
@@ -201,7 +223,7 @@ describe('SearchService', () => {
     });
 
     it('should find multiple notes mentioning the target', async () => {
-      const { searchService } = await prepareServices();
+      const searchService = prepareServices();
 
       const targetNoteId = generateId();
       const sourceNoteId1 = generateId();

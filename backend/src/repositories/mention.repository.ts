@@ -8,92 +8,95 @@
 import { ResultAsync } from 'neverthrow';
 import { eq, or } from 'drizzle-orm';
 import { mentions, notes, type Mention, type NewMention, type Note, type Database } from '../db';
-import { databaseError, type NoteError } from '../errors/domain-errors';
+import type { NoteError } from '../errors/domain-errors';
+import { dbQuery } from './helpers';
+
+// ==========================================
+// Pure Helper Functions
+// ==========================================
+
+/**
+ * メンション配列からグラフ構造を構築
+ */
+const buildMentionGraph = (allMentions: Mention[]): Map<string, string[]> => {
+  const graph = new Map<string, string[]>();
+  for (const mention of allMentions) {
+    if (!graph.has(mention.fromNoteId)) {
+      graph.set(mention.fromNoteId, []);
+    }
+    graph.get(mention.fromNoteId)!.push(mention.toNoteId);
+  }
+  return graph;
+};
+
+// ==========================================
+// Repository Interface
+// ==========================================
 
 export interface MentionRepository {
-  create: (mention: NewMention) => ResultAsync<void, NoteError>;
-  deleteByNoteId: (noteId: string) => ResultAsync<void, NoteError>;
-  getAllMentions: () => ResultAsync<Map<string, string[]>, NoteError>;
-  findByToNoteId: (toNoteId: string) => ResultAsync<Mention[], NoteError>;
-  findByFromNoteId: (fromNoteId: string) => ResultAsync<Mention[], NoteError>;
-  getMentionsWithNotes: (
+  readonly create: (mention: NewMention) => ResultAsync<void, NoteError>;
+  readonly deleteByNoteId: (noteId: string) => ResultAsync<void, NoteError>;
+  readonly getAllMentions: () => ResultAsync<Map<string, string[]>, NoteError>;
+  readonly findByToNoteId: (toNoteId: string) => ResultAsync<Mention[], NoteError>;
+  readonly findByFromNoteId: (fromNoteId: string) => ResultAsync<Mention[], NoteError>;
+  readonly getMentionsWithNotes: (
     toNoteId: string
   ) => ResultAsync<Array<{ mentions: Mention; notes: Note }>, NoteError>;
 }
 
+// ==========================================
+// Repository Implementation (Factory)
+// ==========================================
+
 /**
- * デフォルトのメンションリポジトリ実装
+ * メンションリポジトリを作成
  */
 export const createMentionRepository = ({ db }: { db: Database }): MentionRepository => ({
-  create: (mention: NewMention): ResultAsync<void, NoteError> =>
-    ResultAsync.fromPromise(
+  create: (mention) =>
+    dbQuery(
       db
         .insert(mentions)
         .values(mention)
         .then(() => undefined),
-      (error) => databaseError('Failed to create mention', error)
+      'Failed to create mention'
     ),
 
-  deleteByNoteId: (noteId: string): ResultAsync<void, NoteError> =>
-    ResultAsync.fromPromise(
+  deleteByNoteId: (noteId) =>
+    dbQuery(
       db
         .delete(mentions)
         .where(or(eq(mentions.fromNoteId, noteId), eq(mentions.toNoteId, noteId)))
         .then(() => undefined),
-      (error) => databaseError('Failed to delete mentions', error)
+      'Failed to delete mentions'
     ),
 
-  getAllMentions: (): ResultAsync<Map<string, string[]>, NoteError> =>
-    ResultAsync.fromPromise(
-      db
-        .select()
-        .from(mentions)
-        .then((allMentions) => {
-          const graph = new Map<string, string[]>();
-          for (const mention of allMentions) {
-            if (!graph.has(mention.fromNoteId)) {
-              graph.set(mention.fromNoteId, []);
-            }
-            graph.get(mention.fromNoteId)!.push(mention.toNoteId);
-          }
-          return graph;
-        }),
-      (error) => databaseError('Failed to get mentions', error)
-    ),
+  getAllMentions: () =>
+    dbQuery(db.select().from(mentions), 'Failed to get mentions').map(buildMentionGraph),
 
-  findByToNoteId: (toNoteId: string): ResultAsync<Mention[], NoteError> =>
-    ResultAsync.fromPromise(
+  findByToNoteId: (toNoteId) =>
+    dbQuery(
       db.select().from(mentions).where(eq(mentions.toNoteId, toNoteId)),
-      (error) => databaseError('Failed to find mentions by to note id', error)
+      'Failed to find mentions by to note id'
     ),
 
-  findByFromNoteId: (fromNoteId: string): ResultAsync<Mention[], NoteError> =>
-    ResultAsync.fromPromise(
+  findByFromNoteId: (fromNoteId) =>
+    dbQuery(
       db.select().from(mentions).where(eq(mentions.fromNoteId, fromNoteId)),
-      (error) => databaseError('Failed to find mentions by from note id', error)
+      'Failed to find mentions by from note id'
     ),
 
-  getMentionsWithNotes: (
-    toNoteId: string
-  ): ResultAsync<Array<{ mentions: Mention; notes: Note }>, NoteError> =>
-    ResultAsync.fromPromise(
+  getMentionsWithNotes: (toNoteId) =>
+    dbQuery(
       (async () => {
-        // Get all mentions for this note
         const allMentions = await db.select().from(mentions).where(eq(mentions.toNoteId, toNoteId));
-
-        // Fetch the notes for each mention
         const results = await Promise.all(
           allMentions.map(async (mention) => {
             const [note] = await db.select().from(notes).where(eq(notes.id, mention.fromNoteId));
-            return {
-              mentions: mention,
-              notes: note!,
-            };
+            return { mentions: mention, notes: note! };
           })
         );
-
         return results;
       })(),
-      (error) => databaseError('Failed to get mentions with notes', error)
+      'Failed to get mentions with notes'
     ),
 });

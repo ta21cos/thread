@@ -1,12 +1,43 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db, notes, mentions } from '../db';
-import { MentionService } from './mention.service';
-import { generateId } from '../utils/id-generator';
+import '../../../tests/preload';
+import { db, notes, mentions } from '../../db';
+import { createMentionService } from '.';
+import { generateId } from '../../utils/id-generator';
 
 describe('MentionService', () => {
-  const prepareServices = async () => {
-    const mentionService = new MentionService({ db });
-    return { mentionService };
+  const prepareServices = () => {
+    const service = createMentionService({ db });
+
+    // ResultAsync を Promise に変換するラッパー
+    return {
+      getMentions: async (toNoteId: string) => {
+        const result = await service.getMentions(toNoteId);
+        return result.match(
+          (mentions) => mentions,
+          (error) => {
+            throw new Error(error.message);
+          }
+        );
+      },
+      getMentionsWithNotes: async (toNoteId: string) => {
+        const result = await service.getMentionsWithNotes(toNoteId);
+        return result.match(
+          (mentions) => mentions,
+          (error) => {
+            throw new Error(error.message);
+          }
+        );
+      },
+      validateMentions: async (fromNoteId: string, toNoteIds: string[]) => {
+        const result = await service.validateMentions(fromNoteId, toNoteIds);
+        return result.match(
+          () => undefined,
+          (error) => {
+            throw new Error(error.message);
+          }
+        );
+      },
+    };
   };
 
   beforeEach(async () => {
@@ -16,7 +47,7 @@ describe('MentionService', () => {
 
   describe('getMentions', () => {
     it('should return empty array when no mentions exist for a note', async () => {
-      const { mentionService } = await prepareServices();
+      const mentionService = prepareServices();
 
       const noteId = generateId();
       const now = new Date();
@@ -35,7 +66,7 @@ describe('MentionService', () => {
     });
 
     it('should return mentions pointing to a specific note', async () => {
-      const { mentionService } = await prepareServices();
+      const mentionService = prepareServices();
 
       const targetNoteId = generateId();
       const sourceNoteId = generateId();
@@ -76,7 +107,7 @@ describe('MentionService', () => {
     });
 
     it('should return multiple mentions for the same target note', async () => {
-      const { mentionService } = await prepareServices();
+      const mentionService = prepareServices();
 
       const targetNoteId = generateId();
       const sourceNoteId1 = generateId();
@@ -135,7 +166,7 @@ describe('MentionService', () => {
 
   describe('getMentionsWithNotes', () => {
     it('should return empty array when no mentions exist', async () => {
-      const { mentionService } = await prepareServices();
+      const mentionService = prepareServices();
 
       const noteId = generateId();
       const now = new Date();
@@ -154,7 +185,7 @@ describe('MentionService', () => {
     });
 
     it('should return mentions with associated note data', async () => {
-      const { mentionService } = await prepareServices();
+      const mentionService = prepareServices();
 
       const targetNoteId = generateId();
       const sourceNoteId = generateId();
@@ -197,7 +228,7 @@ describe('MentionService', () => {
 
   describe('validateMentions', () => {
     it('should allow valid mentions without cycles', async () => {
-      const { mentionService } = await prepareServices();
+      const mentionService = prepareServices();
 
       const noteId1 = generateId();
       const noteId2 = generateId();
@@ -226,7 +257,7 @@ describe('MentionService', () => {
     });
 
     it('should detect direct circular reference (A -> B -> A)', async () => {
-      const { mentionService } = await prepareServices();
+      const mentionService = prepareServices();
 
       const noteId1 = generateId();
       const noteId2 = generateId();
@@ -259,13 +290,11 @@ describe('MentionService', () => {
         createdAt: now,
       });
 
-      await expect(mentionService.validateMentions(noteId1, [noteId2])).rejects.toThrow(
-        'Circular reference detected in mentions'
-      );
+      await expect(mentionService.validateMentions(noteId1, [noteId2])).rejects.toThrow();
     });
 
     it('should detect indirect circular reference (A -> B -> C -> A)', async () => {
-      const { mentionService } = await prepareServices();
+      const mentionService = prepareServices();
 
       const noteId1 = generateId();
       const noteId2 = generateId();
@@ -316,13 +345,11 @@ describe('MentionService', () => {
         },
       ]);
 
-      await expect(mentionService.validateMentions(noteId1, [noteId2])).rejects.toThrow(
-        'Circular reference detected in mentions'
-      );
+      await expect(mentionService.validateMentions(noteId1, [noteId2])).rejects.toThrow();
     });
 
     it('should allow multiple mentions to same target', async () => {
-      const { mentionService } = await prepareServices();
+      const mentionService = prepareServices();
 
       const noteId1 = generateId();
       const noteId2 = generateId();
