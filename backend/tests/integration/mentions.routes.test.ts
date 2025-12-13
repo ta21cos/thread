@@ -264,7 +264,7 @@ describe('Mentions Routes Integration Tests', () => {
       expect(res.status).toBe(404);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const body = (await res.json()) as any;
-      expect(body.error).toBe('Not Found');
+      expect(body.error).toBe('NoteNotFoundError');
     });
 
     it('should return 400 for invalid note ID format', async () => {
