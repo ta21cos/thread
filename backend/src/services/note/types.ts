@@ -73,6 +73,8 @@ export interface NoteServiceHandle {
   ) => ResultAsync<PaginatedNotes, NoteError>;
   /** ノートを更新 */
   readonly updateNote: (id: string, input: UpdateNoteInput) => ResultAsync<Note, NoteError>;
+  /** ノートの hidden 状態を更新 */
+  readonly updateHidden: (id: string, isHidden: boolean) => ResultAsync<Note, NoteError>;
   /** ノートを削除（カスケード） */
   readonly deleteNote: (id: string) => ResultAsync<void, NoteError>;
 }

@@ -100,6 +100,12 @@ export const useApiClient = () => {
         body: body ? JSON.stringify(body) : undefined,
       }),
 
+    patch: <T>(endpoint: string, body?: unknown) =>
+      apiFetch<T>(endpoint, {
+        method: 'PATCH',
+        body: body ? JSON.stringify(body) : undefined,
+      }),
+
     delete: <T>(endpoint: string) => apiFetch<T>(endpoint, { method: 'DELETE' }),
   };
 };

@@ -69,15 +69,16 @@ export const useNotes = () => {
 };
 
 // NOTE: Fetch notes with infinite scroll
-export const useInfiniteNotes = (limit: number = 20) => {
+export const useInfiniteNotes = (limit: number = 20, includeHidden: boolean = false) => {
   const { get } = useApiClient();
 
   return useInfiniteQuery({
-    queryKey: [...noteKeys.lists(), { limit }],
+    queryKey: [...noteKeys.lists(), { limit, includeHidden }],
     queryFn: async ({ pageParam = 0 }) => {
       const response = await get<NotesListResponse>('/notes', {
         offset: pageParam,
         limit,
+        includeHidden,
       });
       return response;
     },
@@ -141,8 +142,8 @@ export const useCreateNote = () => {
   const { post } = useApiClient();
 
   return useMutation({
-    mutationFn: async ({ content, parentId }: CreateNoteDto) => {
-      const response = await post<Note>('/notes', { content, parentId });
+    mutationFn: async ({ content, parentId, isHidden }: CreateNoteDto) => {
+      const response = await post<Note>('/notes', { content, parentId, isHidden });
       return response;
     },
     onSuccess: (newNote) => {
@@ -198,6 +199,24 @@ export const useUpdateNote = () => {
       // NOTE: Invalidate related queries
       queryClient.invalidateQueries({ queryKey: noteKeys.detail(updatedNote.id) });
       queryClient.invalidateQueries({ queryKey: noteKeys.lists() });
+    },
+  });
+};
+
+// NOTE: Update note hidden status
+export const useUpdateNoteHidden = () => {
+  const queryClient = useQueryClient();
+  const { patch } = useApiClient();
+
+  return useMutation({
+    mutationFn: async ({ id, isHidden }: { id: string; isHidden: boolean }) => {
+      const response = await patch<Note>(`/notes/${id}/hidden`, { isHidden });
+      return response;
+    },
+    onSuccess: (updatedNote) => {
+      // NOTE: Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: noteKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: noteKeys.detail(updatedNote.id) });
     },
   });
 };

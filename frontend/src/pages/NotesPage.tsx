@@ -9,15 +9,18 @@ import {
   useCreateNote,
   useUpdateNote,
   useDeleteNote,
+  useUpdateNoteHidden,
 } from '../services/note.service';
 import { useNotesUI } from '../store/notes.store';
 import { useFocus } from '../store/focus.context';
+import { useSettings } from '../store/settings.store';
 
 export const NotesPage: React.FC = () => {
   const { noteId } = useParams<{ noteId?: string }>();
   const navigate = useNavigate();
   const { selectedNoteId, setSelectedNoteId, replyingToNoteId, stopReply } = useNotesUI();
   const { focusInput } = useFocus();
+  const { showHiddenNotes } = useSettings();
 
   // NOTE: Fetch notes with infinite scroll
   const {
@@ -26,7 +29,7 @@ export const NotesPage: React.FC = () => {
     hasNextPage,
     isFetchingNextPage,
     isLoading: notesLoading,
-  } = useInfiniteNotes(20);
+  } = useInfiniteNotes(20, showHiddenNotes);
 
   // NOTE: Fetch selected note with thread
   const { data: noteData, isLoading: noteLoading } = useNote(selectedNoteId ?? undefined);
@@ -35,6 +38,7 @@ export const NotesPage: React.FC = () => {
   const createNote = useCreateNote();
   const updateNote = useUpdateNote();
   const deleteNote = useDeleteNote();
+  const updateNoteHidden = useUpdateNoteHidden();
 
   // NOTE: Real-time updates to be implemented in the future
   // TODO: Implement WebSocket or polling for real-time note updates
@@ -90,6 +94,15 @@ export const NotesPage: React.FC = () => {
     }
   };
 
+  // NOTE: Toggle note hidden status
+  const handleToggleHidden = async (noteId: string, isHidden: boolean) => {
+    try {
+      await updateNoteHidden.mutateAsync({ id: noteId, isHidden });
+    } catch (error) {
+      console.error('Failed to update note hidden status:', error);
+    }
+  };
+
   // NOTE: Flatten paginated notes
   const displayNotes = notesData?.pages.flatMap((page) => page.notes) || [];
 
@@ -108,6 +121,7 @@ export const NotesPage: React.FC = () => {
             hasMore={hasNextPage}
             loading={notesLoading || isFetchingNextPage}
             onCreateNote={!replyingToNoteId ? handleCreateNote : undefined}
+            onToggleHidden={handleToggleHidden}
           />
         }
         right={

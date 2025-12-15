@@ -16,6 +16,10 @@ export const updateNoteSchema = z.object({
   content: z.string().min(1).max(MAX_NOTE_LENGTH),
 });
 
+export const updateHiddenSchema = z.object({
+  isHidden: z.boolean(),
+});
+
 export const noteIdSchema = z.object({
   id: z.string().regex(new RegExp(`^[A-Za-z0-9]{${ID_LENGTH}}$`)),
 });
@@ -34,6 +38,7 @@ export const paginationSchema = z.object({
 // NOTE: Export validators - types will be inferred from Hono app context
 export const validateCreateNote = zValidator('json', createNoteSchema);
 export const validateUpdateNote = zValidator('json', updateNoteSchema);
+export const validateUpdateHidden = zValidator('json', updateHiddenSchema);
 export const validateNoteId = zValidator('param', noteIdSchema);
 export const validateSearch = zValidator('query', searchQuerySchema);
 export const validatePagination = zValidator('query', paginationSchema);
