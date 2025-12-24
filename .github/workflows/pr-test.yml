@@ -71,8 +71,8 @@ jobs:
 
       - name: Setup test database
         run: |
-          mkdir -p ../data
-          DATABASE_URL=../data/test.db bun run db:migrate:test
+          mkdir -p data
+          bun run db:migrate:test
 
       - name: Run unit tests
         run: bun test
