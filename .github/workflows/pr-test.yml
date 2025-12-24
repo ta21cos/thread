@@ -71,14 +71,14 @@ jobs:
 
       - name: Setup test database
         run: |
-          mkdir -p ../data
-          DATABASE_URL=../data/test.db bun run db:migrate
+          mkdir -p data
+          bun run db:migrate:test
 
       - name: Run unit tests
         run: bun test
         env:
           NODE_ENV: test
-          DATABASE_URL: ../data/test.db
+          DATABASE_URL: data/test.db
 
   integration-tests:
     name: Integration Tests
