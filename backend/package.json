@@ -12,8 +12,6 @@
     "test": "NODE_ENV=test bun test src tests/preload.ts tests/setup.ts",
     "test:integration": "NODE_ENV=test vitest --config vitest.config.ts",
     "test:load": "k6 run tests/load/load-test.js",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
     "db:seed": "bun src/db/seed.ts",
     "db:migrate:test": "DATABASE_URL=data/test.db drizzle-kit migrate",
     "deploy:development": "wrangler --env=development deploy && ./scripts/deploy-secrets.sh development",
