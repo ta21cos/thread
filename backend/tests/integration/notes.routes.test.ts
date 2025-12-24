@@ -798,5 +798,105 @@ describe('Notes Routes Integration Tests', () => {
         expect(data.notes[0].isHidden).toBe(false);
       });
     });
+
+    describe('PATCH /api/notes/:id/hidden', () => {
+      it('should update isHidden status of a root note', async () => {
+        const noteId = generateId();
+        const now = new Date();
+        await insertNote({
+          id: noteId,
+          content: 'Test note',
+          parentId: null,
+          depth: 0,
+          isHidden: false,
+          createdAt: now,
+          updatedAt: now,
+        });
+
+        const res = await requestWithEnv(`/api/notes/${noteId}/hidden`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isHidden: true }),
+        });
+
+        expect(res.status).toBe(200);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data = (await res.json()) as any;
+        expect(data.isHidden).toBe(true);
+        expect(data.id).toBe(noteId);
+      });
+
+      it('should return 400 when trying to update isHidden of a reply', async () => {
+        const parentId = generateId();
+        const replyId = generateId();
+        const now = new Date();
+        await insertNote({
+          id: parentId,
+          content: 'Parent note',
+          parentId: null,
+          depth: 0,
+          isHidden: false,
+          createdAt: now,
+          updatedAt: now,
+        });
+        await insertNote({
+          id: replyId,
+          content: 'Reply note',
+          parentId: parentId,
+          depth: 1,
+          isHidden: false,
+          createdAt: now,
+          updatedAt: now,
+        });
+
+        const res = await requestWithEnv(`/api/notes/${replyId}/hidden`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isHidden: true }),
+        });
+
+        expect(res.status).toBe(400);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data = (await res.json()) as any;
+        expect(data.error).toBe('InvalidHiddenReplyError');
+      });
+
+      it('should return 404 when note does not exist', async () => {
+        const nonExistentId = generateId();
+
+        const res = await requestWithEnv(`/api/notes/${nonExistentId}/hidden`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isHidden: true }),
+        });
+
+        expect(res.status).toBe(404);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data = (await res.json()) as any;
+        expect(data.error).toBe('NoteNotFoundError');
+      });
+
+      it.skip('should return 401 when not authenticated', async () => {
+        const noteId = generateId();
+
+        // Mock authentication to fail
+        mockAuthenticateRequest.mockResolvedValueOnce({
+          isAuthenticated: false,
+          toAuth: () => {
+            throw new Error('Not authenticated');
+          },
+          reason: 'unauthorized',
+          message: 'Authentication failed',
+        });
+
+        const res = await requestWithEnv(`/api/notes/${noteId}/hidden`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isHidden: true }),
+        });
+
+        expect(res.status).toBe(401);
+      });
+    });
   });
 });

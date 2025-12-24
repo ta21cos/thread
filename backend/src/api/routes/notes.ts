@@ -5,6 +5,7 @@ import { errorToStatusCode, type NoteError } from '../../errors/domain-errors';
 import {
   validateCreateNote,
   validateUpdateNote,
+  validateUpdateHidden,
   validateNoteId,
   validatePagination,
 } from '../../middleware/validation';
@@ -92,6 +93,22 @@ const app = createRouter()
 
     return await noteService
       .updateNote(id, data)
+      .map(serialize)
+      .match(
+        (data) => c.json(data),
+        (error: NoteError) => c.json(toErrorResponse(error), errorToStatusCode(error))
+      );
+  })
+
+  // PATCH /api/notes/:id/hidden - Update note hidden status
+  .patch('/:id/hidden', requireAuth, validateNoteId, validateUpdateHidden, async (c) => {
+    const db = c.get('db');
+    const noteService = createNoteService({ db });
+    const { id } = c.req.valid('param');
+    const { isHidden } = c.req.valid('json');
+
+    return await noteService
+      .updateHidden(id, isHidden)
       .map(serialize)
       .match(
         (data) => c.json(data),

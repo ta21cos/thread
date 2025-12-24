@@ -2,6 +2,7 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NotesUIProvider } from './store/notes.store';
 import { FocusProvider } from './store/focus.context';
+import { SettingsProvider } from './store/settings.store';
 import { AppRouter } from './router';
 import { AuthGuard } from './components/AuthGuard';
 import { useUserSync } from './hooks/useUserSync';
@@ -28,13 +29,15 @@ const App: React.FC = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NotesUIProvider>
-        <FocusProvider>
-          <AuthGuard>
-            <AppRouter />
-          </AuthGuard>
-        </FocusProvider>
-      </NotesUIProvider>
+      <SettingsProvider>
+        <NotesUIProvider>
+          <FocusProvider>
+            <AuthGuard>
+              <AppRouter />
+            </AuthGuard>
+          </FocusProvider>
+        </NotesUIProvider>
+      </SettingsProvider>
     </QueryClientProvider>
   );
 };

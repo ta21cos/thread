@@ -192,6 +192,21 @@ export const createNoteService = ({ db }: { db: Database }): NoteServiceHandle =
         );
     },
 
+    updateHidden: (id, isHidden) =>
+      noteRepo
+        .findById(id)
+        .andThen(ensureNoteExists(id))
+        .andThen((note) => {
+          // NOTE: 子ノートの hidden 状態は変更できない（親から継承）
+          if (note.parentId) {
+            return errAsync({
+              _tag: 'InvalidHiddenReplyError' as const,
+              message: 'Cannot change hidden status of a reply. It inherits from the parent.',
+            });
+          }
+          return noteRepo.updateHidden(id, isHidden);
+        }),
+
     deleteNote: (id) =>
       noteRepo
         .findById(id)
@@ -229,6 +244,7 @@ export const createMockNoteService = (
   getNoteById: () => errAsync(noteNotFoundError('mock')),
   getRootNotes: () => okAsync({ notes: [], total: 0, hasMore: false }),
   updateNote: () => errAsync(noteNotFoundError('mock')),
+  updateHidden: () => errAsync(noteNotFoundError('mock')),
   deleteNote: () => okAsync(undefined),
   ...overrides,
 });

@@ -43,6 +43,7 @@ export interface NoteRepository {
   readonly findById: (id: string) => ResultAsync<Note | undefined, NoteError>;
   readonly create: (note: NewNote) => ResultAsync<Note, NoteError>;
   readonly update: (id: string, content: string) => ResultAsync<Note, NoteError>;
+  readonly updateHidden: (id: string, isHidden: boolean) => ResultAsync<Note, NoteError>;
   readonly findRootNotes: (
     limit: number,
     offset: number,
@@ -114,6 +115,17 @@ export const createNoteRepository = ({ db }: { db: Database }): NoteRepository =
           .returning()
           .then(([updated]) => updated),
         'Failed to update note'
+      ),
+
+    updateHidden: (id, isHidden) =>
+      dbQuery(
+        db
+          .update(notes)
+          .set({ isHidden, updatedAt: new Date() })
+          .where(eq(notes.id, id))
+          .returning()
+          .then(([updated]) => updated),
+        'Failed to update note hidden status'
       ),
 
     findRootNotes: (limit, offset, includeHidden = false) => {

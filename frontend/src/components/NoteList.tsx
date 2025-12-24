@@ -1,5 +1,16 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { Hash, Search, MoreVertical, Trash2, Bookmark, Link2, Edit, Pin, Plus } from 'lucide-react';
+import {
+  Hash,
+  Search,
+  MoreVertical,
+  Trash2,
+  Bookmark,
+  Link2,
+  Edit,
+  Pin,
+  Plus,
+  EyeOff,
+} from 'lucide-react';
 import { Note } from '../../../shared/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +19,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
@@ -15,6 +28,8 @@ import { getRelativeTime } from '@/lib/utils';
 import NoteEditor from './NoteEditor';
 import { ThemeToggle } from './ThemeToggle';
 import { UserButton } from './UserButton';
+import { SettingsDropdown } from './SettingsDropdown';
+import { useSettings } from '@/store/settings.store';
 
 interface NoteListProps {
   notes: Note[];
@@ -23,7 +38,8 @@ interface NoteListProps {
   onLoadMore?: () => void;
   hasMore?: boolean;
   loading?: boolean;
-  onCreateNote?: (content: string) => Promise<void>;
+  onCreateNote?: (content: string, isHidden?: boolean) => Promise<void>;
+  onToggleHidden?: (noteId: string, isHidden: boolean) => Promise<void>;
 }
 
 export const NoteList: React.FC<NoteListProps> = ({
@@ -34,7 +50,9 @@ export const NoteList: React.FC<NoteListProps> = ({
   hasMore = false,
   loading = false,
   onCreateNote,
+  onToggleHidden,
 }) => {
+  const { showHiddenNotes } = useSettings();
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -110,6 +128,7 @@ export const NoteList: React.FC<NoteListProps> = ({
             {filteredNotes.length} notes
           </span>
           <UserButton />
+          <SettingsDropdown />
           <ThemeToggle />
           <Button size="icon" variant="ghost" className="h-8 w-8">
             <Plus className="h-4 w-4" />
@@ -153,6 +172,18 @@ export const NoteList: React.FC<NoteListProps> = ({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      {onToggleHidden && showHiddenNotes && (
+                        <>
+                          <DropdownMenuCheckboxItem
+                            checked={note.isHidden}
+                            onCheckedChange={(checked) => onToggleHidden(note.id, checked)}
+                          >
+                            <EyeOff className="mr-2 h-4 w-4" />
+                            Hidden
+                          </DropdownMenuCheckboxItem>
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
                       <DropdownMenuItem>
                         <Pin className="mr-2 h-4 w-4" />
                         Pin note
@@ -206,6 +237,11 @@ export const NoteList: React.FC<NoteListProps> = ({
                         <span className="text-muted-foreground text-xs">
                           {getRelativeTime(note.createdAt)}
                         </span>
+                        {note.isHidden && (
+                          <span title="Hidden note">
+                            <EyeOff className="h-3 w-3 text-muted-foreground" />
+                          </span>
+                        )}
                         {note.replyCount !== undefined && note.replyCount > 0 && (
                           <span
                             className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/20 px-1.5 font-medium text-primary text-xs"
