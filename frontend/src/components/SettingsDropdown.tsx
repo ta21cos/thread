@@ -24,10 +24,7 @@ export function SettingsDropdown() {
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Settings</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuCheckboxItem
-          checked={showHiddenNotes}
-          onCheckedChange={toggleShowHiddenNotes}
-        >
+        <DropdownMenuCheckboxItem checked={showHiddenNotes} onCheckedChange={toggleShowHiddenNotes}>
           <EyeOff className="mr-2 h-4 w-4" />
           Show hidden notes
         </DropdownMenuCheckboxItem>

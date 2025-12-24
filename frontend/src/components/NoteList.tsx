@@ -1,5 +1,16 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { Hash, Search, MoreVertical, Trash2, Bookmark, Link2, Edit, Pin, Plus, EyeOff } from 'lucide-react';
+import {
+  Hash,
+  Search,
+  MoreVertical,
+  Trash2,
+  Bookmark,
+  Link2,
+  Edit,
+  Pin,
+  Plus,
+  EyeOff,
+} from 'lucide-react';
 import { Note } from '../../../shared/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -227,7 +238,9 @@ export const NoteList: React.FC<NoteListProps> = ({
                           {getRelativeTime(note.createdAt)}
                         </span>
                         {note.isHidden && (
-                          <EyeOff className="h-3 w-3 text-muted-foreground" title="Hidden note" />
+                          <span title="Hidden note">
+                            <EyeOff className="h-3 w-3 text-muted-foreground" />
+                          </span>
                         )}
                         {note.replyCount !== undefined && note.replyCount > 0 && (
                           <span

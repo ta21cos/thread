@@ -68,11 +68,12 @@ export const NotesPage: React.FC = () => {
   };
 
   // NOTE: Create new note or reply
-  const handleCreateNote = async (content: string) => {
+  const handleCreateNote = async (content: string, isHidden?: boolean) => {
     try {
       const newNote = await createNote.mutateAsync({
         content,
         parentId: replyingToNoteId || undefined,
+        isHidden,
       });
 
       // NOTE: Select newly created note

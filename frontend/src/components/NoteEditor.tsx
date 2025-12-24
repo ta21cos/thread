@@ -7,7 +7,7 @@ import { useFocus } from '@/store/focus.context';
 interface NoteEditorProps {
   initialContent?: string;
   parentNote?: Note;
-  onSubmit: (content: string) => Promise<void>;
+  onSubmit: (content: string, isHidden?: boolean) => Promise<void>;
   onCancel?: () => void;
   placeholder?: string;
   maxLength?: number;
@@ -30,6 +30,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   const [content, setContent] = useState(initialContent);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isHidden, setIsHidden] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [cursorPosition, setCursorPosition] = useState(0);
   const { registerInput, unregisterInput } = useFocus();
@@ -105,8 +106,9 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     setError(null);
 
     try {
-      await onSubmit(content.trim());
+      await onSubmit(content.trim(), isHidden);
       setContent('');
+      setIsHidden(false);
       setError(null);
 
       // NOTE: Smart auto-focus - re-focus for next note if creating (not editing)
@@ -190,6 +192,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           placeholder={placeholder}
           disabled={isSubmitting}
           autoFocus={autoFocus}
+          isHidden={isHidden}
+          onHiddenChange={setIsHidden}
         />
 
         {onCancel && (

@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect, forwardRef } from 'react';
-import { Paperclip, Smile, Send } from 'lucide-react';
+import { Paperclip, Smile, Send, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,8 @@ interface TextInputProps {
   autoFocus?: boolean;
   className?: string;
   onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  isHidden?: boolean;
+  onHiddenChange?: (value: boolean) => void;
 }
 
 export const TextInput = forwardRef<HTMLTextAreaElement, TextInputProps>(
@@ -26,6 +28,8 @@ export const TextInput = forwardRef<HTMLTextAreaElement, TextInputProps>(
       autoFocus = false,
       className,
       onKeyDown,
+      isHidden = false,
+      onHiddenChange,
     },
     ref
   ) => {
@@ -88,6 +92,18 @@ export const TextInput = forwardRef<HTMLTextAreaElement, TextInputProps>(
             <Button size="icon" variant="ghost" className="h-7 w-7" type="button">
               <Smile className="h-4 w-4" />
             </Button>
+            {onHiddenChange && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className={cn('h-7 w-7', isHidden && 'text-primary bg-primary/10')}
+                type="button"
+                onClick={() => onHiddenChange(!isHidden)}
+                title={isHidden ? 'Hidden note (click to make visible)' : 'Make this note hidden'}
+              >
+                <EyeOff className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
         <Button
