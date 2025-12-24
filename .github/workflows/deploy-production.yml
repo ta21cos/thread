@@ -32,6 +32,10 @@ jobs:
           echo "VITE_BACKEND_API_ENDPOINT=${{ vars.VITE_BACKEND_API_ENDPOINT_PRODUCTION }}" > .env.production
           echo "VITE_CLERK_PUBLISHABLE_KEY=${{ vars.VITE_CLERK_PUBLISHABLE_KEY_PRODUCTION }}" >> .env.production
 
+      - name: Build Frontend for Production
+        working-directory: frontend
+        run: bun run build:production
+
       - name: Deploy Frontend to Production
         working-directory: frontend
         run: bun run deploy:production
