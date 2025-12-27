@@ -171,7 +171,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           <button
             type="button"
             onClick={handleClear}
-            className="search-bar__clear"
+            className="search-bar__clear hover:text-primary hover:scale-110 active:scale-95 transition-all duration-150"
             aria-label="Clear search"
           >
             <svg

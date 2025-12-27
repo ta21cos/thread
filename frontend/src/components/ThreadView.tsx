@@ -119,7 +119,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
           <a
             key={index}
             href={`#${noteId}`}
-            className="text-primary hover:underline"
+            className="text-primary hover:underline hover:text-primary/80 transition-colors"
             onClick={(e) => {
               e.preventDefault();
               navigate(`/notes/${noteId}`);
@@ -275,7 +275,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                           ))}
                           <button
                             onClick={() => toggleImageExpansion(rootNote.id)}
-                            className="text-primary text-xs hover:underline"
+                            className="text-primary text-xs hover:underline hover:text-primary/80 transition-colors cursor-pointer"
                           >
                             Collapse images
                           </button>
@@ -284,7 +284,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                         // Collapsed: thumbnail stack
                         <button
                           onClick={() => toggleImageExpansion(rootNote.id)}
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
                         >
                           <div className="flex -space-x-2">
                             {rootNote.images.slice(0, 3).map((img, i) => (
@@ -426,7 +426,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                               ))}
                               <button
                                 onClick={() => toggleImageExpansion(note.id)}
-                                className="text-primary text-xs hover:underline"
+                                className="text-primary text-xs hover:underline hover:text-primary/80 transition-colors cursor-pointer"
                               >
                                 Collapse images
                               </button>
@@ -435,7 +435,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                             // Collapsed: thumbnail stack
                             <button
                               onClick={() => toggleImageExpansion(note.id)}
-                              className="flex items-center gap-2"
+                              className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
                             >
                               <div className="flex -space-x-2">
                                 {note.images.slice(0, 3).map((img, i) => (

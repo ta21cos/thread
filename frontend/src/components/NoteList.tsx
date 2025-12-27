@@ -158,8 +158,8 @@ export const NoteList: React.FC<NoteListProps> = ({
               <div
                 key={note.id}
                 className={cn(
-                  'group relative w-full rounded-lg px-4 py-3 transition-colors hover:bg-accent',
-                  selectedNoteId === note.id && 'bg-accent/50'
+                  'group relative w-full rounded-lg px-4 py-3 transition-all duration-150 hover:bg-accent hover:shadow-sm hover:translate-x-0.5 cursor-pointer border-l-2 border-transparent hover:border-primary/50',
+                  selectedNoteId === note.id && 'bg-accent/50 border-primary'
                 )}
                 data-testid="note-item"
               >
@@ -285,7 +285,7 @@ export const NoteList: React.FC<NoteListProps> = ({
                                   e.stopPropagation();
                                   toggleImageExpansion(note.id);
                                 }}
-                                className="text-primary text-xs hover:underline"
+                                className="text-primary text-xs hover:underline hover:text-primary/80 transition-colors"
                               >
                                 Collapse images
                               </button>
@@ -297,7 +297,7 @@ export const NoteList: React.FC<NoteListProps> = ({
                                 e.stopPropagation();
                                 toggleImageExpansion(note.id);
                               }}
-                              className="flex items-center gap-2"
+                              className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
                             >
                               <div className="flex -space-x-2">
                                 {note.images.slice(0, 3).map((img, i) => (
