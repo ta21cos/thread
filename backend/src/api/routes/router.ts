@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
-import { D1DrizzleDatabase } from '../../db/types';
-import { initD1Database } from '../../db/d1';
+import { D1DrizzleDatabase } from '../db/types';
+import { initD1Database } from '../db/d1';
 
 export type Bindings = {
   DB: D1Database;

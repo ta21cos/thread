@@ -1,7 +1,7 @@
 // import app from './api/app';
-import { appConfig } from './config';
-import { initBunDatabase } from './db/bun';
-import { setDb, type Database } from './db';
+import { appConfig } from './api/config';
+import { initBunDatabase } from './api/db/bun';
+import { setDb, type Database } from './api/db';
 
 const port = appConfig.port;
 

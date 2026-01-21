@@ -4,8 +4,8 @@
 
 import { drizzle } from 'drizzle-orm/bun-sqlite';
 import { Database } from 'bun:sqlite';
-import { setDb } from '../src/db';
-import * as schema from '../src/db';
+import { setDb } from '../src/api/db';
+import * as schema from '../src/api/db';
 
 // NOTE: Global test setup to initialize database connection
 export default async function setup() {

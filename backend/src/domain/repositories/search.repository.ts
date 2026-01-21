@@ -7,7 +7,7 @@
 
 import { ResultAsync } from 'neverthrow';
 import { like, desc } from 'drizzle-orm';
-import { notes, type Note, type Database } from '../db';
+import { notes, type Note, type Database } from '../../api/db';
 import type { NoteError } from '../errors/domain-errors';
 import { dbQuery } from './helpers';
 

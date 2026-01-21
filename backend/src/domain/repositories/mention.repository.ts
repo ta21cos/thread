@@ -7,7 +7,14 @@
 
 import { ResultAsync } from 'neverthrow';
 import { eq, or } from 'drizzle-orm';
-import { mentions, notes, type Mention, type NewMention, type Note, type Database } from '../db';
+import {
+  mentions,
+  notes,
+  type Mention,
+  type NewMention,
+  type Note,
+  type Database,
+} from '../../api/db';
 import type { NoteError } from '../errors/domain-errors';
 import { dbQuery } from './helpers';
 

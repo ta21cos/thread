@@ -1,9 +1,9 @@
-import { createSearchService } from '../../services/search';
-import { validateSearch } from '../../middleware/validation';
-import { requireAuth } from '../../middleware/auth.middleware';
-import { errorToStatusCode, type NoteError } from '../../errors/domain-errors';
+import { createSearchService } from '../../domain/services/search';
+import { validateSearch } from '../middleware/validation';
+import { requireAuth } from '../middleware/auth.middleware';
+import { errorToStatusCode, type NoteError } from '../../domain/errors/domain-errors';
 import type { SearchResponse, ErrorResponse } from '@thread-note/shared/types';
-import { serialize } from '../../types/api';
+import { serialize } from '../types/api';
 import { createRouter } from './router';
 
 /**

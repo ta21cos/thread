@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/bun-sqlite';
 import type { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
 import { Database } from 'bun:sqlite';
-import * as schema from '../models/note.schema';
+import * as schema from '../../domain/models/note.schema';
 
 export type BunDatabase = BunSQLiteDatabase<typeof schema>;
 

@@ -2,7 +2,7 @@ import { profiles } from '../models/profile.schema';
 import { externalIdentities } from '../models/external-identity.schema';
 import { eq, and } from 'drizzle-orm';
 import { generateId } from '../utils/id-generator';
-import type { Database } from '../db';
+import type { Database } from '../../api/db';
 
 export interface SyncUserDto {
   provider: 'CLERK' | 'AUTH0' | 'GOOGLE' | 'GITHUB';

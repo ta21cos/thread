@@ -7,7 +7,13 @@
 
 import { ResultAsync, okAsync } from 'neverthrow';
 import { eq, isNull, desc, asc, and } from 'drizzle-orm';
-import { notes, type Note, type NewNote, type NoteWithReplyCount, type Database } from '../db';
+import {
+  notes,
+  type Note,
+  type NewNote,
+  type NoteWithReplyCount,
+  type Database,
+} from '../../api/db';
 import type { NoteError } from '../errors/domain-errors';
 import { dbQuery, dbQueryFirst } from './helpers';
 

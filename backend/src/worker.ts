@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import app from './api/app';
-import { initD1Database } from './db/d1';
-import { setDb } from './db';
+import { initD1Database } from './api/db/d1';
+import { setDb } from './api/db';
 
 // NOTE: Cloudflare Workers environment bindings
 export type Bindings = {

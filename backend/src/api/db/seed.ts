@@ -1,5 +1,5 @@
 import { db, notes, mentions } from './index';
-import { generateId } from '../utils/id-generator';
+import { generateId } from '../../domain/utils/id-generator';
 import { sql } from 'drizzle-orm';
 
 // NOTE: Seed script for test data

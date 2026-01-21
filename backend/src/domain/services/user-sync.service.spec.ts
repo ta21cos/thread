@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { db, profiles, externalIdentities } from '../db';
+import { db, profiles, externalIdentities } from '../../api/db';
 import { UserSyncService, type SyncUserDto } from './user-sync.service';
 import { generateId } from '../utils/id-generator';
 import { eq, and } from 'drizzle-orm';

@@ -5,7 +5,7 @@
  */
 
 import { ResultAsync, okAsync, errAsync } from 'neverthrow';
-import type { Database } from '../../db';
+import type { Database } from '../../../api/db';
 import { createMentionRepository } from '../../repositories/mention.repository';
 import type { MentionServiceHandle } from './types';
 import { detectCircularReference } from './validation';

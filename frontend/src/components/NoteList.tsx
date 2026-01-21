@@ -227,7 +227,7 @@ export const NoteList: React.FC<NoteListProps> = ({
                           {getRelativeTime(note.createdAt)}
                         </span>
                         {note.isHidden && (
-                          <EyeOff className="h-3 w-3 text-muted-foreground" title="Hidden note" />
+                          <EyeOff className="h-3 w-3 text-muted-foreground" aria-label="Hidden note" />
                         )}
                         {note.replyCount !== undefined && note.replyCount > 0 && (
                           <span

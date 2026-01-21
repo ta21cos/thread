@@ -5,7 +5,7 @@
  */
 
 import { ok, err, Result, ResultAsync, okAsync, errAsync } from 'neverthrow';
-import type { Note } from '../../db';
+import type { Note } from '../../../api/db';
 import { MAX_NOTE_LENGTH } from '@thread-note/shared/constants';
 import { extractMentions } from '../../utils/mention-parser';
 import {

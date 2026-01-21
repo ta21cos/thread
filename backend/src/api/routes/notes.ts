@@ -1,17 +1,17 @@
 import { okAsync } from 'neverthrow';
-import { createNoteService } from '../../services/note';
-import { createThreadService } from '../../services/thread';
-import { errorToStatusCode, type NoteError } from '../../errors/domain-errors';
+import { createNoteService } from '../../domain/services/note';
+import { createThreadService } from '../../domain/services/thread';
+import { errorToStatusCode, type NoteError } from '../../domain/errors/domain-errors';
 import {
   validateCreateNote,
   validateUpdateNote,
   validateUpdateHidden,
   validateNoteId,
   validatePagination,
-} from '../../middleware/validation';
-import { requireAuth } from '../../middleware/auth.middleware';
+} from '../middleware/validation';
+import { requireAuth } from '../middleware/auth.middleware';
 import type { NoteDetailResponse, ErrorResponse } from '@thread-note/shared/types';
-import { serialize } from '../../types/api';
+import { serialize } from '../types/api';
 import { createRouter } from './router';
 
 /**

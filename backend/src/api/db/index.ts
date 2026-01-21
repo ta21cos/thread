@@ -8,9 +8,9 @@ export const setDb = (database: Database) => {
   db = database;
 };
 
-export * from '../models/note.schema';
-export * from '../models/mention.schema';
-export * from '../models/search.schema';
-export * from '../models/profile.schema';
-export * from '../models/external-identity.schema';
+export * from '../../domain/models/note.schema';
+export * from '../../domain/models/mention.schema';
+export * from '../../domain/models/search.schema';
+export * from '../../domain/models/profile.schema';
+export * from '../../domain/models/external-identity.schema';
 export type { Database } from './types';

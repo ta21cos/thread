@@ -5,7 +5,7 @@
  */
 
 import { okAsync } from 'neverthrow';
-import type { Database } from '../../db';
+import type { Database } from '../../../api/db';
 import { createSearchRepository } from '../../repositories/search.repository';
 import { createMentionRepository } from '../../repositories/mention.repository';
 import type { SearchServiceHandle } from './types';

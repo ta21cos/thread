@@ -1,5 +1,5 @@
-import { UserSyncService, type SyncUserDto } from '../../services/user-sync.service';
-import { requireAuth } from '../../middleware/auth.middleware';
+import { UserSyncService, type SyncUserDto } from '../../domain/services/user-sync.service';
+import { requireAuth } from '../middleware/auth.middleware';
 import { createRouter } from './router';
 
 const users = createRouter().post('/sync', requireAuth, async (c) => {

@@ -9,8 +9,8 @@ import { env } from 'cloudflare:test';
 import { Hono } from 'hono';
 import type { ClerkClient } from '@clerk/backend';
 import mentionsRoutes from '../../src/api/routes/mentions';
-import { errorHandler } from '../../src/middleware/error';
-import { generateId } from '../../src/utils/id-generator';
+import { errorHandler } from '../../src/api/middleware/error';
+import { generateId } from '../../src/domain/utils/id-generator';
 
 // NOTE: Mock the getClerkClient function
 const mockAuthenticateRequest = vi.fn();

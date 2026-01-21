@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/bun-sqlite';
 import { Database } from 'bun:sqlite';
-import { setDb } from '../src/db';
-import * as schema from '../src/db';
+import { setDb } from '../src/api/db';
+import * as schema from '../src/api/db';
 
 // NOTE: Preload script for Bun test runner to initialize database
 const DATABASE_URL = process.env.DATABASE_URL || 'data/test.db';

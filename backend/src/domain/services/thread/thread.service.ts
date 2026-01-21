@@ -5,7 +5,7 @@
  */
 
 import { ResultAsync, okAsync, errAsync } from 'neverthrow';
-import type { Note, Database } from '../../db';
+import type { Note, Database } from '../../../api/db';
 import { type NoteError, noteNotFoundError } from '../../errors/domain-errors';
 import { createNoteRepository } from '../../repositories/note.repository';
 import type { ThreadServiceHandle } from './types';

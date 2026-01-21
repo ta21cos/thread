@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import '../../../tests/preload';
-import { db, notes, mentions } from '../../db';
+import '../../../../tests/preload';
+import { db, notes, mentions } from '../../../api/db';
 import { createSearchService } from '.';
 import { generateId } from '../../utils/id-generator';
 

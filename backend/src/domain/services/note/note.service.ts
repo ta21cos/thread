@@ -12,7 +12,7 @@
  */
 
 import { ResultAsync, okAsync, errAsync } from 'neverthrow';
-import { type Note, type NewNote, type Database } from '../../db';
+import { type Note, type NewNote, type Database } from '../../../api/db';
 import { type NoteError, noteNotFoundError } from '../../errors/domain-errors';
 import { createNoteRepository } from '../../repositories/note.repository';
 import { createMentionRepository } from '../../repositories/mention.repository';

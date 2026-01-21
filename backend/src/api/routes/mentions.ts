@@ -1,10 +1,10 @@
-import { createMentionService } from '../../services/mention';
-import { createNoteService } from '../../services/note';
-import { validateNoteId } from '../../middleware/validation';
-import { requireAuth } from '../../middleware/auth.middleware';
-import { errorToStatusCode, type NoteError } from '../../errors/domain-errors';
+import { createMentionService } from '../../domain/services/mention';
+import { createNoteService } from '../../domain/services/note';
+import { validateNoteId } from '../middleware/validation';
+import { requireAuth } from '../middleware/auth.middleware';
+import { errorToStatusCode, type NoteError } from '../../domain/errors/domain-errors';
 import type { MentionsResponse, ErrorResponse } from '@thread-note/shared/types';
-import { serialize } from '../../types/api';
+import { serialize } from '../types/api';
 import { createRouter } from './router';
 
 /**

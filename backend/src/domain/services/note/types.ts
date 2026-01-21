@@ -5,7 +5,7 @@
  */
 
 import type { ResultAsync } from 'neverthrow';
-import type { Note, NoteWithReplyCount } from '../../db';
+import type { Note, NoteWithReplyCount } from '../../../api/db';
 import type { NoteError } from '../../errors/domain-errors';
 
 // ==========================================
