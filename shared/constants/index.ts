@@ -1,6 +1,8 @@
 // NOTE: Shared constants across frontend and backend
 export const MAX_NOTE_LENGTH = 1000;
 export const MAX_THREAD_DEPTH = 100;
+// NOTE: Maximum reply depth (0 = root note, 1 = direct reply only)
+export const MAX_REPLY_DEPTH = 1;
 export const ID_LENGTH = 6;
 export const ID_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 

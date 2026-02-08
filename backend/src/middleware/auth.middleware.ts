@@ -1,6 +1,7 @@
 import { getClerkClient } from '../auth/clerk';
 
 import { createMiddleware } from 'hono/factory';
+import type { Context } from 'hono';
 import { Bindings, Variables } from 'hono/types';
 
 type AuthBindings = {
@@ -13,6 +14,13 @@ type AuthBindings = {
 export type AuthVariables = {
   userId: string;
   sessionId: string;
+};
+
+/**
+ * Get authenticated user ID from context
+ */
+export const getAuthUserId = (c: Context): string => {
+  return c.get('userId') as string;
 };
 
 // NOTE: Generic middleware that works with any Hono environment

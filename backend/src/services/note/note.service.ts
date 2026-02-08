@@ -13,9 +13,14 @@
 
 import { ResultAsync, okAsync, errAsync } from 'neverthrow';
 import { type Note, type NewNote, type Database } from '../../db';
-import { type NoteError, noteNotFoundError } from '../../errors/domain-errors';
+import {
+  type NoteError,
+  noteNotFoundError,
+  invalidHiddenReplyError,
+} from '../../errors/domain-errors';
 import { createNoteRepository } from '../../repositories/note.repository';
 import { createMentionRepository } from '../../repositories/mention.repository';
+import { ensureExists } from '../../repositories/helpers';
 import { generateId } from '../../utils/id-generator';
 import { getMentionPositions } from '../../utils/mention-parser';
 
@@ -140,10 +145,8 @@ export const createNoteService = ({ db }: { db: Database }): NoteServiceHandle =
       );
   };
 
-  const ensureNoteExists =
-    (id: string) =>
-    (note: Note | undefined): ResultAsync<Note, NoteError> =>
-      note ? okAsync(note) : errAsync(noteNotFoundError(id));
+  // Use the shared helper for consistent note existence checks
+  const ensureNoteExists = ensureExists<Note>(noteNotFoundError);
 
   const deleteMentionsFor = (noteIds: string[]): ResultAsync<void, NoteError> =>
     noteIds.length === 0
@@ -199,10 +202,7 @@ export const createNoteService = ({ db }: { db: Database }): NoteServiceHandle =
         .andThen((note) => {
           // NOTE: 子ノートの hidden 状態は変更できない（親から継承）
           if (note.parentId) {
-            return errAsync({
-              _tag: 'InvalidHiddenReplyError' as const,
-              message: 'Cannot change hidden status of a reply. It inherits from the parent.',
-            });
+            return errAsync(invalidHiddenReplyError());
           }
           return noteRepo.updateHidden(id, isHidden);
         }),

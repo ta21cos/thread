@@ -1,7 +1,10 @@
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { useEffect } from 'react';
 
-export const useUserSync = () => {
+const isE2ETest = import.meta.env.VITE_E2E_TEST === 'true';
+
+// NOTE: Actual user sync implementation using Clerk hooks
+const useUserSyncImpl = () => {
   const { userId, getToken } = useAuth();
   const { user } = useUser();
 
@@ -43,3 +46,8 @@ export const useUserSync = () => {
     syncUser();
   }, [userId, user, getToken]);
 };
+
+// NOTE: No-op stub for E2E test mode when Clerk is not available
+const useUserSyncStub = () => {};
+
+export const useUserSync = isE2ETest ? useUserSyncStub : useUserSyncImpl;

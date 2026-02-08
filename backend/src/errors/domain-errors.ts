@@ -54,14 +54,41 @@ export interface ParentNoteNotFoundError extends DomainError {
   readonly parentId: string;
 }
 
+export interface ChannelNotFoundError extends DomainError {
+  readonly _tag: 'ChannelNotFoundError';
+  readonly channelId: string;
+}
+
+export interface BookmarkNotFoundError extends DomainError {
+  readonly _tag: 'BookmarkNotFoundError';
+  readonly bookmarkId: string;
+}
+
+export interface TaskNotFoundError extends DomainError {
+  readonly _tag: 'TaskNotFoundError';
+  readonly taskId: string;
+}
+
+export interface DailyNoteNotFoundError extends DomainError {
+  readonly _tag: 'DailyNoteNotFoundError';
+  readonly date: string;
+}
+
+export interface TemplateNotFoundError extends DomainError {
+  readonly _tag: 'TemplateNotFoundError';
+  readonly templateId: string;
+}
+
 // Database Errors (500 Internal Server Error)
 export interface DatabaseError extends DomainError {
   readonly _tag: 'DatabaseError';
   readonly originalError?: unknown;
 }
 
-// Union type for all note-related errors
-export type NoteError =
+// Union type for all domain errors
+// Union type for all domain errors
+// NOTE: Named AppError (not NoteError) since it covers all domain entities
+export type AppError =
   | ValidationError
   | ContentTooLongError
   | ContentEmptyError
@@ -70,7 +97,15 @@ export type NoteError =
   | InvalidHiddenReplyError
   | NoteNotFoundError
   | ParentNoteNotFoundError
+  | ChannelNotFoundError
+  | BookmarkNotFoundError
+  | TaskNotFoundError
+  | DailyNoteNotFoundError
+  | TemplateNotFoundError
   | DatabaseError;
+
+/** @deprecated Use AppError instead */
+export type NoteError = AppError;
 
 // Error constructors (pure functions)
 export const validationError = (message: string, field?: string): ValidationError => ({
@@ -127,6 +162,36 @@ export const parentNoteNotFoundError = (parentId: string): ParentNoteNotFoundErr
   parentId,
 });
 
+export const channelNotFoundError = (channelId: string): ChannelNotFoundError => ({
+  _tag: 'ChannelNotFoundError',
+  message: `Channel with id '${channelId}' not found`,
+  channelId,
+});
+
+export const bookmarkNotFoundError = (bookmarkId: string): BookmarkNotFoundError => ({
+  _tag: 'BookmarkNotFoundError',
+  message: `Bookmark with id '${bookmarkId}' not found`,
+  bookmarkId,
+});
+
+export const taskNotFoundError = (taskId: string): TaskNotFoundError => ({
+  _tag: 'TaskNotFoundError',
+  message: `Task with id '${taskId}' not found`,
+  taskId,
+});
+
+export const dailyNoteNotFoundError = (date: string): DailyNoteNotFoundError => ({
+  _tag: 'DailyNoteNotFoundError',
+  message: `Daily note for date '${date}' not found`,
+  date,
+});
+
+export const templateNotFoundError = (templateId: string): TemplateNotFoundError => ({
+  _tag: 'TemplateNotFoundError',
+  message: `Template with id '${templateId}' not found`,
+  templateId,
+});
+
 export const databaseError = (message: string, originalError?: unknown): DatabaseError => ({
   _tag: 'DatabaseError',
   message,
@@ -134,13 +199,19 @@ export const databaseError = (message: string, originalError?: unknown): Databas
 });
 
 // Type guard functions
-export const isValidationError = (error: NoteError): error is ValidationError =>
+export const isValidationError = (error: AppError): error is ValidationError =>
   error._tag === 'ValidationError';
 
-export const isNotFoundError = (error: NoteError): boolean =>
-  error._tag === 'NoteNotFoundError' || error._tag === 'ParentNoteNotFoundError';
+export const isNotFoundError = (error: AppError): boolean =>
+  error._tag === 'NoteNotFoundError' ||
+  error._tag === 'ParentNoteNotFoundError' ||
+  error._tag === 'ChannelNotFoundError' ||
+  error._tag === 'BookmarkNotFoundError' ||
+  error._tag === 'TaskNotFoundError' ||
+  error._tag === 'DailyNoteNotFoundError' ||
+  error._tag === 'TemplateNotFoundError';
 
-export const isClientError = (error: NoteError): boolean =>
+export const isClientError = (error: AppError): boolean =>
   error._tag === 'ValidationError' ||
   error._tag === 'ContentTooLongError' ||
   error._tag === 'ContentEmptyError' ||
@@ -149,10 +220,15 @@ export const isClientError = (error: NoteError): boolean =>
   error._tag === 'InvalidHiddenReplyError';
 
 // HTTP status code mapping
-export const errorToStatusCode = (error: NoteError): 400 | 404 | 500 => {
+export const errorToStatusCode = (error: AppError): 400 | 404 | 500 => {
   switch (error._tag) {
     case 'NoteNotFoundError':
     case 'ParentNoteNotFoundError':
+    case 'ChannelNotFoundError':
+    case 'BookmarkNotFoundError':
+    case 'TaskNotFoundError':
+    case 'DailyNoteNotFoundError':
+    case 'TemplateNotFoundError':
       return 404;
     case 'ValidationError':
     case 'ContentTooLongError':

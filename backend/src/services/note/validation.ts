@@ -6,7 +6,7 @@
 
 import { ok, err, Result, ResultAsync, okAsync, errAsync } from 'neverthrow';
 import type { Note } from '../../db';
-import { MAX_NOTE_LENGTH } from '@thread-note/shared/constants';
+import { MAX_NOTE_LENGTH, MAX_REPLY_DEPTH } from '@thread-note/shared/constants';
 import { extractMentions } from '../../utils/mention-parser';
 import {
   type NoteError,
@@ -95,8 +95,8 @@ export const calculateDepthFromParent = (
 ): Result<number, NoteError> => {
   if (!parentId) return ok(0);
   if (!parent) return err(parentNoteNotFoundError(parentId));
-  if (parent.depth >= 1) return err(depthLimitExceededError(1));
-  return ok(1);
+  if (parent.depth >= MAX_REPLY_DEPTH) return err(depthLimitExceededError(MAX_REPLY_DEPTH));
+  return ok(parent.depth + 1);
 };
 
 /**

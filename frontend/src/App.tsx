@@ -3,8 +3,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NotesUIProvider } from './store/notes.store';
 import { FocusProvider } from './store/focus.context';
 import { SettingsProvider } from './store/settings.store';
+import { ChannelUIProvider } from './store/channel.store';
 import { AppRouter } from './router';
 import { AuthGuard } from './components/AuthGuard';
+import { ChannelDialog } from './components/channels';
 import { useUserSync } from './hooks/useUserSync';
 
 // NOTE: Configure TanStack Query client
@@ -30,13 +32,16 @@ const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <SettingsProvider>
-        <NotesUIProvider>
-          <FocusProvider>
-            <AuthGuard>
-              <AppRouter />
-            </AuthGuard>
-          </FocusProvider>
-        </NotesUIProvider>
+        <ChannelUIProvider>
+          <NotesUIProvider>
+            <FocusProvider>
+              <AuthGuard>
+                <AppRouter />
+                <ChannelDialog />
+              </AuthGuard>
+            </FocusProvider>
+          </NotesUIProvider>
+        </ChannelUIProvider>
       </SettingsProvider>
     </QueryClientProvider>
   );

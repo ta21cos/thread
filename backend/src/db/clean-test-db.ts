@@ -1,35 +1,53 @@
 import { Database } from 'bun:sqlite';
+import { Glob } from 'bun';
+import path from 'path';
 
-// NOTE: Clean test database for E2E tests using direct SQL
-const DATABASE_URL = 'data/test.db'; // process.env.DATABASE_URL;
+// NOTE: Find the D1 local database file dynamically
+function findD1DatabasePath(): string {
+  const wranglerDir = path.resolve(
+    __dirname,
+    '../../.wrangler/state/v3/d1/miniflare-D1DatabaseObject'
+  );
+  const glob = new Glob('*.sqlite');
+  const matches = Array.from(glob.scanSync({ cwd: wranglerDir }));
 
-function cleanDatabase() {
-  if (!DATABASE_URL) {
-    throw new Error('DATABASE_URL is not set');
+  if (matches.length === 0) {
+    throw new Error(
+      `No D1 database found in ${wranglerDir}. Run 'wrangler dev' first to initialize.`
+    );
   }
 
-  console.log('Cleaning test database...');
+  return path.join(wranglerDir, matches[0]);
+}
 
-  const sqlite = new Database(DATABASE_URL);
+// NOTE: Clean via direct SQLite access (not wrangler CLI) to avoid
+// miniflare lock conflicts when wrangler dev is running concurrently
+function cleanDatabase() {
+  const dbPath = findD1DatabasePath();
+  console.log(`Cleaning test database: ${dbPath}`);
+
+  const sqlite = new Database(dbPath);
 
   try {
-    // NOTE: Delete in proper order - child tables first
-    try {
-      sqlite.run('DELETE FROM search_index');
-    } catch (e) {
-      // Ignore if table doesn't exist
-    }
+    // NOTE: Delete in proper order - child tables first (FK constraints)
+    const tables = [
+      'daily_notes',
+      'tasks',
+      'bookmarks',
+      'scratch_pads',
+      'templates',
+      'search_index',
+      'mentions',
+      'notes',
+      'channels',
+    ];
 
-    try {
-      sqlite.run('DELETE FROM mentions');
-    } catch (e) {
-      // Ignore if table doesn't exist
-    }
-
-    try {
-      sqlite.run('DELETE FROM notes');
-    } catch (e) {
-      // Ignore if table doesn't exist
+    for (const table of tables) {
+      try {
+        sqlite.run(`DELETE FROM ${table}`);
+      } catch {
+        // Ignore if table doesn't exist
+      }
     }
 
     console.log('✓ Test database cleaned');

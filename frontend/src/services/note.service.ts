@@ -15,6 +15,7 @@ interface NoteWithThreadResponse {
     id: string;
     content: string;
     parentId: string | null;
+    channelId: string | null;
     createdAt: string;
     updatedAt: string;
     depth: number;
@@ -25,6 +26,7 @@ interface NoteWithThreadResponse {
     id: string;
     content: string;
     parentId: string | null;
+    channelId: string | null;
     createdAt: string;
     updatedAt: string;
     depth: number;

@@ -15,6 +15,8 @@ interface TextInputProps {
   onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   isHidden?: boolean;
   onHiddenChange?: (value: boolean) => void;
+  textareaTestId?: string;
+  submitTestId?: string;
 }
 
 export const TextInput = forwardRef<HTMLTextAreaElement, TextInputProps>(
@@ -30,6 +32,8 @@ export const TextInput = forwardRef<HTMLTextAreaElement, TextInputProps>(
       onKeyDown,
       isHidden = false,
       onHiddenChange,
+      textareaTestId,
+      submitTestId,
     },
     ref
   ) => {
@@ -84,6 +88,7 @@ export const TextInput = forwardRef<HTMLTextAreaElement, TextInputProps>(
             autoFocus={autoFocus}
             className="border-0 bg-transparent focus-visible:ring-0 min-h-[72px] resize-none"
             rows={3}
+            data-testid={textareaTestId}
           />
           <div className="flex items-center gap-1 px-3 pb-2">
             <Button size="icon" variant="ghost" className="h-7 w-7" type="button">
@@ -112,6 +117,7 @@ export const TextInput = forwardRef<HTMLTextAreaElement, TextInputProps>(
           onClick={onSubmit}
           disabled={disabled || !value.trim()}
           type="button"
+          data-testid={submitTestId}
         >
           <Send className="h-4 w-4" />
         </Button>
