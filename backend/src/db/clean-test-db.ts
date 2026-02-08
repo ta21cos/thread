@@ -20,6 +20,8 @@ function findD1DatabasePath(): string {
   return path.join(wranglerDir, matches[0]);
 }
 
+// NOTE: Clean via direct SQLite access (not wrangler CLI) to avoid
+// miniflare lock conflicts when wrangler dev is running concurrently
 function cleanDatabase() {
   const dbPath = findD1DatabasePath();
   console.log(`Cleaning test database: ${dbPath}`);
