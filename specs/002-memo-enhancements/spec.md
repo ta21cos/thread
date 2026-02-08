@@ -49,9 +49,9 @@ interface Note {
 // New table: user_settings
 interface UserSettings {
   id: string;
-  privacyPin: string | null;        // Hashed 4-6 digit PIN
-  autoLockMinutes: number;          // Default: 5
-  defaultMode: 'work' | 'private';  // Default: 'work'
+  privacyPin: string | null; // Hashed 4-6 digit PIN
+  autoLockMinutes: number; // Default: 5
+  defaultMode: 'work' | 'private'; // Default: 'work'
   createdAt: Date;
   updatedAt: Date;
 }
@@ -134,14 +134,14 @@ interface Task {
   lineNumber: number;
   text: string;
   completed: boolean;
-  createdAt: Date;  // Note's createdAt
+  createdAt: Date; // Note's createdAt
 }
 
 // API response type
 interface TaskListResponse {
   tasks: Array<{
     noteId: string;
-    notePreview: string;   // First 50 chars of note
+    notePreview: string; // First 50 chars of note
     lineNumber: number;
     text: string;
     completed: boolean;
@@ -223,9 +223,9 @@ Provide a free-form scratch pad for quick notes that don't fit the thread struct
 ```typescript
 // New table: scratch_pads
 interface ScratchPad {
-  id: string;           // Primary key
-  content: string;      // Markdown content (no length limit, but recommend soft limit of 10000)
-  isPrivate: boolean;   // Which mode this scratch pad belongs to
+  id: string; // Primary key
+  content: string; // Markdown content (no length limit, but recommend soft limit of 10000)
+  isPrivate: boolean; // Which mode this scratch pad belongs to
   updatedAt: Date;
 }
 ```
@@ -292,7 +292,7 @@ The UI already has bookmark functionality in dropdown menus, but it's not persis
 // New table: bookmarks
 interface Bookmark {
   id: string;
-  noteId: string;       // References notes.id
+  noteId: string; // References notes.id
   createdAt: Date;
 }
 
@@ -369,8 +369,8 @@ Auto-generated daily journal entries that serve as a consistent place to capture
 // New table: daily_notes (mapping table)
 interface DailyNote {
   id: string;
-  date: string;         // YYYY-MM-DD format
-  noteId: string;       // References notes.id
+  date: string; // YYYY-MM-DD format
+  noteId: string; // References notes.id
   isPrivate: boolean;
   createdAt: Date;
 }
@@ -379,32 +379,32 @@ interface DailyNote {
 interface Template {
   id: string;
   name: string;
-  content: string;      // Markdown with placeholders
+  content: string; // Markdown with placeholders
   type: 'daily' | 'general';
-  isDefault: boolean;   // Is this the default for its type?
+  isDefault: boolean; // Is this the default for its type?
   createdAt: Date;
   updatedAt: Date;
 }
 ```
 
 **Template Placeholders**:
+
 - `{{date}}` - Current date (YYYY-MM-DD)
 - `{{date:format}}` - Formatted date (e.g., `{{date:MMMM D, YYYY}}`)
 - `{{weekday}}` - Day of week (Monday, Tuesday, etc.)
 
 **Default Daily Template**:
+
 ```markdown
 # {{date:MMMM D, YYYY}} ({{weekday}})
 
 ## Today's Focus
 
-
 ## Notes
 
-
 ## Tasks
-- [ ]
 
+- [ ]
 ```
 
 ### API Endpoints
@@ -626,7 +626,7 @@ export interface Note {
   createdAt: string;
   updatedAt: string;
   depth: number;
-  isPrivate: boolean;     // Renamed from isHidden
+  isPrivate: boolean; // Renamed from isHidden
   isBookmarked?: boolean; // Optional, included when queried
   taskCount?: { completed: number; total: number }; // Optional
 }
@@ -652,14 +652,14 @@ const routes = [
 
 ## Keyboard Shortcuts Summary
 
-| Shortcut | Action |
-|----------|--------|
+| Shortcut               | Action                             |
+| ---------------------- | ---------------------------------- |
 | `Cmd/Ctrl + Shift + L` | Toggle Privacy Mode (Panic Button) |
-| `Cmd/Ctrl + .` | Toggle Scratch Pad |
-| `Cmd/Ctrl + D` | Toggle Bookmark on selected note |
-| `Cmd/Ctrl + T` | Open today's Daily Note |
-| `Cmd/Ctrl + [` | Previous day (in Daily Notes) |
-| `Cmd/Ctrl + ]` | Next day (in Daily Notes) |
+| `Cmd/Ctrl + .`         | Toggle Scratch Pad                 |
+| `Cmd/Ctrl + D`         | Toggle Bookmark on selected note   |
+| `Cmd/Ctrl + T`         | Open today's Daily Note            |
+| `Cmd/Ctrl + [`         | Previous day (in Daily Notes)      |
+| `Cmd/Ctrl + ]`         | Next day (in Daily Notes)          |
 
 ---
 

@@ -473,6 +473,8 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
           onSubmit={handleReply}
           placeholder="Reply... (Cmd/Ctrl+Enter to send)"
           autoFocus={false}
+          textareaTestId="thread-reply-textarea"
+          submitTestId="thread-reply-submit"
         />
       </div>
     </div>

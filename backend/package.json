@@ -6,6 +6,7 @@
     "dev:bun": "bun --watch src/index.ts",
     "dev:test": "NODE_ENV=test bun --watch src/index.ts",
     "dev": "wrangler dev --env=development --port=3000",
+    "dev:e2e": "NODE_ENV=test wrangler dev --env=development --port=3000",
     "build": "bun build src/index.ts --outdir dist --target bun",
     "build:worker": "wrangler deploy --dry-run",
     "start": "bun dist/index.js",

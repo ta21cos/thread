@@ -194,6 +194,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           autoFocus={autoFocus}
           isHidden={isHidden}
           onHiddenChange={setIsHidden}
+          textareaTestId="note-editor-textarea"
+          submitTestId="note-editor-submit"
         />
 
         {onCancel && (

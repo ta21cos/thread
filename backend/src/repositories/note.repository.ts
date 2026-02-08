@@ -9,7 +9,7 @@ import { ResultAsync, okAsync } from 'neverthrow';
 import { eq, isNull, desc, asc, and } from 'drizzle-orm';
 import { notes, type Note, type NewNote, type NoteWithReplyCount, type Database } from '../db';
 import type { NoteError } from '../errors/domain-errors';
-import { dbQuery, dbQueryFirst } from './helpers';
+import { dbQuery, dbQueryFirst, dbInsertReturning, dbUpdateReturning } from './helpers';
 
 // ==========================================
 // Pure Helper Functions
@@ -97,34 +97,25 @@ export const createNoteRepository = ({ db }: { db: Database }): NoteRepository =
       dbQueryFirst(db.select().from(notes).where(eq(notes.id, id)), 'Failed to find note'),
 
     create: (note) =>
-      dbQuery(
-        db
-          .insert(notes)
-          .values(note)
-          .returning()
-          .then(([created]) => created),
-        'Failed to create note'
-      ),
+      dbInsertReturning(db.insert(notes).values(note).returning(), 'Failed to create note'),
 
     update: (id, content) =>
-      dbQuery(
+      dbUpdateReturning(
         db
           .update(notes)
           .set({ content, updatedAt: new Date() })
           .where(eq(notes.id, id))
-          .returning()
-          .then(([updated]) => updated),
+          .returning(),
         'Failed to update note'
       ),
 
     updateHidden: (id, isHidden) =>
-      dbQuery(
+      dbUpdateReturning(
         db
           .update(notes)
           .set({ isHidden, updatedAt: new Date() })
           .where(eq(notes.id, id))
-          .returning()
-          .then(([updated]) => updated),
+          .returning(),
         'Failed to update note hidden status'
       ),
 

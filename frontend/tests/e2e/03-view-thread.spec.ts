@@ -24,8 +24,9 @@ test.describe('View Thread', () => {
   test('should show empty state when no note is selected', async ({ page }) => {
     await page.goto('/');
 
-    // NOTE: Verify empty state is shown (before any note is selected)
-    await expect(page.locator('text=Select a note to view its thread')).toBeVisible();
+    // NOTE: When no note is selected, the right panel is hidden.
+    // Verify that thread view container is NOT visible.
+    await expect(page.locator(selectors.threadView.container)).not.toBeVisible();
   });
 
   test('should display note content in thread view', async ({ page }) => {

@@ -56,8 +56,19 @@ test.describe('Delete Note', () => {
       await dialog.accept();
     });
 
-    // NOTE: Click delete
-    await page.click(selectors.threadView.deleteButton);
+    // NOTE: Hover over thread node to reveal menu button
+    const threadNode = page.locator('[data-testid="thread-node"]').first();
+    await threadNode.hover();
+
+    // NOTE: Open dropdown menu
+    const menuButton = threadNode.locator('button').first();
+    await menuButton.waitFor({ state: 'visible', timeout: 5000 });
+    await menuButton.click();
+
+    // NOTE: Click delete from dropdown
+    const deleteButton = page.locator(selectors.threadView.deleteButton);
+    await deleteButton.waitFor({ state: 'visible', timeout: 10000 });
+    await deleteButton.click({ force: true });
 
     // NOTE: Wait a moment for dialog
     await page.waitForTimeout(500);
@@ -128,8 +139,19 @@ test.describe('Delete Note', () => {
       await dialog.dismiss();
     });
 
-    // NOTE: Click delete
-    await page.click(selectors.threadView.deleteButton);
+    // NOTE: Hover over thread node to reveal menu button
+    const threadNode = page.locator('[data-testid="thread-node"]').first();
+    await threadNode.hover();
+
+    // NOTE: Open dropdown menu
+    const menuButton = threadNode.locator('button').first();
+    await menuButton.waitFor({ state: 'visible', timeout: 5000 });
+    await menuButton.click();
+
+    // NOTE: Click delete from dropdown
+    const deleteButton = page.locator(selectors.threadView.deleteButton);
+    await deleteButton.waitFor({ state: 'visible', timeout: 10000 });
+    await deleteButton.click({ force: true });
 
     // NOTE: Wait a moment
     await page.waitForTimeout(500);
@@ -202,7 +224,7 @@ test.describe('Delete Note', () => {
     // NOTE: Delete parent (cascade deletes child)
     await deleteNote(page);
 
-    // NOTE: Verify thread view shows empty state
-    await expect(page.locator('.notes-page__empty')).toBeVisible();
+    // NOTE: Verify thread view is no longer shown (navigated back to main view)
+    await expect(page.locator(selectors.threadView.container)).not.toBeVisible();
   });
 });

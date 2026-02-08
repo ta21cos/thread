@@ -815,7 +815,9 @@ describe('NoteService', () => {
           parentId: parentId,
           isHidden: true,
         })
-      ).rejects.toThrow('Only root notes can be marked as hidden. Replies inherit hidden status from parent.');
+      ).rejects.toThrow(
+        'Only root notes can be marked as hidden. Replies inherit hidden status from parent.'
+      );
     });
 
     it('should inherit parent isHidden status for replies', async () => {

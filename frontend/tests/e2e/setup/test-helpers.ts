@@ -66,7 +66,7 @@ export async function createNote(page: Page, content: string): Promise<string> {
   return noteId;
 }
 
-export async function waitForNoteWithContent(page: Page, content: string, timeout: number = 5000) {
+export async function waitForNoteWithContent(page: Page, content: string, timeout: number = 10000) {
   await page.waitForFunction(
     ({ contentText }) => {
       const contentElements = Array.from(

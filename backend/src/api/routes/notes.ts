@@ -1,7 +1,6 @@
 import { okAsync } from 'neverthrow';
 import { createNoteService } from '../../services/note';
 import { createThreadService } from '../../services/thread';
-import { errorToStatusCode, type NoteError } from '../../errors/domain-errors';
 import {
   validateCreateNote,
   validateUpdateNote,
@@ -10,17 +9,10 @@ import {
   validatePagination,
 } from '../../middleware/validation';
 import { requireAuth } from '../../middleware/auth.middleware';
-import type { NoteDetailResponse, ErrorResponse } from '@thread-note/shared/types';
+import { handleServiceResponse, handleVoidResponse } from '../middleware/response-handler';
+import type { NoteDetailResponse } from '@thread-note/shared/types';
 import { serialize } from '../../types/api';
 import { createRouter } from './router';
-
-/**
- * NoteError を ErrorResponse に変換
- */
-const toErrorResponse = (error: NoteError): ErrorResponse => ({
-  error: error._tag,
-  message: error.message,
-});
 
 const app = createRouter()
   // GET /api/notes - List root notes
@@ -31,17 +23,15 @@ const app = createRouter()
     const { limit, offset } = c.req.valid('query');
     const includeHidden = c.req.query('includeHidden') === 'true';
 
-    return await noteService
-      .getRootNotes(limit, offset, includeHidden)
-      .map((d) => ({
+    return handleServiceResponse(
+      noteService.getRootNotes(limit, offset, includeHidden),
+      c,
+      (d) => ({
         notes: d.notes.map(serialize),
         total: d.total,
         hasMore: d.hasMore,
-      }))
-      .match(
-        (data) => c.json(data),
-        (error: NoteError) => c.json(toErrorResponse(error), errorToStatusCode(error))
-      );
+      })
+    );
   })
 
   // POST /api/notes - Create note
@@ -50,13 +40,7 @@ const app = createRouter()
     const noteService = createNoteService({ db });
     const data = c.req.valid('json');
 
-    return await noteService
-      .createNote(data)
-      .map(serialize)
-      .match(
-        (data) => c.json(data, 201),
-        (error: NoteError) => c.json(toErrorResponse(error), errorToStatusCode(error))
-      );
+    return handleServiceResponse(noteService.createNote(data), c, serialize, 201);
   })
 
   // GET /api/notes/:id - Get note with thread
@@ -67,9 +51,8 @@ const app = createRouter()
     const { id } = c.req.valid('param');
     const includeThread = c.req.query('includeThread') !== 'false';
 
-    return await noteService
-      .getNoteById(id)
-      .andThen((note) =>
+    return handleServiceResponse(
+      noteService.getNoteById(id).andThen((note) =>
         (includeThread ? threadService.getThread(id) : okAsync([])).map((thread) => {
           const response: NoteDetailResponse = {
             note: serialize(note),
@@ -77,11 +60,9 @@ const app = createRouter()
           };
           return response;
         })
-      )
-      .match(
-        (data) => c.json(data),
-        (error: NoteError) => c.json(toErrorResponse(error), errorToStatusCode(error))
-      );
+      ),
+      c
+    );
   })
 
   // PUT /api/notes/:id - Update note
@@ -91,13 +72,7 @@ const app = createRouter()
     const { id } = c.req.valid('param');
     const data = c.req.valid('json');
 
-    return await noteService
-      .updateNote(id, data)
-      .map(serialize)
-      .match(
-        (data) => c.json(data),
-        (error: NoteError) => c.json(toErrorResponse(error), errorToStatusCode(error))
-      );
+    return handleServiceResponse(noteService.updateNote(id, data), c, serialize);
   })
 
   // PATCH /api/notes/:id/hidden - Update note hidden status
@@ -107,13 +82,7 @@ const app = createRouter()
     const { id } = c.req.valid('param');
     const { isHidden } = c.req.valid('json');
 
-    return await noteService
-      .updateHidden(id, isHidden)
-      .map(serialize)
-      .match(
-        (data) => c.json(data),
-        (error: NoteError) => c.json(toErrorResponse(error), errorToStatusCode(error))
-      );
+    return handleServiceResponse(noteService.updateHidden(id, isHidden), c, serialize);
   })
 
   // DELETE /api/notes/:id - Delete note (cascade)
@@ -122,10 +91,7 @@ const app = createRouter()
     const noteService = createNoteService({ db });
     const { id } = c.req.valid('param');
 
-    return await noteService.deleteNote(id).match(
-      () => c.body(null, 204),
-      (error: NoteError) => c.json(toErrorResponse(error), errorToStatusCode(error))
-    );
+    return handleVoidResponse(noteService.deleteNote(id), c);
   });
 
 export default app;
