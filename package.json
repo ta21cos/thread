@@ -26,7 +26,8 @@
     "release:production": "bun run --filter @thread-note/frontend deploy:production && bun run --filter @thread-note/backend db:migrate:production && bun run --filter @thread-note/backend deploy:production",
     "lint": "bun run --filter '*' lint",
     "typecheck": "bun run --filter '*' typecheck",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "release": "bash scripts/release.sh"
   },
   "devDependencies": {
     "@types/bun": "latest",
