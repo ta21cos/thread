@@ -82,6 +82,10 @@
   * {
     @apply border-border outline-ring/50;
   }
+  button,
+  [role='button'] {
+    cursor: pointer;
+  }
   html,
   body,
   #root {
