@@ -4,6 +4,8 @@ export interface Shortcut {
   key: string;
   handler: () => void;
   description: string;
+  /** When true, the shortcut fires even when an input/textarea/contenteditable is focused. */
+  enableInInput?: boolean;
 }
 
 const isMac =
@@ -44,11 +46,10 @@ export const useKeyboardShortcuts = (shortcuts: Shortcut[]) => {
       if (!(e.target instanceof HTMLElement)) return;
 
       const { tagName, isContentEditable } = e.target;
-      if (tagName === 'INPUT' || tagName === 'TEXTAREA' || isContentEditable) {
-        return;
-      }
+      const isInInput = tagName === 'INPUT' || tagName === 'TEXTAREA' || isContentEditable;
 
       for (const shortcut of shortcutsRef.current) {
+        if (isInInput && !shortcut.enableInInput) continue;
         if (matchesShortcut(e, shortcut.key)) {
           e.preventDefault();
           shortcut.handler();
