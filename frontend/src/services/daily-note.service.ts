@@ -18,7 +18,7 @@ interface DailyNoteResponse {
 
 interface CalendarEntry {
   date: string;
-  noteId: string;
+  hasNote: boolean;
 }
 
 interface CalendarResponse {

@@ -95,17 +95,17 @@ export const createDailyNoteService = ({ db }: { db: Database }): DailyNoteServi
 
     getCalendar: (authorId, year, month) =>
       dailyNoteRepo
-        .findByAuthorAndDateRange(
+        .findEditedByAuthorAndDateRange(
           authorId,
           `${formatDate(year, month)}-01`,
           `${formatDate(year, month)}-31`
         )
-        .map((dailyNotes) => {
-          const datesWithNotes = new Set(dailyNotes.map((dn) => dn.date));
+        .map((editedNotes) => {
+          const editedDates = new Set(editedNotes.map((dn) => dn.date));
           const daysInMonth = new Date(year, month, 0).getDate();
           return Array.from({ length: daysInMonth }, (_, i) => {
             const dateStr = formatDate(year, month, i + 1);
-            return { date: dateStr, hasNote: datesWithNotes.has(dateStr) } as CalendarEntry;
+            return { date: dateStr, hasNote: editedDates.has(dateStr) } as CalendarEntry;
           });
         }),
 

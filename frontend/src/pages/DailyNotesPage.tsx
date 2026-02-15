@@ -1,11 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, ChevronLeft, ChevronRight, Edit3, Loader2 } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
-import { useDailyNote, useCalendar } from '../services/daily-note.service';
+import { useQueryClient } from '@tanstack/react-query';
+import { useDailyNote, useCalendar, dailyNoteKeys } from '../services/daily-note.service';
 import { useUpdateNote } from '../services/note.service';
+
+const AUTO_SAVE_DELAY_MS = 1000;
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -79,7 +82,13 @@ const CalendarWidget: React.FC<{
             >
               {cell.day}
               {entriesSet.has(cell.date) && (
-                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-primary" />
+                <Check
+                  className={cn(
+                    'absolute top-0 right-0 h-2.5 w-2.5',
+                    cell.date === selectedDate ? 'text-primary-foreground' : 'text-primary'
+                  )}
+                  strokeWidth={3}
+                />
               )}
             </button>
           ) : (
@@ -90,6 +99,8 @@ const CalendarWidget: React.FC<{
     </div>
   );
 };
+
+type SaveStatus = 'idle' | 'saving' | 'saved';
 
 export const DailyNotesPage: React.FC = () => {
   const { date } = useParams<{ date?: string }>();
@@ -105,44 +116,102 @@ export const DailyNotesPage: React.FC = () => {
   const [calYear, setCalYear] = useState(parsedDate.year);
   const [calMonth, setCalMonth] = useState(parsedDate.month);
 
+  const queryClient = useQueryClient();
   const { data: dailyNoteData, isLoading } = useDailyNote(selectedDate);
   const { data: calendarEntries } = useCalendar(calYear, calMonth);
   const updateNote = useUpdateNote();
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState('');
+  const [content, setContent] = useState('');
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedIndicatorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const noteIdRef = useRef<string | null>(null);
+  const originalContentRef = useRef<string>('');
+
+  // Sync content from server data when date changes or data loads
+  useEffect(() => {
+    if (dailyNoteData?.note) {
+      if (noteIdRef.current !== dailyNoteData.note.id) {
+        setContent(dailyNoteData.note.content);
+        noteIdRef.current = dailyNoteData.note.id;
+        originalContentRef.current = dailyNoteData.note.content;
+        setSaveStatus('idle');
+      }
+    } else {
+      setContent('');
+      noteIdRef.current = null;
+      originalContentRef.current = '';
+      setSaveStatus('idle');
+    }
+  }, [dailyNoteData]);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      if (savedIndicatorTimerRef.current) clearTimeout(savedIndicatorTimerRef.current);
+    };
+  }, []);
+
+  const saveContent = useCallback(
+    async (noteId: string, newContent: string) => {
+      setSaveStatus('saving');
+      try {
+        await updateNote.mutateAsync({ id: noteId, content: newContent });
+        originalContentRef.current = newContent;
+        setSaveStatus('saved');
+        queryClient.invalidateQueries({ queryKey: dailyNoteKeys.calendar(calYear, calMonth) });
+        if (savedIndicatorTimerRef.current) clearTimeout(savedIndicatorTimerRef.current);
+        savedIndicatorTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
+      } catch (error) {
+        console.error('Failed to auto-save daily note:', error);
+        setSaveStatus('idle');
+      }
+    },
+    [updateNote, queryClient, calYear, calMonth]
+  );
+
+  const handleContentChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const newContent = e.target.value;
+      setContent(newContent);
+
+      if (!dailyNoteData?.note) return;
+
+      // Skip save if content matches original
+      if (newContent === originalContentRef.current) {
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        return;
+      }
+
+      const noteId = dailyNoteData.note.id;
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => {
+        saveContent(noteId, newContent);
+      }, AUTO_SAVE_DELAY_MS);
+    },
+    [dailyNoteData, saveContent]
+  );
 
   const entriesSet = useMemo(() => {
-    return new Set(calendarEntries?.map((e) => e.date) ?? []);
+    return new Set(calendarEntries?.filter((e) => e.hasNote).map((e) => e.date) ?? []);
   }, [calendarEntries]);
 
   const handleDateSelect = (newDate: string) => {
+    // Flush pending save before navigating (only if content differs)
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    if (dailyNoteData?.note && content !== originalContentRef.current) {
+      saveContent(dailyNoteData.note.id, content);
+    }
     navigate(`/daily/${newDate}`);
   };
 
   const handleMonthChange = (year: number, month: number) => {
     setCalYear(year);
     setCalMonth(month);
-  };
-
-  const handleStartEdit = () => {
-    if (dailyNoteData?.note) {
-      setEditContent(dailyNoteData.note.content);
-      setIsEditing(true);
-    }
-  };
-
-  const handleSaveEdit = async () => {
-    if (!dailyNoteData?.note) return;
-    try {
-      await updateNote.mutateAsync({
-        id: dailyNoteData.note.id,
-        content: editContent,
-      });
-      setIsEditing(false);
-    } catch (error) {
-      console.error('Failed to update daily note:', error);
-    }
   };
 
   const formattedDate = new Date(selectedDate).toLocaleDateString('en-US', {
@@ -185,16 +254,17 @@ export const DailyNotesPage: React.FC = () => {
         <div className="flex-1 flex flex-col min-w-0">
           <div className="flex h-14 items-center justify-between border-b border-border px-4 flex-shrink-0">
             <span className="text-sm font-medium text-foreground">{formattedDate}</span>
-            {dailyNoteData?.note && !isEditing && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleStartEdit}
-                data-testid="daily-note-edit"
-              >
-                <Edit3 className="mr-1 h-4 w-4" />
-                Edit
-              </Button>
+            {saveStatus === 'saving' && (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Saving...
+              </span>
+            )}
+            {saveStatus === 'saved' && (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Check className="h-3 w-3" />
+                Saved
+              </span>
             )}
           </div>
 
@@ -203,28 +273,14 @@ export const DailyNotesPage: React.FC = () => {
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-            ) : isEditing ? (
-              <div className="space-y-3">
-                <textarea
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                  className="w-full min-h-[200px] resize-none rounded-lg border border-border bg-background p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  data-testid="daily-note-textarea"
-                />
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={handleSaveEdit} disabled={updateNote.isPending}>
-                    {updateNote.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-                    Save
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
             ) : dailyNoteData?.note ? (
-              <div className="prose prose-sm max-w-none text-foreground">
-                <p className="whitespace-pre-wrap">{dailyNoteData.note.content}</p>
-              </div>
+              <textarea
+                value={content}
+                onChange={handleContentChange}
+                placeholder="Write your daily note..."
+                className="w-full h-full min-h-[200px] resize-none bg-transparent text-sm text-foreground focus:outline-none"
+                data-testid="daily-note-textarea"
+              />
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                 <Calendar className="mb-3 h-12 w-12" />

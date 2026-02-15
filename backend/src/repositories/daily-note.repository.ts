@@ -3,8 +3,9 @@
  */
 
 import type { ResultAsync } from 'neverthrow';
-import { eq, and, gte, lte } from 'drizzle-orm';
+import { eq, and, gte, lte, gt } from 'drizzle-orm';
 import { dailyNotes, type DailyNote, type NewDailyNote, type Database } from '../db';
+import { notes } from '../models/note.schema';
 import type { NoteError } from '../errors/domain-errors';
 import { dbQuery, dbQueryFirst, dbInsertReturning, dbDelete } from './helpers';
 
@@ -19,6 +20,11 @@ export interface DailyNoteRepository {
     date: string
   ) => ResultAsync<DailyNote | undefined, NoteError>;
   readonly findByAuthorAndDateRange: (
+    authorId: string,
+    startDate: string,
+    endDate: string
+  ) => ResultAsync<DailyNote[], NoteError>;
+  readonly findEditedByAuthorAndDateRange: (
     authorId: string,
     startDate: string,
     endDate: string
@@ -60,6 +66,24 @@ export const createDailyNoteRepository = ({ db }: { db: Database }): DailyNoteRe
           )
         ),
       'Failed to find daily notes in range'
+    ),
+
+  findEditedByAuthorAndDateRange: (authorId, startDate, endDate) =>
+    dbQuery(
+      db
+        .select()
+        .from(dailyNotes)
+        .innerJoin(notes, eq(dailyNotes.noteId, notes.id))
+        .where(
+          and(
+            eq(dailyNotes.authorId, authorId),
+            gte(dailyNotes.date, startDate),
+            lte(dailyNotes.date, endDate),
+            gt(notes.updatedAt, notes.createdAt)
+          )
+        )
+        .then((rows) => rows.map((r) => r.daily_notes)),
+      'Failed to find edited daily notes in range'
     ),
 
   create: (dailyNote) =>
