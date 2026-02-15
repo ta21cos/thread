@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Hash, Plus, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
@@ -52,11 +53,18 @@ interface ChannelListProps {
 }
 
 export const ChannelList: React.FC<ChannelListProps> = ({ className }) => {
+  const navigate = useNavigate();
   const { data: channels, isLoading } = useChannels();
   const { selectedChannelId, setSelectedChannelId, openChannelDialog } = useChannelUI();
 
   const handleSelectChannel = (id: string) => {
-    setSelectedChannelId(id === selectedChannelId ? null : id);
+    if (id === selectedChannelId) {
+      setSelectedChannelId(null);
+      navigate('/');
+    } else {
+      setSelectedChannelId(id);
+      navigate(`/channels/${id}`);
+    }
   };
 
   const handleEditChannel = (id: string) => {
@@ -97,7 +105,10 @@ export const ChannelList: React.FC<ChannelListProps> = ({ className }) => {
             'flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors',
             selectedChannelId === null ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'
           )}
-          onClick={() => setSelectedChannelId(null)}
+          onClick={() => {
+            setSelectedChannelId(null);
+            navigate('/');
+          }}
           role="button"
           tabIndex={0}
         >

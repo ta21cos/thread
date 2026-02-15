@@ -50,6 +50,15 @@ function cleanDatabase() {
       }
     }
 
+    // NOTE: Seed test user profile required by FK constraints on bookmarks, scratch_pads, etc.
+    try {
+      sqlite.run(
+        `INSERT OR REPLACE INTO profiles (id, display_name, created_at, updated_at) VALUES ('test_user_123', 'Test User', unixepoch(), unixepoch())`
+      );
+    } catch {
+      // Ignore if profiles table doesn't exist
+    }
+
     console.log('✓ Test database cleaned');
     sqlite.close();
   } catch (error) {

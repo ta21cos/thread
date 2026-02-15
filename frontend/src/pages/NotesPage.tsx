@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { AppLayout } from '../components/layout/AppLayout';
 import { SplitView } from '../layouts/SplitView';
 import { NoteList } from '../components/NoteList';
 import { ThreadView } from '../components/ThreadView';
@@ -14,22 +15,30 @@ import {
 import { useNotesUI } from '../store/notes.store';
 import { useFocus } from '../store/focus.context';
 import { useSettings } from '../store/settings.store';
+import { useChannelUI } from '../store/channel.store';
 
 export const NotesPage: React.FC = () => {
-  const { noteId } = useParams<{ noteId?: string }>();
+  const { noteId, channelId } = useParams<{ noteId?: string; channelId?: string }>();
   const navigate = useNavigate();
   const { selectedNoteId, setSelectedNoteId, replyingToNoteId, stopReply } = useNotesUI();
   const { focusInput } = useFocus();
   const { showHiddenNotes } = useSettings();
+  const { selectedChannelId, setSelectedChannelId } = useChannelUI();
 
-  // NOTE: Fetch notes with infinite scroll
+  // NOTE: Sync URL channelId to store (only when URL changes)
+  useEffect(() => {
+    const target = channelId ?? null;
+    setSelectedChannelId(target);
+  }, [channelId, setSelectedChannelId]);
+
+  // NOTE: Fetch notes with infinite scroll, filtered by channel
   const {
     data: notesData,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
     isLoading: notesLoading,
-  } = useInfiniteNotes(20, showHiddenNotes);
+  } = useInfiniteNotes(20, showHiddenNotes, selectedChannelId);
 
   // NOTE: Fetch selected note with thread
   const { data: noteData, isLoading: noteLoading } = useNote(selectedNoteId ?? undefined);
@@ -39,9 +48,6 @@ export const NotesPage: React.FC = () => {
   const updateNote = useUpdateNote();
   const deleteNote = useDeleteNote();
   const updateNoteHidden = useUpdateNoteHidden();
-
-  // NOTE: Real-time updates to be implemented in the future
-  // TODO: Implement WebSocket or polling for real-time note updates
 
   // NOTE: Sync URL param with selected note
   useEffect(() => {
@@ -59,7 +65,11 @@ export const NotesPage: React.FC = () => {
   // NOTE: Close thread view (mobile navigation)
   const handleCloseThread = () => {
     setSelectedNoteId(null);
-    navigate('/');
+    if (channelId) {
+      navigate(`/channels/${channelId}`);
+    } else {
+      navigate('/');
+    }
 
     // NOTE: Focus message input when thread closes
     setTimeout(() => {
@@ -73,6 +83,7 @@ export const NotesPage: React.FC = () => {
       const newNote = await createNote.mutateAsync({
         content,
         parentId: replyingToNoteId || undefined,
+        channelId: selectedChannelId || undefined,
         isHidden,
       });
 
@@ -108,71 +119,73 @@ export const NotesPage: React.FC = () => {
   const displayNotes = notesData?.pages.flatMap((page) => page.notes) || [];
 
   return (
-    <div className="h-full w-full">
-      {/* NOTE: Split view layout */}
-      <SplitView
-        showRight={!!selectedNoteId}
-        onCloseRight={handleCloseThread}
-        left={
-          <NoteList
-            notes={displayNotes}
-            selectedNoteId={selectedNoteId ?? undefined}
-            onNoteSelect={handleNoteSelect}
-            onLoadMore={handleLoadMore}
-            hasMore={hasNextPage}
-            loading={notesLoading || isFetchingNextPage}
-            onCreateNote={!replyingToNoteId ? handleCreateNote : undefined}
-            onToggleHidden={handleToggleHidden}
-          />
-        }
-        right={
-          <div className="h-full w-full flex flex-col">
-            {selectedNoteId && noteData?.note ? (
-              <ThreadView
-                rootNote={noteData.note}
-                thread={noteData.thread || []}
-                onClose={handleCloseThread}
-                onReply={async (parentId: string, content: string) => {
-                  await createNote.mutateAsync({
-                    content,
-                    parentId,
-                  });
-                }}
-                onEdit={async (noteId: string, content: string) => {
-                  try {
-                    await updateNote.mutateAsync({ id: noteId, content });
-                  } catch (error) {
-                    console.error('Failed to update note:', error);
-                  }
-                }}
-                onDelete={async (noteId: string) => {
-                  try {
-                    await deleteNote.mutateAsync(noteId);
-
-                    // NOTE: Clear selection if deleted note was selected
-                    if (selectedNoteId === noteId) {
-                      handleCloseThread();
+    <AppLayout>
+      <div className="h-full w-full">
+        {/* NOTE: Split view layout */}
+        <SplitView
+          showRight={!!selectedNoteId}
+          onCloseRight={handleCloseThread}
+          left={
+            <NoteList
+              notes={displayNotes}
+              selectedNoteId={selectedNoteId ?? undefined}
+              onNoteSelect={handleNoteSelect}
+              onLoadMore={handleLoadMore}
+              hasMore={hasNextPage}
+              loading={notesLoading || isFetchingNextPage}
+              onCreateNote={!replyingToNoteId ? handleCreateNote : undefined}
+              onToggleHidden={handleToggleHidden}
+            />
+          }
+          right={
+            <div className="h-full w-full flex flex-col">
+              {selectedNoteId && noteData?.note ? (
+                <ThreadView
+                  rootNote={noteData.note}
+                  thread={noteData.thread || []}
+                  onClose={handleCloseThread}
+                  onReply={async (parentId: string, content: string) => {
+                    await createNote.mutateAsync({
+                      content,
+                      parentId,
+                    });
+                  }}
+                  onEdit={async (noteId: string, content: string) => {
+                    try {
+                      await updateNote.mutateAsync({ id: noteId, content });
+                    } catch (error) {
+                      console.error('Failed to update note:', error);
                     }
-                  } catch (error) {
-                    console.error('Failed to delete note:', error);
-                  }
-                }}
-              />
-            ) : noteLoading ? (
-              <div className="flex h-full items-center justify-center">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  <p className="text-muted-foreground text-sm">Loading thread...</p>
+                  }}
+                  onDelete={async (noteId: string) => {
+                    try {
+                      await deleteNote.mutateAsync(noteId);
+
+                      // NOTE: Clear selection if deleted note was selected
+                      if (selectedNoteId === noteId) {
+                        handleCloseThread();
+                      }
+                    } catch (error) {
+                      console.error('Failed to delete note:', error);
+                    }
+                  }}
+                />
+              ) : noteLoading ? (
+                <div className="flex h-full items-center justify-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <p className="text-muted-foreground text-sm">Loading thread...</p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <p className="text-muted-foreground text-sm">Select a note to view its thread</p>
-              </div>
-            )}
-          </div>
-        }
-      />
-    </div>
+              ) : (
+                <div className="flex h-full items-center justify-center">
+                  <p className="text-muted-foreground text-sm">Select a note to view its thread</p>
+                </div>
+              )}
+            </div>
+          }
+        />
+      </div>
+    </AppLayout>
   );
 };
