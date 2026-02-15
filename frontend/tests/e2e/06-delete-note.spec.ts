@@ -56,19 +56,14 @@ test.describe('Delete Note', () => {
       await dialog.accept();
     });
 
-    // NOTE: Hover over thread node to reveal menu button
+    // NOTE: Hover over thread node to reveal inline action buttons
     const threadNode = page.locator('[data-testid="thread-node"]').first();
     await threadNode.hover();
 
-    // NOTE: Open dropdown menu
-    const menuButton = threadNode.locator('button').first();
-    await menuButton.waitFor({ state: 'visible', timeout: 5000 });
-    await menuButton.click();
-
-    // NOTE: Click delete from dropdown
+    // NOTE: Click delete button directly (inline action bar)
     const deleteButton = page.locator(selectors.threadView.deleteButton);
-    await deleteButton.waitFor({ state: 'visible', timeout: 10000 });
-    await deleteButton.click({ force: true });
+    await deleteButton.waitFor({ state: 'visible', timeout: 5000 });
+    await deleteButton.click();
 
     // NOTE: Wait a moment for dialog
     await page.waitForTimeout(500);
@@ -139,19 +134,14 @@ test.describe('Delete Note', () => {
       await dialog.dismiss();
     });
 
-    // NOTE: Hover over thread node to reveal menu button
+    // NOTE: Hover over thread node to reveal inline action buttons
     const threadNode = page.locator('[data-testid="thread-node"]').first();
     await threadNode.hover();
 
-    // NOTE: Open dropdown menu
-    const menuButton = threadNode.locator('button').first();
-    await menuButton.waitFor({ state: 'visible', timeout: 5000 });
-    await menuButton.click();
-
-    // NOTE: Click delete from dropdown
+    // NOTE: Click delete button directly (inline action bar)
     const deleteButton = page.locator(selectors.threadView.deleteButton);
-    await deleteButton.waitFor({ state: 'visible', timeout: 10000 });
-    await deleteButton.click({ force: true });
+    await deleteButton.waitFor({ state: 'visible', timeout: 5000 });
+    await deleteButton.click();
 
     // NOTE: Wait a moment
     await page.waitForTimeout(500);
