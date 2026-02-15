@@ -9,11 +9,15 @@ CREATE TABLE IF NOT EXISTS channels (
   created_at INTEGER DEFAULT (unixepoch()) NOT NULL,
   updated_at INTEGER DEFAULT (unixepoch()) NOT NULL
 );
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS idx_channels_author_sort ON channels(author_id, sort_order);
+--> statement-breakpoint
 
 -- Add channel_id to notes table
 ALTER TABLE notes ADD COLUMN channel_id TEXT REFERENCES channels(id) ON DELETE SET NULL;
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS idx_notes_channel ON notes(channel_id);
+--> statement-breakpoint
 
 -- Add bookmarks table for marking important notes
 CREATE TABLE IF NOT EXISTS bookmarks (
@@ -23,7 +27,9 @@ CREATE TABLE IF NOT EXISTS bookmarks (
   created_at INTEGER DEFAULT (unixepoch()) NOT NULL,
   UNIQUE(note_id, author_id)
 );
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS idx_bookmarks_author ON bookmarks(author_id);
+--> statement-breakpoint
 
 -- Add tasks table for tracking TODO items
 CREATE TABLE IF NOT EXISTS tasks (
@@ -37,8 +43,11 @@ CREATE TABLE IF NOT EXISTS tasks (
   created_at INTEGER DEFAULT (unixepoch()) NOT NULL,
   updated_at INTEGER DEFAULT (unixepoch()) NOT NULL
 );
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS idx_tasks_author_status ON tasks(author_id, is_completed);
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS idx_tasks_note ON tasks(note_id);
+--> statement-breakpoint
 
 -- Add scratch_pads table for quick notes
 CREATE TABLE IF NOT EXISTS scratch_pads (
@@ -49,6 +58,7 @@ CREATE TABLE IF NOT EXISTS scratch_pads (
   updated_at INTEGER DEFAULT (unixepoch()) NOT NULL,
   UNIQUE(author_id, channel_id)
 );
+--> statement-breakpoint
 
 -- Add daily_notes table for diary feature
 CREATE TABLE IF NOT EXISTS daily_notes (
@@ -59,7 +69,9 @@ CREATE TABLE IF NOT EXISTS daily_notes (
   created_at INTEGER DEFAULT (unixepoch()) NOT NULL,
   UNIQUE(author_id, date)
 );
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS idx_daily_notes_date ON daily_notes(date);
+--> statement-breakpoint
 
 -- Add templates table for daily note templates
 CREATE TABLE IF NOT EXISTS templates (
