@@ -8,7 +8,7 @@
 [![Bun](https://img.shields.io/badge/Bun-Runtime-black.svg)](https://bun.sh/)
 [![React](https://img.shields.io/badge/React-18-61dafb.svg)](https://reactjs.org/)
 
-[Features](#-features) • [Quick Start](#-quick-start) • [Tech Stack](#-tech-stack) • [Development](#-development) • [Testing](#-testing)
+[Features](#-features) • [Quick Start](#-quick-start) • [Tech Stack](#-tech-stack) • [Development](#-development) • [Testing](#-testing) • [Release](#-release)
 
 </div>
 
@@ -199,6 +199,55 @@ bun run test:load
 - 🔍 Search results: **<150ms**
 - 📄 Page load: **<1s**
 - 📚 Support: **1000+ notes**
+
+## 🚢 Release
+
+Production リリースは `scripts/release.sh` で自動化されています。
+
+### 仕組み
+
+1. 最新の git タグ (`v1.2.3` 等) を取得
+2. それ以降のコミットメッセージを [Conventional Commits](https://www.conventionalcommits.org/) に基づいて解析し、バージョンバンプを自動判定
+   - `feat:` → **minor** (例: `v1.2.0` → `v1.3.0`)
+   - `fix:`, `chore:`, `refactor:` 等 → **patch** (例: `v1.2.0` → `v1.2.1`)
+   - `BREAKING CHANGE` / `!:` → **major** (例: `v1.2.0` → `v2.0.0`)
+3. カテゴリ別のリリースノートを自動生成 (New Features / Bug Fixes / Other Changes)
+4. Annotated tag を作成して push
+5. `gh release create` で GitHub Release を作成
+
+### 使い方
+
+```bash
+# ドライランで確認 (タグ作成・push・Release 作成はスキップ)
+bun run release -- --dry-run
+
+# 本番リリース実行
+bun run release
+```
+
+### 前提条件
+
+- `main` ブランチから実行すること
+- ワーキングツリーがクリーンであること
+- [GitHub CLI (`gh`)](https://cli.github.com/) がインストール・認証済みであること
+
+### リリースノートの出力例
+
+```markdown
+## What's Changed
+
+### New Features
+
+- implement hidden chat feature (backend) (#51)
+
+### Bug Fixes
+
+- add frontend build step before production deployment (#55)
+
+### Other Changes
+
+- update CI config (#56)
+```
 
 ## 🙏 Acknowledgments
 

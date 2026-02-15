@@ -11,7 +11,8 @@
   "scripts": {
     "dev": "bun run --filter @thread-note/backend dev & bun run --filter @thread-note/frontend dev",
     "dev:test": "bun run --filter @thread-note/backend dev:test & bun run --filter @thread-note/frontend dev:test",
-    "build": "bun run --filter @thread-note/backend build && bun run --filter @thread-note/frontend build",
+    "dev:e2e": "bun run --filter @thread-note/backend dev:e2e & bun run --filter @thread-note/frontend dev:test",
+    "build": "bun run --filter @thread-note/frontend build",
     "test:e2e": "bun run --filter @thread-note/frontend test:e2e",
     "test:load": "bun run --filter @thread-note/backend test:load",
     "db:setup": "bun run --filter @thread-note/backend db:setup",
@@ -25,7 +26,8 @@
     "release:production": "bun run --filter @thread-note/frontend deploy:production && bun run --filter @thread-note/backend db:migrate:production && bun run --filter @thread-note/backend deploy:production",
     "lint": "bun run --filter '*' lint",
     "typecheck": "bun run --filter '*' typecheck",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "release": "bash scripts/release.sh"
   },
   "devDependencies": {
     "@types/bun": "latest",

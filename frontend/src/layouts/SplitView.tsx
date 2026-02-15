@@ -24,30 +24,25 @@ export const SplitView: React.FC<SplitViewProps> = ({
   className = '',
   showRight = true,
 }) => {
-  const [splitPosition, setSplitPosition] = useState(defaultSplitPosition);
+  // NOTE: Initialize split position from localStorage synchronously to avoid race conditions
+  const [splitPosition, setSplitPosition] = useState(() => {
+    const saved = localStorage.getItem('splitView.position');
+    if (saved) {
+      const position = parseFloat(saved);
+      if (position >= 20 && position <= 80) return position;
+    }
+    return defaultSplitPosition;
+  });
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const leftPanelRef = useRef<HTMLDivElement>(null);
   const rightPanelRef = useRef<HTMLDivElement>(null);
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
-  // NOTE: Load saved split position from localStorage
-  useEffect(() => {
-    const savedPosition = localStorage.getItem('splitView.position');
-    if (savedPosition) {
-      const position = parseFloat(savedPosition);
-      if (position >= 20 && position <= 80) {
-        setSplitPosition(position);
-      }
-    }
-  }, []);
-
   // NOTE: Save split position to localStorage
   useEffect(() => {
     localStorage.setItem('splitView.position', splitPosition.toString());
-    if (onSplitChange) {
-      onSplitChange(splitPosition);
-    }
+    onSplitChange?.(splitPosition);
   }, [splitPosition, onSplitChange]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {

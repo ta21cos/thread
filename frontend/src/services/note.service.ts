@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { useApiClient } from '../hooks/useApiClient';
 import type { Note, SearchResponse } from '../../../shared/types';
+import { taskKeys } from './task.service';
 
 // NOTE: API response types
 interface NotesListResponse {
@@ -15,6 +16,7 @@ interface NoteWithThreadResponse {
     id: string;
     content: string;
     parentId: string | null;
+    channelId: string | null;
     createdAt: string;
     updatedAt: string;
     depth: number;
@@ -25,6 +27,7 @@ interface NoteWithThreadResponse {
     id: string;
     content: string;
     parentId: string | null;
+    channelId: string | null;
     createdAt: string;
     updatedAt: string;
     depth: number;
@@ -36,6 +39,7 @@ interface NoteWithThreadResponse {
 interface CreateNoteDto {
   content: string;
   parentId?: string;
+  channelId?: string;
   isHidden?: boolean;
 }
 
@@ -69,17 +73,25 @@ export const useNotes = () => {
 };
 
 // NOTE: Fetch notes with infinite scroll
-export const useInfiniteNotes = (limit: number = 20, includeHidden: boolean = false) => {
+export const useInfiniteNotes = (
+  limit: number = 20,
+  includeHidden: boolean = false,
+  channelId?: string | null
+) => {
   const { get } = useApiClient();
 
   return useInfiniteQuery({
-    queryKey: [...noteKeys.lists(), { limit, includeHidden }],
+    queryKey: [...noteKeys.lists(), { limit, includeHidden, channelId: channelId ?? null }],
     queryFn: async ({ pageParam = 0 }) => {
-      const response = await get<NotesListResponse>('/notes', {
+      const params: Record<string, string | number | boolean | undefined> = {
         offset: pageParam,
         limit,
         includeHidden,
-      });
+      };
+      if (channelId) {
+        params.channelId = channelId;
+      }
+      const response = await get<NotesListResponse>('/notes', params);
       return response;
     },
     getNextPageParam: (lastPage, allPages) => {
@@ -142,8 +154,8 @@ export const useCreateNote = () => {
   const { post } = useApiClient();
 
   return useMutation({
-    mutationFn: async ({ content, parentId, isHidden }: CreateNoteDto) => {
-      const response = await post<Note>('/notes', { content, parentId, isHidden });
+    mutationFn: async ({ content, parentId, channelId, isHidden }: CreateNoteDto) => {
+      const response = await post<Note>('/notes', { content, parentId, channelId, isHidden });
       return response;
     },
     onSuccess: (newNote) => {
@@ -154,6 +166,9 @@ export const useCreateNote = () => {
       if (newNote.parentId) {
         queryClient.invalidateQueries({ queryKey: noteKeys.detail(newNote.parentId) });
       }
+
+      // NOTE: Invalidate tasks cache since note content may contain checkbox tasks
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
 };
@@ -199,6 +214,9 @@ export const useUpdateNote = () => {
       // NOTE: Invalidate related queries
       queryClient.invalidateQueries({ queryKey: noteKeys.detail(updatedNote.id) });
       queryClient.invalidateQueries({ queryKey: noteKeys.lists() });
+
+      // NOTE: Invalidate tasks cache since edited content may add/remove checkbox tasks
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
 };
@@ -237,6 +255,9 @@ export const useDeleteNote = () => {
 
       // NOTE: Remove deleted note from cache
       queryClient.removeQueries({ queryKey: noteKeys.detail(deletedId) });
+
+      // NOTE: Invalidate tasks cache since deleted note may have had tasks
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
 };

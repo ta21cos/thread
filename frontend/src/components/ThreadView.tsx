@@ -1,30 +1,17 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFocus } from '@/store/focus.context';
-import {
-  X,
-  MoreVertical,
-  Trash2,
-  Bookmark,
-  Link2,
-  Edit,
-  Pin,
-  ArrowLeft,
-  MessageSquare,
-} from 'lucide-react';
+import { X, Trash2, Link2, Edit, Pin, ArrowLeft, MessageSquare, Bookmark } from 'lucide-react';
 import { Note } from '../../../shared/types';
+import { getRelativeTime } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { getRelativeTime } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import NoteEditor from './NoteEditor';
+import { NoteContent } from '@/components/NoteContent';
 import { TextInput } from '@/components/ui/text-input';
+
+import { BookmarkButton } from '@/components/bookmarks/BookmarkButton';
 
 interface ThreadViewProps {
   rootNote: Note;
@@ -52,7 +39,6 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   const isMobile = !useMediaQuery('(min-width: 1024px)');
   const replyInputRef = useRef<HTMLTextAreaElement>(null);
   const { registerInput, unregisterInput } = useFocus();
-
   // NOTE: Register reply input with FocusContext
   useEffect(() => {
     registerInput('thread-reply', replyInputRef);
@@ -109,30 +95,6 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
     }
   };
 
-  const renderContent = (content: string) => {
-    // NOTE: Parse mentions and make them clickable
-    const parts = content.split(/(@\w{6})/g);
-    return parts.map((part, index) => {
-      if (part.match(/^@\w{6}$/)) {
-        const noteId = part.substring(1);
-        return (
-          <a
-            key={index}
-            href={`#${noteId}`}
-            className="text-primary hover:underline"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate(`/notes/${noteId}`);
-            }}
-          >
-            {part}
-          </a>
-        );
-      }
-      return <span key={index}>{part}</span>;
-    });
-  };
-
   // NOTE: Get replies (all notes except root)
   const replies = useMemo(() => {
     return thread
@@ -158,11 +120,14 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
           )}
           <h3 className="font-semibold text-foreground text-sm">Thread</h3>
         </div>
-        {!isMobile && onClose && (
-          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        )}
+        <div className="flex items-center gap-1">
+          <BookmarkButton noteId={rootNote.id} size="sm" data-testid="thread-bookmark-button" />
+          {!isMobile && onClose && (
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Scrollable Messages Container */}
@@ -171,43 +136,37 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
           {/* Original Message */}
           <div className="border-b border-border p-4">
             <div className="group relative space-y-2" data-testid="thread-node">
-              <div className="absolute top-0 right-0 opacity-0 transition-opacity group-hover:opacity-100">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="icon" variant="ghost" className="h-7 w-7">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <Pin className="mr-2 h-4 w-4" />
-                      Pin note
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Bookmark className="mr-2 h-4 w-4" />
-                      Bookmark
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => copyLink(rootNote.id)}>
-                      <Link2 className="mr-2 h-4 w-4" />
-                      Copy link
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setIsEditing(rootNote.id)}
-                      data-testid="thread-action-edit"
-                    >
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit note
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleDelete(rootNote.id)}
-                      className="text-destructive"
-                      data-testid="thread-action-delete"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete note
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+              <div className="absolute -top-1 right-0 flex items-center gap-0.5 rounded-md border border-border bg-background px-0.5 py-0.5 shadow-sm opacity-0 transition-opacity group-hover:opacity-100">
+                <BookmarkButton noteId={rootNote.id} size="sm" />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7"
+                  onClick={() => copyLink(rootNote.id)}
+                  aria-label="Copy link"
+                >
+                  <Link2 className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7"
+                  onClick={() => setIsEditing(rootNote.id)}
+                  aria-label="Edit note"
+                  data-testid="thread-action-edit"
+                >
+                  <Edit className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 text-destructive hover:text-destructive"
+                  onClick={() => handleDelete(rootNote.id)}
+                  aria-label="Delete note"
+                  data-testid="thread-action-delete"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
 
               {/* Tags */}
@@ -252,12 +211,11 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                 />
               ) : (
                 <>
-                  <p
-                    className="text-foreground text-sm leading-relaxed"
+                  <NoteContent
+                    content={rootNote.content}
+                    onMentionClick={(noteId) => navigate(`/notes/${noteId}`)}
                     data-testid="thread-node-content"
-                  >
-                    {renderContent(rootNote.content)}
-                  </p>
+                  />
 
                   {/* Image Previews */}
                   {rootNote.images && rootNote.images.length > 0 && (
@@ -326,39 +284,37 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
             ) : (
               replies.map((note) => (
                 <div key={note.id} className="group relative space-y-2" data-testid="thread-node">
-                  <div className="absolute top-0 right-0 opacity-0 transition-opacity group-hover:opacity-100">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size="icon" variant="ghost" className="h-7 w-7">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Bookmark className="mr-2 h-4 w-4" />
-                          Bookmark
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => copyLink(note.id)}>
-                          <Link2 className="mr-2 h-4 w-4" />
-                          Copy link
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setIsEditing(note.id)}
-                          data-testid="thread-action-edit"
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit note
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(note.id)}
-                          className="text-destructive"
-                          data-testid="thread-action-delete"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete note
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                  <div className="absolute -top-1 right-0 flex items-center gap-0.5 rounded-md border border-border bg-background px-0.5 py-0.5 shadow-sm opacity-0 transition-opacity group-hover:opacity-100">
+                    <BookmarkButton noteId={note.id} size="sm" />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => copyLink(note.id)}
+                      aria-label="Copy link"
+                    >
+                      <Link2 className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => setIsEditing(note.id)}
+                      aria-label="Edit note"
+                      data-testid="thread-action-edit"
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-destructive hover:text-destructive"
+                      onClick={() => handleDelete(note.id)}
+                      aria-label="Delete note"
+                      data-testid="thread-action-delete"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
 
                   {/* Tags */}
@@ -403,12 +359,11 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                     />
                   ) : (
                     <>
-                      <p
-                        className="text-foreground text-sm leading-relaxed"
+                      <NoteContent
+                        content={note.content}
+                        onMentionClick={(noteId) => navigate(`/notes/${noteId}`)}
                         data-testid="thread-node-content"
-                      >
-                        {renderContent(note.content)}
-                      </p>
+                      />
 
                       {/* Image Previews */}
                       {note.images && note.images.length > 0 && (
@@ -473,6 +428,8 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
           onSubmit={handleReply}
           placeholder="Reply... (Cmd/Ctrl+Enter to send)"
           autoFocus={false}
+          textareaTestId="thread-reply-textarea"
+          submitTestId="thread-reply-submit"
         />
       </div>
     </div>

@@ -1,6 +1,8 @@
 import { useAuth } from '@clerk/clerk-react';
 import { ApiError } from '../services/api.client';
 
+const isE2ETest = import.meta.env.VITE_E2E_TEST === 'true';
+
 interface FetchOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
 }
@@ -17,8 +19,13 @@ function createUrl(base: string, path: string): URL {
   return new URL([base.replace(/\/+$/, ''), path.replace(/^\/+/, '')].join('/'), base);
 }
 
+// NOTE: Stub for E2E test mode when Clerk is not available
+const useAuthStub = () => ({
+  getToken: async () => null,
+});
+
 export const useApiClient = () => {
-  const { getToken } = useAuth();
+  const { getToken } = isE2ETest ? useAuthStub() : useAuth();
 
   const API_BASE_URL = `${import.meta.env.VITE_BACKEND_API_ENDPOINT}/api`;
 

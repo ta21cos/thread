@@ -56,8 +56,14 @@ test.describe('Delete Note', () => {
       await dialog.accept();
     });
 
-    // NOTE: Click delete
-    await page.click(selectors.threadView.deleteButton);
+    // NOTE: Hover over thread node to reveal inline action buttons
+    const threadNode = page.locator('[data-testid="thread-node"]').first();
+    await threadNode.hover();
+
+    // NOTE: Click delete button directly (inline action bar)
+    const deleteButton = page.locator(selectors.threadView.deleteButton);
+    await deleteButton.waitFor({ state: 'visible', timeout: 5000 });
+    await deleteButton.click();
 
     // NOTE: Wait a moment for dialog
     await page.waitForTimeout(500);
@@ -128,8 +134,14 @@ test.describe('Delete Note', () => {
       await dialog.dismiss();
     });
 
-    // NOTE: Click delete
-    await page.click(selectors.threadView.deleteButton);
+    // NOTE: Hover over thread node to reveal inline action buttons
+    const threadNode = page.locator('[data-testid="thread-node"]').first();
+    await threadNode.hover();
+
+    // NOTE: Click delete button directly (inline action bar)
+    const deleteButton = page.locator(selectors.threadView.deleteButton);
+    await deleteButton.waitFor({ state: 'visible', timeout: 5000 });
+    await deleteButton.click();
 
     // NOTE: Wait a moment
     await page.waitForTimeout(500);
@@ -202,7 +214,7 @@ test.describe('Delete Note', () => {
     // NOTE: Delete parent (cascade deletes child)
     await deleteNote(page);
 
-    // NOTE: Verify thread view shows empty state
-    await expect(page.locator('.notes-page__empty')).toBeVisible();
+    // NOTE: Verify thread view is no longer shown (navigated back to main view)
+    await expect(page.locator(selectors.threadView.container)).not.toBeVisible();
   });
 });

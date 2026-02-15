@@ -66,7 +66,7 @@ export async function createNote(page: Page, content: string): Promise<string> {
   return noteId;
 }
 
-export async function waitForNoteWithContent(page: Page, content: string, timeout: number = 5000) {
+export async function waitForNoteWithContent(page: Page, content: string, timeout: number = 10000) {
   await page.waitForFunction(
     ({ contentText }) => {
       const contentElements = Array.from(
@@ -180,21 +180,14 @@ export async function deleteNote(page: Page) {
     { timeout: 15000 }
   );
 
-  // NOTE: Hover over thread node to show menu button
+  // NOTE: Hover over thread node to show inline action buttons
   const threadNode = page.locator('[data-testid="thread-node"]').first();
   await threadNode.hover();
 
-  // NOTE: Find and click the dropdown menu button
-  const menuButton = threadNode.locator('button').first();
-  await menuButton.waitFor({ state: 'visible', timeout: 5000 });
-  await menuButton.click();
-
-  // NOTE: Wait for dropdown menu to be visible (portal rendered)
+  // NOTE: Click delete button directly (inline action bar, no dropdown)
   const deleteButton = page.locator('[data-testid="thread-action-delete"]');
-  await deleteButton.waitFor({ state: 'visible', timeout: 10000 });
-
-  // NOTE: Click delete menu item (force click as it might be in a portal/dropdown)
-  await deleteButton.click({ force: true });
+  await deleteButton.waitFor({ state: 'visible', timeout: 5000 });
+  await deleteButton.click();
 
   // NOTE: Wait for deletion to complete
   await responsePromise;

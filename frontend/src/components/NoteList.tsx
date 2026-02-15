@@ -1,35 +1,13 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
-import {
-  Hash,
-  Search,
-  MoreVertical,
-  Trash2,
-  Bookmark,
-  Link2,
-  Edit,
-  Pin,
-  Plus,
-  EyeOff,
-} from 'lucide-react';
+import { Hash, Search, Plus } from 'lucide-react';
 import { Note } from '../../../shared/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuCheckboxItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
-import { getRelativeTime } from '@/lib/utils';
+import { NoteItem } from './notes';
 import NoteEditor from './NoteEditor';
-import { ThemeToggle } from './ThemeToggle';
-import { UserButton } from './UserButton';
-import { SettingsDropdown } from './SettingsDropdown';
 import { useSettings } from '@/store/settings.store';
+import { useToggleMap } from '@/hooks/useToggleMap';
 
 interface NoteListProps {
   notes: Note[];
@@ -56,7 +34,7 @@ export const NoteList: React.FC<NoteListProps> = ({
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedImages, setExpandedImages] = useState<Record<string, boolean>>({});
+  const [expandedImages, toggleImageExpansion] = useToggleMap();
 
   const filteredNotes = notes.filter(
     (note) =>
@@ -99,22 +77,6 @@ export const NoteList: React.FC<NoteListProps> = ({
     [onNoteSelect]
   );
 
-  const truncateContent = (content: string, maxLength: number = 100) => {
-    if (content.length <= maxLength) return content;
-    return content.substring(0, maxLength) + '...';
-  };
-
-  const copyLink = (noteId: string) => {
-    navigator.clipboard.writeText(`${window.location.origin}?note=${noteId}`);
-  };
-
-  const toggleImageExpansion = (noteId: string) => {
-    setExpandedImages((prev) => ({
-      ...prev,
-      [noteId]: !prev[noteId],
-    }));
-  };
-
   return (
     <div className="flex flex-col h-full w-full bg-background" data-testid="note-list">
       {/* Header */}
@@ -127,9 +89,6 @@ export const NoteList: React.FC<NoteListProps> = ({
           <span className="text-muted-foreground text-xs" data-testid="note-list-count">
             {filteredNotes.length} notes
           </span>
-          <UserButton />
-          <SettingsDropdown />
-          <ThemeToggle />
           <Button size="icon" variant="ghost" className="h-8 w-8">
             <Plus className="h-4 w-4" />
           </Button>
@@ -155,172 +114,16 @@ export const NoteList: React.FC<NoteListProps> = ({
         <ScrollArea className="h-full">
           <div className="space-y-0 p-4">
             {filteredNotes.map((note) => (
-              <div
+              <NoteItem
                 key={note.id}
-                className={cn(
-                  'group relative w-full rounded-lg px-4 py-3 transition-colors hover:bg-accent',
-                  selectedNoteId === note.id && 'bg-accent/50'
-                )}
-                data-testid="note-item"
-              >
-                {/* Action Menu */}
-                <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button size="icon" variant="ghost" className="h-7 w-7">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {onToggleHidden && showHiddenNotes && (
-                        <>
-                          <DropdownMenuCheckboxItem
-                            checked={note.isHidden}
-                            onCheckedChange={(checked) => onToggleHidden(note.id, checked)}
-                          >
-                            <EyeOff className="mr-2 h-4 w-4" />
-                            Hidden
-                          </DropdownMenuCheckboxItem>
-                          <DropdownMenuSeparator />
-                        </>
-                      )}
-                      <DropdownMenuItem>
-                        <Pin className="mr-2 h-4 w-4" />
-                        Pin note
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Bookmark className="mr-2 h-4 w-4" />
-                        Bookmark
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => copyLink(note.id)}>
-                        <Link2 className="mr-2 h-4 w-4" />
-                        Copy link
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit note
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete note
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-
-                {/* Note Content */}
-                <button onClick={() => handleNoteClick(note.id)} className="w-full text-left">
-                  <div className="space-y-2">
-                    {/* Tags */}
-                    {note.tags && note.tags.length > 0 && (
-                      <div className="flex gap-1.5">
-                        {note.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="rounded bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Header with ID and Timestamp */}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="rounded bg-primary/10 px-2 py-0.5 font-mono font-medium text-primary text-xs"
-                          data-testid="note-item-id"
-                        >
-                          #{note.id}
-                        </span>
-                        <span className="text-muted-foreground text-xs">
-                          {getRelativeTime(note.createdAt)}
-                        </span>
-                        {note.isHidden && (
-                          <span title="Hidden note">
-                            <EyeOff className="h-3 w-3 text-muted-foreground" />
-                          </span>
-                        )}
-                        {note.replyCount !== undefined && note.replyCount > 0 && (
-                          <span
-                            className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/20 px-1.5 font-medium text-primary text-xs"
-                            data-testid="note-item-reply-count"
-                          >
-                            {note.replyCount}
-                          </span>
-                        )}
-                        {note.bookmarked && (
-                          <Bookmark className="h-3 w-3 fill-yellow-500 text-yellow-500" />
-                        )}
-                      </div>
-                      {note.pinned && <Pin className="h-4 w-4 fill-primary text-primary" />}
-                    </div>
-
-                    {/* Content */}
-                    <div className="space-y-2">
-                      <p
-                        className="text-foreground text-sm leading-relaxed"
-                        data-testid="note-item-content"
-                      >
-                        {truncateContent(note.content)}
-                      </p>
-
-                      {/* Image Previews */}
-                      {note.images && note.images.length > 0 && (
-                        <div className="space-y-2">
-                          {expandedImages[note.id] ? (
-                            // Expanded: show all images
-                            <>
-                              {note.images.map((img, i) => (
-                                <img
-                                  key={i}
-                                  src={img}
-                                  alt={`Image ${i + 1}`}
-                                  className="w-full rounded-lg border border-border"
-                                />
-                              ))}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleImageExpansion(note.id);
-                                }}
-                                className="text-primary text-xs hover:underline"
-                              >
-                                Collapse images
-                              </button>
-                            </>
-                          ) : (
-                            // Collapsed: thumbnail stack
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleImageExpansion(note.id);
-                              }}
-                              className="flex items-center gap-2"
-                            >
-                              <div className="flex -space-x-2">
-                                {note.images.slice(0, 3).map((img, i) => (
-                                  <img
-                                    key={i}
-                                    src={img}
-                                    alt={`Thumbnail ${i + 1}`}
-                                    className="h-12 w-12 rounded border-2 border-background object-cover"
-                                  />
-                                ))}
-                              </div>
-                              <span className="text-muted-foreground text-xs">
-                                {note.images.length} {note.images.length === 1 ? 'image' : 'images'}{' '}
-                                - Click to expand
-                              </span>
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              </div>
+                note={note}
+                isSelected={selectedNoteId === note.id}
+                isImageExpanded={expandedImages[note.id] ?? false}
+                showHiddenToggle={showHiddenNotes}
+                onClick={handleNoteClick}
+                onToggleImageExpansion={toggleImageExpansion}
+                onToggleHidden={onToggleHidden}
+              />
             ))}
 
             {/* Loading State */}
