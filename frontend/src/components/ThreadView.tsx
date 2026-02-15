@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import NoteEditor from './NoteEditor';
+import { NoteContent } from '@/components/NoteContent';
 import { TextInput } from '@/components/ui/text-input';
 
 import { BookmarkButton } from '@/components/bookmarks/BookmarkButton';
@@ -92,30 +93,6 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
     if (window.confirm('Delete this note? This cannot be undone.')) {
       await onDelete(noteId);
     }
-  };
-
-  const renderContent = (content: string) => {
-    // NOTE: Parse mentions and make them clickable
-    const parts = content.split(/(@\w{6})/g);
-    return parts.map((part, index) => {
-      if (part.match(/^@\w{6}$/)) {
-        const noteId = part.substring(1);
-        return (
-          <a
-            key={index}
-            href={`#${noteId}`}
-            className="text-primary hover:underline"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate(`/notes/${noteId}`);
-            }}
-          >
-            {part}
-          </a>
-        );
-      }
-      return <span key={index}>{part}</span>;
-    });
   };
 
   // NOTE: Get replies (all notes except root)
@@ -234,12 +211,11 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                 />
               ) : (
                 <>
-                  <p
-                    className="text-foreground text-sm leading-relaxed"
+                  <NoteContent
+                    content={rootNote.content}
+                    onMentionClick={(noteId) => navigate(`/notes/${noteId}`)}
                     data-testid="thread-node-content"
-                  >
-                    {renderContent(rootNote.content)}
-                  </p>
+                  />
 
                   {/* Image Previews */}
                   {rootNote.images && rootNote.images.length > 0 && (
@@ -383,12 +359,11 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                     />
                   ) : (
                     <>
-                      <p
-                        className="text-foreground text-sm leading-relaxed"
+                      <NoteContent
+                        content={note.content}
+                        onMentionClick={(noteId) => navigate(`/notes/${noteId}`)}
                         data-testid="thread-node-content"
-                      >
-                        {renderContent(note.content)}
-                      </p>
+                      />
 
                       {/* Image Previews */}
                       {note.images && note.images.length > 0 && (

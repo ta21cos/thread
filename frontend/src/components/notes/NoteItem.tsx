@@ -4,6 +4,7 @@ import { Note } from '../../../../shared/types';
 import { cn, getRelativeTime } from '@/lib/utils';
 import { NoteActionMenu } from './NoteActionMenu';
 import { ImagePreview } from './ImagePreview';
+import { NoteContent } from '@/components/NoteContent';
 
 interface NoteItemProps {
   note: Note;
@@ -14,11 +15,6 @@ interface NoteItemProps {
   onToggleImageExpansion: (noteId: string) => void;
   onToggleHidden?: (noteId: string, isHidden: boolean) => void;
 }
-
-const truncateContent = (content: string, maxLength: number = 100): string => {
-  if (content.length <= maxLength) return content;
-  return content.substring(0, maxLength) + '...';
-};
 
 export const NoteItem: React.FC<NoteItemProps> = ({
   note,
@@ -96,9 +92,7 @@ export const NoteItem: React.FC<NoteItemProps> = ({
 
           {/* Content */}
           <div className="space-y-2">
-            <p className="text-foreground text-sm leading-relaxed" data-testid="note-item-content">
-              {truncateContent(note.content)}
-            </p>
+            <NoteContent content={note.content} truncate={100} data-testid="note-item-content" />
 
             {/* Image Previews */}
             {note.images && note.images.length > 0 && (
