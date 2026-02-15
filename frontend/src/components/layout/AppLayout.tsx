@@ -1,13 +1,12 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useKeyboardShortcuts, Shortcut } from '@/hooks/useKeyboardShortcuts';
-import { useChannels } from '@/services/channel.service';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Sidebar } from './Sidebar';
 import { ScratchPadPanel } from '@/components/scratch-pad/ScratchPadPanel';
+import { CommandPalette } from '@/components/CommandPalette';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -17,53 +16,36 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [scratchPadOpen, setScratchPadOpen] = useState(false);
-  const navigate = useNavigate();
-  const { data: channels } = useChannels();
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+  const closeScratchPad = useCallback(() => {
+    setScratchPadOpen(false);
+  }, []);
 
   const toggleScratchPad = useCallback(() => {
     setScratchPadOpen((prev) => !prev);
   }, []);
 
-  const shortcuts = useMemo<Shortcut[]>(() => {
-    const base: Shortcut[] = [
-      {
-        key: 'mod+b',
-        handler: () => navigate('/bookmarks'),
-        description: 'Go to Bookmarks',
-      },
-      {
-        key: 'mod+t',
-        handler: () => navigate('/tasks'),
-        description: 'Go to Tasks',
-      },
-      {
-        key: 'mod+d',
-        handler: () => {
-          const today = new Date().toISOString().split('T')[0];
-          navigate(`/daily/${today}`);
-        },
-        description: 'Go to Daily Notes',
-      },
+  const toggleCommandPalette = useCallback(() => {
+    setCommandPaletteOpen((prev) => !prev);
+  }, []);
+
+  const shortcuts = useMemo<Shortcut[]>(
+    () => [
       {
         key: 'mod+/',
         handler: toggleScratchPad,
         description: 'Toggle Scratch Pad',
       },
-    ];
-
-    // NOTE: Cmd+1~9 for channel switching
-    if (channels) {
-      channels.slice(0, 9).forEach((channel, index) => {
-        base.push({
-          key: `mod+${index + 1}`,
-          handler: () => navigate(`/channels/${channel.id}`),
-          description: `Switch to channel: ${channel.name}`,
-        });
-      });
-    }
-
-    return base;
-  }, [navigate, channels, toggleScratchPad]);
+      {
+        key: 'mod+k',
+        handler: toggleCommandPalette,
+        description: 'Open Command Palette',
+        enableInInput: true,
+      },
+    ],
+    [toggleScratchPad, toggleCommandPalette]
+  );
 
   useKeyboardShortcuts(shortcuts);
 
@@ -72,7 +54,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       <div className="flex h-screen w-screen">
         <Sidebar />
         <main className="flex-1 min-w-0 h-full">{children}</main>
-        <ScratchPadPanel open={scratchPadOpen} onClose={() => setScratchPadOpen(false)} />
+        <ScratchPadPanel open={scratchPadOpen} onClose={closeScratchPad} />
+        <CommandPalette
+          open={commandPaletteOpen}
+          onOpenChange={setCommandPaletteOpen}
+          onToggleScratchPad={toggleScratchPad}
+        />
       </div>
     );
   }
@@ -100,7 +87,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       </Sheet>
 
       <main className="flex-1 min-w-0 h-full overflow-hidden">{children}</main>
-      <ScratchPadPanel open={scratchPadOpen} onClose={() => setScratchPadOpen(false)} />
+      <ScratchPadPanel open={scratchPadOpen} onClose={closeScratchPad} />
+      <CommandPalette
+        open={commandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
+        onToggleScratchPad={toggleScratchPad}
+      />
     </div>
   );
 };

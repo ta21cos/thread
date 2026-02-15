@@ -7,6 +7,7 @@ import { ChannelList } from '@/components/channels/ChannelList';
 import { UserButton } from '@/components/UserButton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { SettingsDropdown } from '@/components/SettingsDropdown';
+import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -95,6 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
       <div className="flex items-center gap-2 border-t border-border px-3 py-2">
         <UserButton />
         <div className="flex-1" />
+        <KeyboardShortcutsHelp />
         <SettingsDropdown />
         <ThemeToggle />
       </div>

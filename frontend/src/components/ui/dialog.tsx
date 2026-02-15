@@ -35,18 +35,19 @@ export const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) 
   );
 };
 
-interface DialogContentProps {
+interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   className?: string;
 }
 
-export const DialogContent: React.FC<DialogContentProps> = ({ children, className }) => {
+export const DialogContent: React.FC<DialogContentProps> = ({ children, className, ...rest }) => {
   return (
     <div
       className={cn(
         'bg-background border rounded-lg shadow-lg w-full max-w-md p-6 animate-in fade-in-0 zoom-in-95',
         className
       )}
+      {...rest}
     >
       {children}
     </div>
