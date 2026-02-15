@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { useApiClient } from '../hooks/useApiClient';
 import type { Note, SearchResponse } from '../../../shared/types';
+import { taskKeys } from './task.service';
 
 // NOTE: API response types
 interface NotesListResponse {
@@ -165,6 +166,9 @@ export const useCreateNote = () => {
       if (newNote.parentId) {
         queryClient.invalidateQueries({ queryKey: noteKeys.detail(newNote.parentId) });
       }
+
+      // NOTE: Invalidate tasks cache since note content may contain checkbox tasks
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
 };
@@ -210,6 +214,9 @@ export const useUpdateNote = () => {
       // NOTE: Invalidate related queries
       queryClient.invalidateQueries({ queryKey: noteKeys.detail(updatedNote.id) });
       queryClient.invalidateQueries({ queryKey: noteKeys.lists() });
+
+      // NOTE: Invalidate tasks cache since edited content may add/remove checkbox tasks
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
 };
@@ -248,6 +255,9 @@ export const useDeleteNote = () => {
 
       // NOTE: Remove deleted note from cache
       queryClient.removeQueries({ queryKey: noteKeys.detail(deletedId) });
+
+      // NOTE: Invalidate tasks cache since deleted note may have had tasks
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
 };
