@@ -62,7 +62,7 @@ export const TextInput = forwardRef<HTMLTextAreaElement, TextInputProps>(
       [onKeyDown, onSubmit]
     );
 
-    // NOTE: Auto-resize textarea based on content (max 3 rows)
+    // NOTE: Auto-resize textarea based on content (max 10 rows)
     useEffect(() => {
       const textarea = textareaRef.current;
       if (!textarea) return;
@@ -70,7 +70,7 @@ export const TextInput = forwardRef<HTMLTextAreaElement, TextInputProps>(
       textarea.style.height = 'auto';
       const scrollHeight = textarea.scrollHeight;
       const lineHeight = parseInt(getComputedStyle(textarea).lineHeight);
-      const maxHeight = lineHeight * 3;
+      const maxHeight = lineHeight * 10;
 
       textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
     }, [value, textareaRef]);
