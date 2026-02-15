@@ -6,9 +6,6 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { NoteItem } from './notes';
 import NoteEditor from './NoteEditor';
-import { ThemeToggle } from './ThemeToggle';
-import { UserButton } from './UserButton';
-import { SettingsDropdown } from './SettingsDropdown';
 import { useSettings } from '@/store/settings.store';
 import { useToggleMap } from '@/hooks/useToggleMap';
 
@@ -92,9 +89,6 @@ export const NoteList: React.FC<NoteListProps> = ({
           <span className="text-muted-foreground text-xs" data-testid="note-list-count">
             {filteredNotes.length} notes
           </span>
-          <UserButton />
-          <SettingsDropdown />
-          <ThemeToggle />
           <Button size="icon" variant="ghost" className="h-8 w-8">
             <Plus className="h-4 w-4" />
           </Button>

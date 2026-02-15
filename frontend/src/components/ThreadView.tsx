@@ -5,14 +5,15 @@ import {
   X,
   MoreVertical,
   Trash2,
-  Bookmark,
   Link2,
   Edit,
   Pin,
   ArrowLeft,
   MessageSquare,
+  Bookmark,
 } from 'lucide-react';
 import { Note } from '../../../shared/types';
+import { cn, getRelativeTime } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -21,10 +22,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { getRelativeTime } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import NoteEditor from './NoteEditor';
 import { TextInput } from '@/components/ui/text-input';
+import { useIsBookmarked, useToggleBookmark } from '@/services/bookmark.service';
+import { BookmarkButton } from '@/components/bookmarks/BookmarkButton';
 
 interface ThreadViewProps {
   rootNote: Note;
@@ -52,6 +54,8 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   const isMobile = !useMediaQuery('(min-width: 1024px)');
   const replyInputRef = useRef<HTMLTextAreaElement>(null);
   const { registerInput, unregisterInput } = useFocus();
+  const { data: isRootBookmarked } = useIsBookmarked(rootNote.id);
+  const toggleBookmark = useToggleBookmark();
 
   // NOTE: Register reply input with FocusContext
   useEffect(() => {
@@ -158,11 +162,14 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
           )}
           <h3 className="font-semibold text-foreground text-sm">Thread</h3>
         </div>
-        {!isMobile && onClose && (
-          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        )}
+        <div className="flex items-center gap-1">
+          <BookmarkButton noteId={rootNote.id} size="sm" data-testid="thread-bookmark-button" />
+          {!isMobile && onClose && (
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Scrollable Messages Container */}
@@ -183,9 +190,14 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                       <Pin className="mr-2 h-4 w-4" />
                       Pin note
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Bookmark className="mr-2 h-4 w-4" />
-                      Bookmark
+                    <DropdownMenuItem onClick={() => toggleBookmark.mutate(rootNote.id)}>
+                      <Bookmark
+                        className={cn(
+                          'mr-2 h-4 w-4',
+                          isRootBookmarked && 'fill-yellow-500 text-yellow-500'
+                        )}
+                      />
+                      {isRootBookmarked ? 'Remove bookmark' : 'Bookmark'}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => copyLink(rootNote.id)}>
                       <Link2 className="mr-2 h-4 w-4" />
@@ -334,7 +346,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => toggleBookmark.mutate(note.id)}>
                           <Bookmark className="mr-2 h-4 w-4" />
                           Bookmark
                         </DropdownMenuItem>

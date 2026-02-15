@@ -38,6 +38,7 @@ interface NoteWithThreadResponse {
 interface CreateNoteDto {
   content: string;
   parentId?: string;
+  channelId?: string;
   isHidden?: boolean;
 }
 
@@ -71,17 +72,25 @@ export const useNotes = () => {
 };
 
 // NOTE: Fetch notes with infinite scroll
-export const useInfiniteNotes = (limit: number = 20, includeHidden: boolean = false) => {
+export const useInfiniteNotes = (
+  limit: number = 20,
+  includeHidden: boolean = false,
+  channelId?: string | null
+) => {
   const { get } = useApiClient();
 
   return useInfiniteQuery({
-    queryKey: [...noteKeys.lists(), { limit, includeHidden }],
+    queryKey: [...noteKeys.lists(), { limit, includeHidden, channelId: channelId ?? null }],
     queryFn: async ({ pageParam = 0 }) => {
-      const response = await get<NotesListResponse>('/notes', {
+      const params: Record<string, string | number | boolean | undefined> = {
         offset: pageParam,
         limit,
         includeHidden,
-      });
+      };
+      if (channelId) {
+        params.channelId = channelId;
+      }
+      const response = await get<NotesListResponse>('/notes', params);
       return response;
     },
     getNextPageParam: (lastPage, allPages) => {
@@ -144,8 +153,8 @@ export const useCreateNote = () => {
   const { post } = useApiClient();
 
   return useMutation({
-    mutationFn: async ({ content, parentId, isHidden }: CreateNoteDto) => {
-      const response = await post<Note>('/notes', { content, parentId, isHidden });
+    mutationFn: async ({ content, parentId, channelId, isHidden }: CreateNoteDto) => {
+      const response = await post<Note>('/notes', { content, parentId, channelId, isHidden });
       return response;
     },
     onSuccess: (newNote) => {
