@@ -1,31 +1,15 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFocus } from '@/store/focus.context';
-import {
-  X,
-  MoreVertical,
-  Trash2,
-  Link2,
-  Edit,
-  Pin,
-  ArrowLeft,
-  MessageSquare,
-  Bookmark,
-} from 'lucide-react';
+import { X, Trash2, Link2, Edit, Pin, ArrowLeft, MessageSquare, Bookmark } from 'lucide-react';
 import { Note } from '../../../shared/types';
-import { cn, getRelativeTime } from '@/lib/utils';
+import { getRelativeTime } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import NoteEditor from './NoteEditor';
 import { TextInput } from '@/components/ui/text-input';
-import { useIsBookmarked, useToggleBookmark } from '@/services/bookmark.service';
+
 import { BookmarkButton } from '@/components/bookmarks/BookmarkButton';
 
 interface ThreadViewProps {
@@ -54,9 +38,6 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   const isMobile = !useMediaQuery('(min-width: 1024px)');
   const replyInputRef = useRef<HTMLTextAreaElement>(null);
   const { registerInput, unregisterInput } = useFocus();
-  const { data: isRootBookmarked } = useIsBookmarked(rootNote.id);
-  const toggleBookmark = useToggleBookmark();
-
   // NOTE: Register reply input with FocusContext
   useEffect(() => {
     registerInput('thread-reply', replyInputRef);
@@ -178,48 +159,37 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
           {/* Original Message */}
           <div className="border-b border-border p-4">
             <div className="group relative space-y-2" data-testid="thread-node">
-              <div className="absolute top-0 right-0 opacity-0 transition-opacity group-hover:opacity-100">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="icon" variant="ghost" className="h-7 w-7">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <Pin className="mr-2 h-4 w-4" />
-                      Pin note
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => toggleBookmark.mutate(rootNote.id)}>
-                      <Bookmark
-                        className={cn(
-                          'mr-2 h-4 w-4',
-                          isRootBookmarked && 'fill-yellow-500 text-yellow-500'
-                        )}
-                      />
-                      {isRootBookmarked ? 'Remove bookmark' : 'Bookmark'}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => copyLink(rootNote.id)}>
-                      <Link2 className="mr-2 h-4 w-4" />
-                      Copy link
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setIsEditing(rootNote.id)}
-                      data-testid="thread-action-edit"
-                    >
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit note
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleDelete(rootNote.id)}
-                      className="text-destructive"
-                      data-testid="thread-action-delete"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete note
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+              <div className="absolute -top-1 right-0 flex items-center gap-0.5 rounded-md border border-border bg-background px-0.5 py-0.5 shadow-sm opacity-0 transition-opacity group-hover:opacity-100">
+                <BookmarkButton noteId={rootNote.id} size="sm" />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7"
+                  onClick={() => copyLink(rootNote.id)}
+                  aria-label="Copy link"
+                >
+                  <Link2 className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7"
+                  onClick={() => setIsEditing(rootNote.id)}
+                  aria-label="Edit note"
+                  data-testid="thread-action-edit"
+                >
+                  <Edit className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 text-destructive hover:text-destructive"
+                  onClick={() => handleDelete(rootNote.id)}
+                  aria-label="Delete note"
+                  data-testid="thread-action-delete"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
 
               {/* Tags */}
@@ -338,39 +308,37 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
             ) : (
               replies.map((note) => (
                 <div key={note.id} className="group relative space-y-2" data-testid="thread-node">
-                  <div className="absolute top-0 right-0 opacity-0 transition-opacity group-hover:opacity-100">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size="icon" variant="ghost" className="h-7 w-7">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => toggleBookmark.mutate(note.id)}>
-                          <Bookmark className="mr-2 h-4 w-4" />
-                          Bookmark
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => copyLink(note.id)}>
-                          <Link2 className="mr-2 h-4 w-4" />
-                          Copy link
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setIsEditing(note.id)}
-                          data-testid="thread-action-edit"
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit note
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(note.id)}
-                          className="text-destructive"
-                          data-testid="thread-action-delete"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete note
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                  <div className="absolute -top-1 right-0 flex items-center gap-0.5 rounded-md border border-border bg-background px-0.5 py-0.5 shadow-sm opacity-0 transition-opacity group-hover:opacity-100">
+                    <BookmarkButton noteId={note.id} size="sm" />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => copyLink(note.id)}
+                      aria-label="Copy link"
+                    >
+                      <Link2 className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => setIsEditing(note.id)}
+                      aria-label="Edit note"
+                      data-testid="thread-action-edit"
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-destructive hover:text-destructive"
+                      onClick={() => handleDelete(note.id)}
+                      aria-label="Delete note"
+                      data-testid="thread-action-delete"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
 
                   {/* Tags */}

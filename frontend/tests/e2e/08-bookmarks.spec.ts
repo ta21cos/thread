@@ -21,19 +21,21 @@ test.describe('Bookmarks', () => {
     // NOTE: Select the note to open ThreadView
     await selectNoteByContent(page, 'Bookmarked note for E2E test');
 
-    // NOTE: Hover over thread node to reveal action menu
+    // NOTE: Hover over thread node to reveal inline action buttons
     const threadNode = page.locator('[data-testid="thread-node"]').first();
     await threadNode.hover();
 
-    // NOTE: Click the dropdown trigger (three dots menu)
-    const menuButton = threadNode.locator('button').first();
-    await menuButton.waitFor({ state: 'visible', timeout: 5000 });
-    await menuButton.click();
+    // NOTE: Click bookmark button directly in the inline action bar
+    const bookmarkButton = threadNode.getByRole('button', { name: /bookmark/i });
+    await bookmarkButton.waitFor({ state: 'visible', timeout: 5000 });
 
-    // NOTE: Click "Bookmark" in the dropdown menu
-    const bookmarkMenuItem = page.getByRole('menuitem', { name: 'Bookmark' });
-    await bookmarkMenuItem.waitFor({ state: 'visible', timeout: 5000 });
-    await bookmarkMenuItem.click();
+    const bookmarkResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes('/bookmarks/') && response.request().method() === 'POST',
+      { timeout: 10000 }
+    );
+    await bookmarkButton.click();
+    await bookmarkResponse;
 
     // NOTE: Navigate to bookmarks page and verify
     await page.getByRole('button', { name: 'Bookmarks' }).click();

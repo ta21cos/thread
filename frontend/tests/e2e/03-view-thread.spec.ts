@@ -118,7 +118,7 @@ test.describe('View Thread', () => {
     await expect(page.locator('text=2 replies')).toBeVisible();
   });
 
-  test('should display action menu in thread', async ({ page }) => {
+  test('should display action buttons on hover in thread', async ({ page }) => {
     await page.goto('/');
 
     // NOTE: Create and select note with unique content
@@ -131,12 +131,11 @@ test.describe('View Thread', () => {
     // NOTE: Verify reply input is visible
     await expect(page.locator('[data-testid="thread-reply-input"]')).toBeVisible();
 
-    // NOTE: Open dropdown menu by hovering and clicking the three-dot button
+    // NOTE: Hover over thread node to reveal inline action buttons
     const threadNode = page.locator('[data-testid="thread-node"]').first();
     await threadNode.hover();
-    await threadNode.locator('button:has(svg)').click();
 
-    // NOTE: Verify edit and delete actions are in the menu
+    // NOTE: Verify edit and delete action buttons are visible directly (no dropdown)
     await expect(page.locator('[data-testid="thread-action-edit"]')).toBeVisible({ timeout: 5000 });
     await expect(page.locator('[data-testid="thread-action-delete"]')).toBeVisible({
       timeout: 5000,

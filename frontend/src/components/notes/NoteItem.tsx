@@ -37,8 +37,8 @@ export const NoteItem: React.FC<NoteItemProps> = ({
       )}
       data-testid="note-item"
     >
-      {/* Action Menu */}
-      <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+      {/* Inline Action Bar */}
+      <div className="absolute -top-1 right-2 opacity-0 transition-opacity group-hover:opacity-100">
         <NoteActionMenu
           noteId={note.id}
           isHidden={note.isHidden}
