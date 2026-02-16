@@ -45,7 +45,7 @@ const app = createRouter()
 
     return handleServiceResponse(
       noteService
-        .createNote(data)
+        .createNote({ ...data, authorId })
         .andThen((note) =>
           taskService.syncTasksFromNote(note.id, authorId, note.content).map(() => note)
         ),

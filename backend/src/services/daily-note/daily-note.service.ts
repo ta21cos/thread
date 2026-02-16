@@ -78,7 +78,11 @@ export const createDailyNoteService = ({ db }: { db: Database }): DailyNoteServi
               : getOrCreateDefaultTemplate(authorId)
             ).andThen((template) =>
               noteService
-                .createNote({ content: processTemplate(template.content, date), isHidden: false })
+                .createNote({
+                  content: processTemplate(template.content, date),
+                  authorId,
+                  isHidden: false,
+                })
                 .andThen((note) =>
                   dailyNoteRepo
                     .create({

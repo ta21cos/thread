@@ -4,15 +4,17 @@ import { profiles } from './profile.schema';
 import { channels } from './channel.schema';
 
 // NOTE: Drizzle schema for Note entity with 1000 char limit (from clarifications)
-// NOTE: authorId is nullable for now, will be required after Clerk auth is fully implemented
+// NOTE: authorId is required - set from auth token on the server side
 export const notes = sqliteTable(
   'notes',
   {
     id: text('id').primaryKey(),
     content: text('content').notNull(),
-    authorId: text('author_id').references((): AnySQLiteColumn => profiles.id, {
-      onDelete: 'cascade',
-    }),
+    authorId: text('author_id')
+      .notNull()
+      .references((): AnySQLiteColumn => profiles.id, {
+        onDelete: 'cascade',
+      }),
     parentId: text('parent_id').references((): AnySQLiteColumn => notes.id, {
       onDelete: 'cascade',
     }),

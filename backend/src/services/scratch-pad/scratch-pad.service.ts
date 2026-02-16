@@ -54,7 +54,7 @@ export const createScratchPadService = ({ db }: { db: Database }): ScratchPadSer
           !scratchPad || !scratchPad.content.trim()
             ? errAsync(contentEmptyError())
             : noteService
-                .createNote({ content: scratchPad.content, isHidden: false })
+                .createNote({ content: scratchPad.content, authorId, isHidden: false })
                 .andThen((note) => scratchPadRepo.update(scratchPad.id, '').map(() => note))
         ),
   };

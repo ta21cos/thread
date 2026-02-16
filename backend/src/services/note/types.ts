@@ -15,6 +15,7 @@ import type { NoteError } from '../../errors/domain-errors';
 /** ノート作成のための入力データ */
 export interface CreateNoteInput {
   readonly content: string;
+  readonly authorId: string;
   readonly parentId?: string;
   readonly isHidden?: boolean;
 }
@@ -43,6 +44,7 @@ export interface PaginatedNotes {
 export interface ValidatedNoteData {
   readonly id: string;
   readonly content: string;
+  readonly authorId: string;
   readonly parentId?: string;
   readonly depth: number;
   readonly mentionIds: string[];

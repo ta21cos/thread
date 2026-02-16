@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import '../../../tests/preload';
-import { db, notes, mentions } from '../../db';
+import { db, notes, mentions, profiles } from '../../db';
 import { createMentionService } from '.';
 import { generateId } from '../../utils/id-generator';
+
+const TEST_AUTHOR_ID = 'test-author-id';
 
 describe('MentionService', () => {
   const prepareServices = () => {
@@ -43,6 +45,13 @@ describe('MentionService', () => {
   beforeEach(async () => {
     await db.delete(mentions);
     await db.delete(notes);
+    await db.delete(profiles);
+    await db.insert(profiles).values({
+      id: TEST_AUTHOR_ID,
+      displayName: 'Test User',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
   });
 
   describe('getMentions', () => {
@@ -54,6 +63,7 @@ describe('MentionService', () => {
       await db.insert(notes).values({
         id: noteId,
         content: 'Test note',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -76,6 +86,7 @@ describe('MentionService', () => {
         {
           id: targetNoteId,
           content: 'Target note',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -84,6 +95,7 @@ describe('MentionService', () => {
         {
           id: sourceNoteId,
           content: `Mentioning @${targetNoteId}`,
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -118,6 +130,7 @@ describe('MentionService', () => {
         {
           id: targetNoteId,
           content: 'Target note',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -126,6 +139,7 @@ describe('MentionService', () => {
         {
           id: sourceNoteId1,
           content: `First mention @${targetNoteId}`,
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -134,6 +148,7 @@ describe('MentionService', () => {
         {
           id: sourceNoteId2,
           content: `Second mention @${targetNoteId}`,
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -173,6 +188,7 @@ describe('MentionService', () => {
       await db.insert(notes).values({
         id: noteId,
         content: 'Test note',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -195,6 +211,7 @@ describe('MentionService', () => {
         {
           id: targetNoteId,
           content: 'Target note',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -203,6 +220,7 @@ describe('MentionService', () => {
         {
           id: sourceNoteId,
           content: `Source note @${targetNoteId}`,
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -238,6 +256,7 @@ describe('MentionService', () => {
         {
           id: noteId1,
           content: 'Note 1',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -246,6 +265,7 @@ describe('MentionService', () => {
         {
           id: noteId2,
           content: 'Note 2',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -267,6 +287,7 @@ describe('MentionService', () => {
         {
           id: noteId1,
           content: 'Note 1',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -275,6 +296,7 @@ describe('MentionService', () => {
         {
           id: noteId2,
           content: 'Note 2',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -305,6 +327,7 @@ describe('MentionService', () => {
         {
           id: noteId1,
           content: 'Note 1',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -313,6 +336,7 @@ describe('MentionService', () => {
         {
           id: noteId2,
           content: 'Note 2',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -321,6 +345,7 @@ describe('MentionService', () => {
         {
           id: noteId3,
           content: 'Note 3',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -360,6 +385,7 @@ describe('MentionService', () => {
         {
           id: noteId1,
           content: 'Note 1',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -368,6 +394,7 @@ describe('MentionService', () => {
         {
           id: noteId2,
           content: 'Note 2',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -376,6 +403,7 @@ describe('MentionService', () => {
         {
           id: noteId3,
           content: 'Note 3',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,

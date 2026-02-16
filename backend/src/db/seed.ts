@@ -1,6 +1,8 @@
-import { db, notes, mentions } from './index';
+import { db, notes, mentions, profiles } from './index';
 import { generateId } from '../utils/id-generator';
 import { sql } from 'drizzle-orm';
+
+const SEED_AUTHOR_ID = 'seed-user-001';
 
 // NOTE: Seed script for test data
 async function seed() {
@@ -16,11 +18,23 @@ async function seed() {
   // Then delete root notes
   await db.run(sql`DELETE FROM notes WHERE parent_id IS NULL`);
 
+  // Ensure seed profile exists
+  await db
+    .insert(profiles)
+    .values({
+      id: SEED_AUTHOR_ID,
+      displayName: 'Seed User',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .onConflictDoNothing();
+
   // Create test data expected by tests
   // Test note with specific ID for contract tests
   await db.insert(notes).values({
     id: 'abc123',
     content: 'Test note for contract tests',
+    authorId: SEED_AUTHOR_ID,
     depth: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -30,6 +44,7 @@ async function seed() {
   await db.insert(notes).values({
     id: 'parent',
     content: 'Parent note for cascade test',
+    authorId: SEED_AUTHOR_ID,
     depth: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -39,6 +54,7 @@ async function seed() {
   await db.insert(notes).values({
     id: 'child1',
     content: 'Child note 1',
+    authorId: SEED_AUTHOR_ID,
     parentId: 'parent',
     depth: 1,
     createdAt: new Date(),
@@ -48,6 +64,7 @@ async function seed() {
   await db.insert(notes).values({
     id: 'child2',
     content: 'Child note 2',
+    authorId: SEED_AUTHOR_ID,
     parentId: 'parent',
     depth: 1,
     createdAt: new Date(),
@@ -58,6 +75,7 @@ async function seed() {
   await db.insert(notes).values({
     id: 'noment',
     content: 'Note with no mentions',
+    authorId: SEED_AUTHOR_ID,
     depth: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -68,6 +86,7 @@ async function seed() {
   await db.insert(notes).values({
     id: rootId,
     content: 'Welcome to Thread Notes! This is your first note.',
+    authorId: SEED_AUTHOR_ID,
     depth: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -78,6 +97,7 @@ async function seed() {
   await db.insert(notes).values({
     id: replyId,
     content: `This is a reply to @${rootId}`,
+    authorId: SEED_AUTHOR_ID,
     parentId: rootId,
     depth: 1,
     createdAt: new Date(),
@@ -97,6 +117,7 @@ async function seed() {
   await db.insert(notes).values({
     id: generateId(),
     content: 'This note contains the word test for search functionality',
+    authorId: SEED_AUTHOR_ID,
     depth: 0,
     createdAt: new Date(),
     updatedAt: new Date(),

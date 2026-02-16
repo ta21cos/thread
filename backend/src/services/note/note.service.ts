@@ -86,6 +86,7 @@ export const createNoteService = ({ db }: { db: Database }): NoteServiceHandle =
           ? okAsync({
               id: noteId,
               content: input.content,
+              authorId: input.authorId,
               parentId: input.parentId,
               depth,
               mentionIds: [],
@@ -94,6 +95,7 @@ export const createNoteService = ({ db }: { db: Database }): NoteServiceHandle =
           : validateCircularReference(noteId, mentionIds).map(() => ({
               id: noteId,
               content: input.content,
+              authorId: input.authorId,
               parentId: input.parentId,
               depth,
               mentionIds,
@@ -131,6 +133,7 @@ export const createNoteService = ({ db }: { db: Database }): NoteServiceHandle =
     const newNote: NewNote = {
       id: data.id,
       content: data.content,
+      authorId: data.authorId,
       parentId: data.parentId,
       depth: data.depth,
       isHidden: data.isHidden,

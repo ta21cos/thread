@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import '../../../tests/preload';
-import { db, notes, mentions } from '../../db';
+import { db, notes, mentions, profiles } from '../../db';
 import { createSearchService } from '.';
 import { generateId } from '../../utils/id-generator';
+
+const TEST_AUTHOR_ID = 'test-author-id';
 
 describe('SearchService', () => {
   const prepareServices = () => {
@@ -34,6 +36,13 @@ describe('SearchService', () => {
   beforeEach(async () => {
     await db.delete(mentions);
     await db.delete(notes);
+    await db.delete(profiles);
+    await db.insert(profiles).values({
+      id: TEST_AUTHOR_ID,
+      displayName: 'Test User',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
   });
 
   describe('searchByContent', () => {
@@ -53,6 +62,7 @@ describe('SearchService', () => {
       await db.insert(notes).values({
         id: noteId,
         content: 'This is a test note about TypeScript',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -73,6 +83,7 @@ describe('SearchService', () => {
       await db.insert(notes).values({
         id: noteId,
         content: 'JavaScript Tutorial',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -93,6 +104,7 @@ describe('SearchService', () => {
         {
           id: generateId(),
           content: 'First note about JavaScript',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -101,6 +113,7 @@ describe('SearchService', () => {
         {
           id: generateId(),
           content: 'Second note about JavaScript frameworks',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -109,6 +122,7 @@ describe('SearchService', () => {
         {
           id: generateId(),
           content: 'Note about Python',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -129,6 +143,7 @@ describe('SearchService', () => {
         await db.insert(notes).values({
           id: generateId(),
           content: `Test note number ${i}`,
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: new Date(now.getTime() + i * 1000),
@@ -149,6 +164,7 @@ describe('SearchService', () => {
         await db.insert(notes).values({
           id: generateId(),
           content: `Search note ${i}`,
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: new Date(now.getTime() + i * 1000),
@@ -171,6 +187,7 @@ describe('SearchService', () => {
       await db.insert(notes).values({
         id: noteId,
         content: 'Test note',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -193,6 +210,7 @@ describe('SearchService', () => {
         {
           id: targetNoteId,
           content: 'Target note',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -201,6 +219,7 @@ describe('SearchService', () => {
         {
           id: sourceNoteId,
           content: `Source note @${targetNoteId}`,
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -234,6 +253,7 @@ describe('SearchService', () => {
         {
           id: targetNoteId,
           content: 'Target note',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -242,6 +262,7 @@ describe('SearchService', () => {
         {
           id: sourceNoteId1,
           content: `First source @${targetNoteId}`,
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -250,6 +271,7 @@ describe('SearchService', () => {
         {
           id: sourceNoteId2,
           content: `Second source @${targetNoteId}`,
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
