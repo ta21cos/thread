@@ -93,7 +93,9 @@ test.describe('Mention Note', () => {
     await selectNoteByContent(page, mentioningContent);
 
     // NOTE: Verify mention is displayed as a clickable link
-    const mentionLink = page.locator(`a:has-text("@${noteId}")`).first();
+    const mentionLink = page
+      .locator(`[data-testid="thread-view"] a:has-text("@${noteId}")`)
+      .first();
     await expect(mentionLink).toBeVisible();
 
     // NOTE: Verify it's an anchor tag with href

@@ -24,8 +24,9 @@ test.describe('Tasks Page', () => {
   test('should auto-create task from note with checkbox syntax', async ({ page }) => {
     await page.goto('/');
 
-    // NOTE: Create a note with checkbox syntax
-    await createNote(page, '- [ ] Buy groceries');
+    // NOTE: Create a note with checkbox syntax (skip content verification because
+    // NoteContent renders "- [ ]" as a styled badge with CSS margin, not text space)
+    await createNote(page, '- [ ] Buy groceries', { skipContentVerification: true });
 
     // NOTE: Navigate to tasks page
     await page.getByRole('button', { name: 'Tasks' }).click();
@@ -41,8 +42,9 @@ test.describe('Tasks Page', () => {
   test('should show completed task from note with checked checkbox', async ({ page }) => {
     await page.goto('/');
 
-    // NOTE: Create a note with completed checkbox syntax
-    await createNote(page, '- [x] Already done');
+    // NOTE: Create a note with completed checkbox syntax (skip content verification because
+    // NoteContent renders "- [x]" as a styled badge with CSS margin, not text space)
+    await createNote(page, '- [x] Already done', { skipContentVerification: true });
 
     // NOTE: Navigate to tasks page
     await page.getByRole('button', { name: 'Tasks' }).click();

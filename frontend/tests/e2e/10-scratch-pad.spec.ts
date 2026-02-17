@@ -28,13 +28,20 @@ test.describe('Scratch Pad', () => {
   test('should type content and auto-save', async ({ page }) => {
     await page.goto('/');
 
+    // NOTE: Set up response listener before opening scratch pad (GET fires on open)
+    const scratchPadLoaded = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/scratch-pad') && response.request().method() === 'GET',
+      { timeout: 10000 }
+    );
+
     // NOTE: Open scratch pad
     await page.keyboard.press(MOD_SLASH);
     const panel = page.getByTestId('scratch-pad-panel');
     await expect(panel).toHaveClass(/translate-x-0/);
 
-    // NOTE: Wait for initial GET scratch pad to complete
-    await page.waitForTimeout(1000);
+    // NOTE: Wait for initial GET scratch pad to complete before modifying content
+    await scratchPadLoaded;
 
     // NOTE: Clear existing content and type new content
     const textarea = page.getByTestId('scratch-pad-textarea');
@@ -49,9 +56,19 @@ test.describe('Scratch Pad', () => {
   test('should persist content after closing and reopening', async ({ page }) => {
     await page.goto('/');
 
+    // NOTE: Set up response listener before opening scratch pad (GET fires on open)
+    const scratchPadLoaded = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/scratch-pad') && response.request().method() === 'GET',
+      { timeout: 10000 }
+    );
+
     // NOTE: Open and clear any existing content, then type new content
     await page.keyboard.press(MOD_SLASH);
     const textarea = page.getByTestId('scratch-pad-textarea');
+
+    // NOTE: Wait for initial GET scratch pad to complete before clearing
+    await scratchPadLoaded;
     await textarea.click();
     await textarea.fill('');
     await textarea.pressSequentially('Persistent content', { delay: 20 });

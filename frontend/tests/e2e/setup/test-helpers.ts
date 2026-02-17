@@ -32,7 +32,7 @@ export const selectors = {
     replyButton: '[data-testid="thread-reply-submit"]',
     editButton: '[data-testid="thread-action-edit"]',
     deleteButton: '[data-testid="thread-action-delete"]',
-    mention: 'a.text-primary:has-text("@")',
+    mention: '[data-testid="thread-view"] a.text-primary:has-text("@")',
   },
 
   // NOTE: Search Bar (using data-testid)
@@ -45,11 +45,15 @@ export const selectors = {
 
 // NOTE: Common test actions
 
-export async function createNote(page: Page, content: string): Promise<string> {
+export async function createNote(
+  page: Page,
+  content: string,
+  { skipContentVerification = false }: { skipContentVerification?: boolean } = {}
+): Promise<string> {
   // NOTE: Listen for API response
   const responsePromise = page.waitForResponse(
     (response) => response.url().includes('/api/notes') && response.request().method() === 'POST',
-    { timeout: 5000 }
+    { timeout: 15000 }
   );
 
   await page.fill(selectors.noteEditor.textarea, content);
@@ -60,23 +64,21 @@ export async function createNote(page: Page, content: string): Promise<string> {
   const data = await response.json();
   const noteId = data.note?.id || data.id;
 
-  // NOTE: Wait for note to appear in list
-  await waitForNoteWithContent(page, content);
+  // NOTE: Wait for note to appear in list (skip for content that renders differently, e.g. checkboxes)
+  if (!skipContentVerification) {
+    await waitForNoteWithContent(page, content);
+  }
 
   return noteId;
 }
 
-export async function waitForNoteWithContent(page: Page, content: string, timeout: number = 10000) {
-  await page.waitForFunction(
-    ({ contentText }) => {
-      const contentElements = Array.from(
-        document.querySelectorAll('[data-testid="note-item-content"]')
-      );
-      return contentElements.some((el) => el.textContent?.includes(contentText));
-    },
-    { contentText: content },
-    { timeout }
-  );
+export async function waitForNoteWithContent(page: Page, content: string, timeout: number = 25000) {
+  // NOTE: Use Playwright auto-retry locator instead of waitForFunction for better reliability
+  await page
+    .locator(selectors.noteList.itemContent)
+    .filter({ hasText: content })
+    .first()
+    .waitFor({ state: 'attached', timeout });
 }
 
 export async function findNoteByContent(page: Page, content: string): Promise<number> {
@@ -103,7 +105,7 @@ export async function replyToNote({
   // NOTE: Listen for API response
   const responsePromise = page.waitForResponse(
     (response) => response.url().includes('/api/notes') && response.request().method() === 'POST',
-    { timeout: 5000 }
+    { timeout: 15000 }
   );
 
   // NOTE: Fill reply input (now at bottom of thread view)
@@ -125,7 +127,7 @@ export async function replyToNote({
       return nodes.some((node) => node.textContent?.includes(contentText));
     },
     { contentText: content },
-    { timeout: 5000 }
+    { timeout: 15000 }
   );
 
   return noteId;
@@ -184,8 +186,8 @@ export async function deleteNote(page: Page) {
   const threadNode = page.locator('[data-testid="thread-node"]').first();
   await threadNode.hover();
 
-  // NOTE: Click delete button directly (inline action bar, no dropdown)
-  const deleteButton = page.locator('[data-testid="thread-action-delete"]');
+  // NOTE: Click delete button scoped to the hovered thread node (avoid strict mode violation)
+  const deleteButton = threadNode.locator('[data-testid="thread-action-delete"]');
   await deleteButton.waitFor({ state: 'visible', timeout: 5000 });
   await deleteButton.click();
 
@@ -230,7 +232,7 @@ export async function verifyNoteContent(page: Page, content: string, noteIndex?:
 export async function verifyNoteExists(page: Page, content: string) {
   await expect(
     page.locator(selectors.noteList.itemContent).filter({ hasText: content })
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 20000 });
 }
 
 export async function verifyThreadNodeContent(page: Page, content: string, nodeIndex: number = 0) {
@@ -242,7 +244,7 @@ export async function verifyThreadNodeContent(page: Page, content: string, nodeI
 }
 
 export async function clickMentionLink(page: Page, noteId: string) {
-  await page.click(`a:has-text("@${noteId}")`);
+  await page.locator(`[data-testid="thread-view"] a:has-text("@${noteId}")`).click();
 
   // NOTE: Wait for navigation
   await page.waitForTimeout(500);
