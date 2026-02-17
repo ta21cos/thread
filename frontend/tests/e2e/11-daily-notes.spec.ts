@@ -82,8 +82,10 @@ test.describe('Daily Notes', () => {
     // NOTE: Visit a past date - the API auto-creates a note from the default template
     await page.goto('/daily/2020-01-01');
 
-    // NOTE: Template content includes date and section headers, rendered in a <p> element
-    await expect(page.locator('p').filter({ hasText: '2020-01-01' })).toBeVisible();
-    await expect(page.locator('p').filter({ hasText: '## Today' })).toBeVisible();
+    // NOTE: Template content is rendered in a textarea, verify textarea contains expected text
+    const textarea = page.getByTestId('daily-note-textarea');
+    await expect(textarea).toBeVisible({ timeout: 10000 });
+    await expect(textarea).toHaveValue(/2020-01-01/);
+    await expect(textarea).toHaveValue(/## Today/);
   });
 });
