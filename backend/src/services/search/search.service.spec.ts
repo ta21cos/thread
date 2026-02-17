@@ -5,15 +5,16 @@ import { createSearchService } from '.';
 import { generateId } from '../../utils/id-generator';
 
 const TEST_AUTHOR_ID = 'test-author-id';
+const OTHER_AUTHOR_ID = 'other-author-id';
 
 describe('SearchService', () => {
-  const prepareServices = () => {
+  const prepareServices = (authorId: string = TEST_AUTHOR_ID) => {
     const service = createSearchService({ db });
 
     // ResultAsync を Promise に変換するラッパー
     return {
       searchByContent: async (query: string, limit?: number) => {
-        const result = await service.searchByContent(query, limit);
+        const result = await service.searchByContent(authorId, query, limit);
         return result.match(
           (notes) => notes,
           (error) => {
@@ -22,7 +23,7 @@ describe('SearchService', () => {
         );
       },
       searchByMention: async (noteId: string) => {
-        const result = await service.searchByMention(noteId);
+        const result = await service.searchByMention(noteId, authorId);
         return result.match(
           (notes) => notes,
           (error) => {
@@ -37,12 +38,20 @@ describe('SearchService', () => {
     await db.delete(mentions);
     await db.delete(notes);
     await db.delete(profiles);
-    await db.insert(profiles).values({
-      id: TEST_AUTHOR_ID,
-      displayName: 'Test User',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    await db.insert(profiles).values([
+      {
+        id: TEST_AUTHOR_ID,
+        displayName: 'Test User',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: OTHER_AUTHOR_ID,
+        displayName: 'Other User',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ]);
   });
 
   describe('searchByContent', () => {
@@ -299,6 +308,83 @@ describe('SearchService', () => {
       const result = await searchService.searchByMention(targetNoteId);
 
       expect(result).toHaveLength(2);
+    });
+  });
+
+  describe('cross-user isolation', () => {
+    it('should not return notes from other users in content search', async () => {
+      const mySearch = prepareServices(TEST_AUTHOR_ID);
+      const otherSearch = prepareServices(OTHER_AUTHOR_ID);
+
+      const now = new Date();
+      await db.insert(notes).values([
+        {
+          id: generateId(),
+          content: 'Shared keyword note',
+          authorId: TEST_AUTHOR_ID,
+          parentId: null,
+          depth: 0,
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: generateId(),
+          content: 'Shared keyword note from other',
+          authorId: OTHER_AUTHOR_ID,
+          parentId: null,
+          depth: 0,
+          createdAt: now,
+          updatedAt: now,
+        },
+      ]);
+
+      const myResults = await mySearch.searchByContent('Shared keyword');
+      expect(myResults).toHaveLength(1);
+      expect(myResults[0].authorId).toBe(TEST_AUTHOR_ID);
+
+      const otherResults = await otherSearch.searchByContent('Shared keyword');
+      expect(otherResults).toHaveLength(1);
+      expect(otherResults[0].authorId).toBe(OTHER_AUTHOR_ID);
+    });
+
+    it('should not return mentions from other users notes', async () => {
+      const otherSearch = prepareServices(OTHER_AUTHOR_ID);
+
+      const targetNoteId = generateId();
+      const sourceNoteId = generateId();
+      const now = new Date();
+
+      await db.insert(notes).values([
+        {
+          id: targetNoteId,
+          content: 'Target note',
+          authorId: TEST_AUTHOR_ID,
+          parentId: null,
+          depth: 0,
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: sourceNoteId,
+          content: `Source note @${targetNoteId}`,
+          authorId: TEST_AUTHOR_ID,
+          parentId: null,
+          depth: 0,
+          createdAt: now,
+          updatedAt: now,
+        },
+      ]);
+
+      await db.insert(mentions).values({
+        id: generateId(),
+        fromNoteId: sourceNoteId,
+        toNoteId: targetNoteId,
+        position: 12,
+        createdAt: now,
+      });
+
+      const result = await otherSearch.searchByMention(targetNoteId);
+      expect(result).toEqual([]);
     });
   });
 });

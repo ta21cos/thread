@@ -22,10 +22,13 @@ export const createSearchService = ({ db }: { db: Database }): SearchServiceHand
   const mentionRepo = createMentionRepository({ db });
 
   return {
-    searchByContent: (query, limit = 20) => searchRepo.searchByContent(query, limit),
+    searchByContent: (authorId, query, limit = 20) =>
+      searchRepo.searchByContent(authorId, query, limit),
 
-    searchByMention: (noteId) =>
-      mentionRepo.getMentionsWithNotes(noteId).map((mentions) => mentions.map((m) => m.notes)),
+    searchByMention: (noteId, authorId) =>
+      mentionRepo
+        .getMentionsWithNotes(noteId, authorId)
+        .map((mentions) => mentions.map((m) => m.notes)),
   };
 };
 

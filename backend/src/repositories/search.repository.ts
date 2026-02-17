@@ -6,7 +6,7 @@
  */
 
 import { ResultAsync } from 'neverthrow';
-import { like, desc } from 'drizzle-orm';
+import { like, desc, and, eq } from 'drizzle-orm';
 import { notes, type Note, type Database } from '../db';
 import type { NoteError } from '../errors/domain-errors';
 import { dbQuery } from './helpers';
@@ -16,7 +16,11 @@ import { dbQuery } from './helpers';
 // ==========================================
 
 export interface SearchRepository {
-  readonly searchByContent: (query: string, limit?: number) => ResultAsync<Note[], NoteError>;
+  readonly searchByContent: (
+    authorId: string,
+    query: string,
+    limit?: number
+  ) => ResultAsync<Note[], NoteError>;
 }
 
 // ==========================================
@@ -27,12 +31,12 @@ export interface SearchRepository {
  * 検索リポジトリを作成
  */
 export const createSearchRepository = ({ db }: { db: Database }): SearchRepository => ({
-  searchByContent: (query, limit = 20) =>
+  searchByContent: (authorId, query, limit = 20) =>
     dbQuery(
       db
         .select()
         .from(notes)
-        .where(like(notes.content, `%${query}%`))
+        .where(and(like(notes.content, `%${query}%`), eq(notes.authorId, authorId)))
         .orderBy(desc(notes.updatedAt))
         .limit(limit),
       'Failed to search notes by content'

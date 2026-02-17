@@ -18,8 +18,12 @@ import type { NoteError } from '../../errors/domain-errors';
  * 検索機能のための公開API。
  */
 export interface SearchServiceHandle {
-  /** コンテンツでノートを検索 */
-  readonly searchByContent: (query: string, limit?: number) => ResultAsync<Note[], NoteError>;
-  /** メンションでノートを検索（指定ノートをメンションしているノート一覧） */
-  readonly searchByMention: (noteId: string) => ResultAsync<Note[], NoteError>;
+  /** コンテンツでノートを検索（authorId でフィルタ） */
+  readonly searchByContent: (
+    authorId: string,
+    query: string,
+    limit?: number
+  ) => ResultAsync<Note[], NoteError>;
+  /** メンションでノートを検索（指定ノートをメンションしているノート一覧、authorId でフィルタ） */
+  readonly searchByMention: (noteId: string, authorId: string) => ResultAsync<Note[], NoteError>;
 }

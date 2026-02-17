@@ -18,8 +18,8 @@ import type { NoteError } from '../../errors/domain-errors';
  * スレッド階層管理のための公開API。
  */
 export interface ThreadServiceHandle {
-  /** ノートが属するスレッド全体を取得（ルートから全子孫） */
-  readonly getThread: (noteId: string) => ResultAsync<Note[], NoteError>;
-  /** ノートの直接の子ノートを取得 */
-  readonly getChildren: (noteId: string) => ResultAsync<Note[], NoteError>;
+  /** ノートが属するスレッド全体を取得（ルートから全子孫、authorId でフィルタ） */
+  readonly getThread: (noteId: string, authorId: string) => ResultAsync<Note[], NoteError>;
+  /** ノートの直接の子ノートを取得（authorId でフィルタ） */
+  readonly getChildren: (noteId: string, authorId: string) => ResultAsync<Note[], NoteError>;
 }

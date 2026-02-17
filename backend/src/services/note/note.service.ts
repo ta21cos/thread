@@ -71,7 +71,9 @@ export const createNoteService = ({ db }: { db: Database }): NoteServiceHandle =
 
     return fromResult(validateContentLength(input.content))
       .andThen(() => fromResult(validateIsHidden(input.isHidden, input.parentId)))
-      .andThen(() => (input.parentId ? noteRepo.findById(input.parentId) : okAsync(undefined)))
+      .andThen(() =>
+        input.parentId ? noteRepo.findById(input.parentId, input.authorId) : okAsync(undefined)
+      )
       .andThen((parent) => {
         const depth = input.parentId && parent ? parent.depth + 1 : 0;
         const isHidden = input.parentId && parent ? parent.isHidden : (input.isHidden ?? false);
@@ -158,10 +160,12 @@ export const createNoteService = ({ db }: { db: Database }): NoteServiceHandle =
           () => undefined
         );
 
-  const deleteNotes = (noteIds: string[]): ResultAsync<void, NoteError> =>
+  const deleteNotes = (noteIds: string[], authorId: string): ResultAsync<void, NoteError> =>
     noteIds.length === 0
       ? okAsync(undefined)
-      : ResultAsync.combine(noteIds.map((nid) => noteRepo.delete(nid))).map(() => undefined);
+      : ResultAsync.combine(noteIds.map((nid) => noteRepo.delete(nid, authorId))).map(
+          () => undefined
+        );
 
   // ==========================================
   // Handle (Public API)
@@ -170,58 +174,58 @@ export const createNoteService = ({ db }: { db: Database }): NoteServiceHandle =
   return {
     createNote: (input) => validateCreateNote(input).andThen(persistNote),
 
-    getNoteById: (id) => noteRepo.findById(id).andThen(ensureNoteExists(id)),
+    getNoteById: (id, authorId) => noteRepo.findById(id, authorId).andThen(ensureNoteExists(id)),
 
-    getRootNotes: (limit = 20, offset = 0, includeHidden = false) =>
+    getRootNotes: (authorId, limit = 20, offset = 0, includeHidden = false) =>
       ResultAsync.combine([
-        noteRepo.findRootNotes(limit, offset, includeHidden),
-        noteRepo.countRootNotes(includeHidden),
+        noteRepo.findRootNotes(authorId, limit, offset, includeHidden),
+        noteRepo.countRootNotes(authorId, includeHidden),
       ]).map(([notes, total]) => ({
         notes,
         total,
         hasMore: offset + notes.length < total,
       })),
 
-    updateNote: (id, input) => {
+    updateNote: (id, authorId, input) => {
       const mentionIds = extractMentionIds(input.content);
       const checkCycle =
         mentionIds.length === 0 ? okAsync(undefined) : validateCircularReference(id, mentionIds);
 
       return fromResult(validateContentLength(input.content))
-        .andThen(() => noteRepo.findById(id))
+        .andThen(() => noteRepo.findById(id, authorId))
         .andThen(ensureNoteExists(id))
         .andThen(() => checkCycle)
         .andThen(() => mentionRepo.deleteByNoteId(id))
-        .andThen(() => noteRepo.update(id, input.content))
+        .andThen(() => noteRepo.update(id, authorId, input.content))
         .andThen((updated) =>
           createMentionsForNote(id, input.content, mentionIds).map(() => updated)
         );
     },
 
-    updateHidden: (id, isHidden) =>
+    updateHidden: (id, authorId, isHidden) =>
       noteRepo
-        .findById(id)
+        .findById(id, authorId)
         .andThen(ensureNoteExists(id))
         .andThen((note) => {
           // NOTE: 子ノートの hidden 状態は変更できない（親から継承）
           if (note.parentId) {
             return errAsync(invalidHiddenReplyError());
           }
-          return noteRepo.updateHidden(id, isHidden);
+          return noteRepo.updateHidden(id, authorId, isHidden);
         }),
 
-    deleteNote: (id) =>
+    deleteNote: (id, authorId) =>
       noteRepo
-        .findById(id)
+        .findById(id, authorId)
         .andThen(ensureNoteExists(id))
-        .andThen(() => noteRepo.findByParentId(id))
+        .andThen(() => noteRepo.findByParentId(id, authorId))
         .andThen((children) => {
           const allNoteIds = [id, ...children.map((child) => child.id)];
           const childIds = children.map((child) => child.id);
 
           return deleteMentionsFor(allNoteIds)
-            .andThen(() => deleteNotes(childIds))
-            .andThen(() => noteRepo.delete(id));
+            .andThen(() => deleteNotes(childIds, authorId))
+            .andThen(() => noteRepo.delete(id, authorId));
         }),
   };
 };
@@ -248,6 +252,6 @@ export const createMockNoteService = (
   getRootNotes: () => okAsync({ notes: [], total: 0, hasMore: false }),
   updateNote: () => errAsync(noteNotFoundError('mock')),
   updateHidden: () => errAsync(noteNotFoundError('mock')),
-  deleteNote: () => okAsync(undefined),
+  deleteNote: () => okAsync<void, NoteError>(undefined),
   ...overrides,
 });

@@ -5,15 +5,16 @@ import { createThreadService } from '.';
 import { generateId } from '../../utils/id-generator';
 
 const TEST_AUTHOR_ID = 'test-author-id';
+const OTHER_AUTHOR_ID = 'other-author-id';
 
 describe('ThreadService', () => {
-  const prepareServices = () => {
+  const prepareServices = (authorId: string = TEST_AUTHOR_ID) => {
     const service = createThreadService({ db });
 
     // ResultAsync を Promise に変換するラッパー
     return {
       getThread: async (noteId: string) => {
-        const result = await service.getThread(noteId);
+        const result = await service.getThread(noteId, authorId);
         return result.match(
           (notes) => notes,
           (error) => {
@@ -22,7 +23,7 @@ describe('ThreadService', () => {
         );
       },
       getChildren: async (noteId: string) => {
-        const result = await service.getChildren(noteId);
+        const result = await service.getChildren(noteId, authorId);
         return result.match(
           (notes) => notes,
           (error) => {
@@ -37,12 +38,20 @@ describe('ThreadService', () => {
     await db.delete(mentions);
     await db.delete(notes);
     await db.delete(profiles);
-    await db.insert(profiles).values({
-      id: TEST_AUTHOR_ID,
-      displayName: 'Test User',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    await db.insert(profiles).values([
+      {
+        id: TEST_AUTHOR_ID,
+        displayName: 'Test User',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: OTHER_AUTHOR_ID,
+        displayName: 'Other User',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ]);
   });
 
   describe('getThread', () => {
@@ -379,6 +388,58 @@ describe('ThreadService', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe(parentId);
+    });
+  });
+
+  describe('cross-user isolation', () => {
+    it('should not return thread for note owned by another user', async () => {
+      const otherThreadService = prepareServices(OTHER_AUTHOR_ID);
+
+      const noteId = generateId();
+      const now = new Date();
+      await db.insert(notes).values({
+        id: noteId,
+        content: 'Private note',
+        authorId: TEST_AUTHOR_ID,
+        parentId: null,
+        depth: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      await expect(otherThreadService.getThread(noteId)).rejects.toThrow();
+    });
+
+    it('should not return children of note owned by another user', async () => {
+      const otherThreadService = prepareServices(OTHER_AUTHOR_ID);
+
+      const parentId = generateId();
+      const childId = generateId();
+      const now = new Date();
+
+      await db.insert(notes).values([
+        {
+          id: parentId,
+          content: 'Parent note',
+          authorId: TEST_AUTHOR_ID,
+          parentId: null,
+          depth: 0,
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: childId,
+          content: 'Child note',
+          authorId: TEST_AUTHOR_ID,
+          parentId: parentId,
+          depth: 1,
+          createdAt: now,
+          updatedAt: now,
+        },
+      ]);
+
+      const result = await otherThreadService.getChildren(parentId);
+      expect(result).toEqual([]);
     });
   });
 });

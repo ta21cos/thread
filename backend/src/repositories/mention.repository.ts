@@ -6,7 +6,7 @@
  */
 
 import { ResultAsync } from 'neverthrow';
-import { eq, or } from 'drizzle-orm';
+import { eq, or, and } from 'drizzle-orm';
 import { mentions, notes, type Mention, type NewMention, type Note, type Database } from '../db';
 import type { NoteError } from '../errors/domain-errors';
 import { dbQuery } from './helpers';
@@ -37,10 +37,14 @@ export interface MentionRepository {
   readonly create: (mention: NewMention) => ResultAsync<void, NoteError>;
   readonly deleteByNoteId: (noteId: string) => ResultAsync<void, NoteError>;
   readonly getAllMentions: () => ResultAsync<Map<string, string[]>, NoteError>;
-  readonly findByToNoteId: (toNoteId: string) => ResultAsync<Mention[], NoteError>;
+  readonly findByToNoteId: (
+    toNoteId: string,
+    authorId: string
+  ) => ResultAsync<Mention[], NoteError>;
   readonly findByFromNoteId: (fromNoteId: string) => ResultAsync<Mention[], NoteError>;
   readonly getMentionsWithNotes: (
-    toNoteId: string
+    toNoteId: string,
+    authorId: string
   ) => ResultAsync<Array<{ mentions: Mention; notes: Note }>, NoteError>;
 }
 
@@ -73,9 +77,14 @@ export const createMentionRepository = ({ db }: { db: Database }): MentionReposi
   getAllMentions: () =>
     dbQuery(db.select().from(mentions), 'Failed to get mentions').map(buildMentionGraph),
 
-  findByToNoteId: (toNoteId) =>
+  findByToNoteId: (toNoteId, authorId) =>
     dbQuery(
-      db.select().from(mentions).where(eq(mentions.toNoteId, toNoteId)),
+      db
+        .select()
+        .from(mentions)
+        .innerJoin(notes, eq(mentions.fromNoteId, notes.id))
+        .where(and(eq(mentions.toNoteId, toNoteId), eq(notes.authorId, authorId)))
+        .then((rows) => rows.map((r) => r.mentions)),
       'Failed to find mentions by to note id'
     ),
 
@@ -85,18 +94,14 @@ export const createMentionRepository = ({ db }: { db: Database }): MentionReposi
       'Failed to find mentions by from note id'
     ),
 
-  getMentionsWithNotes: (toNoteId) =>
+  getMentionsWithNotes: (toNoteId, authorId) =>
     dbQuery(
-      (async () => {
-        const allMentions = await db.select().from(mentions).where(eq(mentions.toNoteId, toNoteId));
-        const results = await Promise.all(
-          allMentions.map(async (mention) => {
-            const [note] = await db.select().from(notes).where(eq(notes.id, mention.fromNoteId));
-            return { mentions: mention, notes: note! };
-          })
-        );
-        return results;
-      })(),
+      db
+        .select()
+        .from(mentions)
+        .innerJoin(notes, eq(mentions.fromNoteId, notes.id))
+        .where(and(eq(mentions.toNoteId, toNoteId), eq(notes.authorId, authorId)))
+        .then((rows) => rows.map((r) => ({ mentions: r.mentions, notes: r.notes }))),
       'Failed to get mentions with notes'
     ),
 });

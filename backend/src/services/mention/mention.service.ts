@@ -31,9 +31,10 @@ export const createMentionService = ({ db }: { db: Database }): MentionServiceHa
   const mentionRepo = createMentionRepository({ db });
 
   return {
-    getMentions: (toNoteId) => mentionRepo.findByToNoteId(toNoteId),
+    getMentions: (toNoteId, authorId) => mentionRepo.findByToNoteId(toNoteId, authorId),
 
-    getMentionsWithNotes: (toNoteId) => mentionRepo.getMentionsWithNotes(toNoteId),
+    getMentionsWithNotes: (toNoteId, authorId) =>
+      mentionRepo.getMentionsWithNotes(toNoteId, authorId),
 
     validateMentions: (fromNoteId, toNoteIds) =>
       mentionRepo

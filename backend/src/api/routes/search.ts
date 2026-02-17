@@ -1,6 +1,6 @@
 import { createSearchService } from '../../services/search';
 import { validateSearch } from '../../middleware/validation';
-import { requireAuth } from '../../middleware/auth.middleware';
+import { requireAuth, getAuthUserId } from '../../middleware/auth.middleware';
 import { handleServiceResponse } from '../middleware/response-handler';
 import type { SearchResponse } from '@thread-note/shared/types';
 import { serialize } from '../../types/api';
@@ -11,13 +11,14 @@ const app = createRouter()
   .get('/search', requireAuth, validateSearch, async (c) => {
     const db = c.get('db');
     const searchService = createSearchService({ db });
+    const authorId = getAuthUserId(c);
 
     const { q, type, limit } = c.req.valid('query');
 
     const searchResult =
       type === 'mention'
-        ? searchService.searchByMention(q)
-        : searchService.searchByContent(q, limit);
+        ? searchService.searchByMention(q, authorId)
+        : searchService.searchByContent(authorId, q, limit);
 
     return handleServiceResponse(searchResult, c, (results) => {
       const response: SearchResponse = {

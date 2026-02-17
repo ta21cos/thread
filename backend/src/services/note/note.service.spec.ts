@@ -8,9 +8,10 @@ import { MAX_NOTE_LENGTH } from '@thread-note/shared/constants';
 import { createNoteService } from '.';
 
 const TEST_AUTHOR_ID = 'test-author-id';
+const OTHER_AUTHOR_ID = 'other-author-id';
 
 describe('NoteService', () => {
-  const prepareServices = async () => {
+  const prepareServices = async (authorId: string = TEST_AUTHOR_ID) => {
     const service = createNoteService({ db });
 
     // ResultAsyncをPromiseに変換するラッパー
@@ -29,8 +30,8 @@ describe('NoteService', () => {
           }
         );
       },
-      getNoteById: async (id: string) => {
-        const result = await service.getNoteById(id);
+      getNoteById: async (id: string, overrideAuthorId?: string) => {
+        const result = await service.getNoteById(id, overrideAuthorId ?? authorId);
         return result.match(
           (note) => note,
           (error) => {
@@ -43,7 +44,7 @@ describe('NoteService', () => {
         );
       },
       getRootNotes: async (limit?: number, offset?: number, includeHidden?: boolean) => {
-        const result = await service.getRootNotes(limit, offset, includeHidden);
+        const result = await service.getRootNotes(authorId, limit, offset, includeHidden);
         return result.match(
           (data) => data,
           (error) => {
@@ -52,7 +53,7 @@ describe('NoteService', () => {
         );
       },
       updateNote: async (id: string, input: { content: string }) => {
-        const result = await service.updateNote(id, input);
+        const result = await service.updateNote(id, authorId, input);
         return result.match(
           (note) => note,
           (error) => {
@@ -61,7 +62,7 @@ describe('NoteService', () => {
         );
       },
       deleteNote: async (id: string) => {
-        const result = await service.deleteNote(id);
+        const result = await service.deleteNote(id, authorId);
         return result.match(
           () => undefined,
           (error) => {
@@ -78,12 +79,20 @@ describe('NoteService', () => {
     await db.delete(mentions);
     await db.delete(notes);
     await db.delete(profiles);
-    await db.insert(profiles).values({
-      id: TEST_AUTHOR_ID,
-      displayName: 'Test User',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    await db.insert(profiles).values([
+      {
+        id: TEST_AUTHOR_ID,
+        displayName: 'Test User',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: OTHER_AUTHOR_ID,
+        displayName: 'Other User',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ]);
   });
 
   describe('createNote', () => {
@@ -1067,6 +1076,66 @@ describe('NoteService', () => {
       });
 
       expect(child.authorId).toBe(TEST_AUTHOR_ID);
+    });
+  });
+
+  describe('cross-user isolation', () => {
+    it('should not return note when accessed by different authorId', async () => {
+      const { noteService } = await prepareServices();
+
+      const created = await noteService.createNote({
+        content: 'Private note',
+        authorId: TEST_AUTHOR_ID,
+      });
+
+      const result = await noteService.getNoteById(created.id, OTHER_AUTHOR_ID);
+      expect(result).toBeUndefined();
+    });
+
+    it('should not include other users notes in getRootNotes', async () => {
+      const { noteService: myService } = await prepareServices(TEST_AUTHOR_ID);
+      const { noteService: otherService } = await prepareServices(OTHER_AUTHOR_ID);
+
+      await myService.createNote({ content: 'My note', authorId: TEST_AUTHOR_ID });
+      await otherService.createNote({ content: 'Other note', authorId: OTHER_AUTHOR_ID });
+
+      const myNotes = await myService.getRootNotes();
+      expect(myNotes.notes).toHaveLength(1);
+      expect(myNotes.notes[0].content).toBe('My note');
+
+      const otherNotes = await otherService.getRootNotes();
+      expect(otherNotes.notes).toHaveLength(1);
+      expect(otherNotes.notes[0].content).toBe('Other note');
+    });
+
+    it('should not allow updating note owned by another user', async () => {
+      const { noteService: ownerService } = await prepareServices(TEST_AUTHOR_ID);
+      const { noteService: otherService } = await prepareServices(OTHER_AUTHOR_ID);
+
+      const created = await ownerService.createNote({
+        content: 'Owner note',
+        authorId: TEST_AUTHOR_ID,
+      });
+
+      await expect(otherService.updateNote(created.id, { content: 'Hijacked' })).rejects.toThrow(
+        'not found'
+      );
+    });
+
+    it('should not allow deleting note owned by another user', async () => {
+      const { noteService: ownerService } = await prepareServices(TEST_AUTHOR_ID);
+      const { noteService: otherService } = await prepareServices(OTHER_AUTHOR_ID);
+
+      const created = await ownerService.createNote({
+        content: 'Owner note',
+        authorId: TEST_AUTHOR_ID,
+      });
+
+      await expect(otherService.deleteNote(created.id)).rejects.toThrow('not found');
+
+      // Verify note still exists for the owner
+      const stillExists = await ownerService.getNoteById(created.id);
+      expect(stillExists).toBeDefined();
     });
   });
 });

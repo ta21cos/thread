@@ -31,6 +31,9 @@ type TestBindings = {
   APP_DOMAIN: string;
 };
 
+const TEST_USER_ID = 'test_user_123';
+const OTHER_USER_ID = 'other_user_456';
+
 describe('Notes Routes Integration Tests', () => {
   let app: Hono<{ Bindings: TestBindings }>;
 
@@ -38,12 +41,23 @@ describe('Notes Routes Integration Tests', () => {
   const clearTables = async () => {
     await env.DB.exec('DELETE FROM mentions');
     await env.DB.exec('DELETE FROM notes');
+    await env.DB.exec('DELETE FROM profiles');
+  };
+
+  // Helper to insert a profile directly via D1
+  const insertProfile = async (id: string, displayName = 'Test User') => {
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO profiles (id, display_name, created_at, updated_at) VALUES (?, ?, datetime('now'), datetime('now'))"
+    )
+      .bind(id, displayName)
+      .run();
   };
 
   // Helper to insert a note directly via D1
   const insertNote = async (note: {
     id: string;
     content: string;
+    authorId?: string;
     parentId: string | null;
     depth: number;
     isHidden?: boolean;
@@ -51,11 +65,12 @@ describe('Notes Routes Integration Tests', () => {
     updatedAt: Date;
   }) => {
     await env.DB.prepare(
-      'INSERT INTO notes (id, content, parent_id, depth, is_hidden, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO notes (id, content, author_id, parent_id, depth, is_hidden, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     )
       .bind(
         note.id,
         note.content,
+        note.authorId ?? TEST_USER_ID,
         note.parentId,
         note.depth,
         note.isHidden ? 1 : 0,
@@ -102,13 +117,17 @@ describe('Notes Routes Integration Tests', () => {
     // Clear database before each test
     await clearTables();
 
+    // Create test user profiles (required by FK constraint)
+    await insertProfile(TEST_USER_ID, 'Test User');
+    await insertProfile(OTHER_USER_ID, 'Other User');
+
     // Reset mocks
     vi.clearAllMocks();
 
     // Mock authentication to succeed by default
     mockAuthenticateRequest.mockResolvedValue({
       isAuthenticated: true,
-      toAuth: () => ({ userId: 'test_user_123', sessionId: 'test_session_456' }),
+      toAuth: () => ({ userId: TEST_USER_ID, sessionId: 'test_session_456' }),
     });
 
     // Create a fresh Hono app with the notes routes
@@ -897,6 +916,103 @@ describe('Notes Routes Integration Tests', () => {
 
         expect(res.status).toBe(401);
       });
+    });
+  });
+
+  describe('cross-user isolation', () => {
+    it('should not list notes owned by another user', async () => {
+      const now = new Date();
+      await insertNote({
+        id: generateId(),
+        content: 'My note',
+        authorId: TEST_USER_ID,
+        parentId: null,
+        depth: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await insertNote({
+        id: generateId(),
+        content: 'Other user note',
+        authorId: OTHER_USER_ID,
+        parentId: null,
+        depth: 0,
+        createdAt: new Date(now.getTime() + 1000),
+        updatedAt: new Date(now.getTime() + 1000),
+      });
+
+      const res = await requestWithEnv('/api/notes?limit=20&offset=0', { method: 'GET' });
+
+      expect(res.status).toBe(200);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const body = (await res.json()) as any;
+      expect(body.notes).toHaveLength(1);
+      expect(body.notes[0].content).toBe('My note');
+      expect(body.total).toBe(1);
+    });
+
+    it('should return 404 when accessing note owned by another user', async () => {
+      const otherNoteId = generateId();
+      const now = new Date();
+      await insertNote({
+        id: otherNoteId,
+        content: 'Other user note',
+        authorId: OTHER_USER_ID,
+        parentId: null,
+        depth: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      const res = await requestWithEnv(`/api/notes/${otherNoteId}`, { method: 'GET' });
+      expect(res.status).toBe(404);
+    });
+
+    it('should return 404 when updating note owned by another user', async () => {
+      const otherNoteId = generateId();
+      const now = new Date();
+      await insertNote({
+        id: otherNoteId,
+        content: 'Other user note',
+        authorId: OTHER_USER_ID,
+        parentId: null,
+        depth: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      const res = await requestWithEnv(`/api/notes/${otherNoteId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: 'Trying to update' }),
+      });
+
+      expect(res.status).toBe(404);
+
+      // Verify note was NOT updated in database
+      const note = await queryNotes(otherNoteId);
+      expect(note?.content).toBe('Other user note');
+    });
+
+    it('should return 404 when deleting note owned by another user', async () => {
+      const otherNoteId = generateId();
+      const now = new Date();
+      await insertNote({
+        id: otherNoteId,
+        content: 'Other user note',
+        authorId: OTHER_USER_ID,
+        parentId: null,
+        depth: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      const res = await requestWithEnv(`/api/notes/${otherNoteId}`, { method: 'DELETE' });
+      expect(res.status).toBe(404);
+
+      // Verify note still exists
+      const note = await queryNotes(otherNoteId);
+      expect(note).toBeDefined();
     });
   });
 });
