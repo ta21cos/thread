@@ -29,6 +29,13 @@
       "when": 1765700000000,
       "tag": "0003_add_channels_and_enhancements",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1765800000000,
+      "tag": "0004_make_author_id_required",
+      "breakpoints": true
     }
   ]
 }

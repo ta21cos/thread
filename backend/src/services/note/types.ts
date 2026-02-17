@@ -15,6 +15,7 @@ import type { NoteError } from '../../errors/domain-errors';
 /** ノート作成のための入力データ */
 export interface CreateNoteInput {
   readonly content: string;
+  readonly authorId: string;
   readonly parentId?: string;
   readonly isHidden?: boolean;
 }
@@ -43,6 +44,7 @@ export interface PaginatedNotes {
 export interface ValidatedNoteData {
   readonly id: string;
   readonly content: string;
+  readonly authorId: string;
   readonly parentId?: string;
   readonly depth: number;
   readonly mentionIds: string[];
@@ -63,18 +65,27 @@ export interface ValidatedNoteData {
 export interface NoteServiceHandle {
   /** ノートを作成 */
   readonly createNote: (input: CreateNoteInput) => ResultAsync<Note, NoteError>;
-  /** IDでノートを取得 */
-  readonly getNoteById: (id: string) => ResultAsync<Note, NoteError>;
-  /** ルートノートを取得 */
+  /** IDでノートを取得（authorId による所有権チェック） */
+  readonly getNoteById: (id: string, authorId: string) => ResultAsync<Note, NoteError>;
+  /** ルートノートを取得（authorId でフィルタ） */
   readonly getRootNotes: (
+    authorId: string,
     limit?: number,
     offset?: number,
     includeHidden?: boolean
   ) => ResultAsync<PaginatedNotes, NoteError>;
-  /** ノートを更新 */
-  readonly updateNote: (id: string, input: UpdateNoteInput) => ResultAsync<Note, NoteError>;
-  /** ノートの hidden 状態を更新 */
-  readonly updateHidden: (id: string, isHidden: boolean) => ResultAsync<Note, NoteError>;
-  /** ノートを削除（カスケード） */
-  readonly deleteNote: (id: string) => ResultAsync<void, NoteError>;
+  /** ノートを更新（authorId による所有権チェック） */
+  readonly updateNote: (
+    id: string,
+    authorId: string,
+    input: UpdateNoteInput
+  ) => ResultAsync<Note, NoteError>;
+  /** ノートの hidden 状態を更新（authorId による所有権チェック） */
+  readonly updateHidden: (
+    id: string,
+    authorId: string,
+    isHidden: boolean
+  ) => ResultAsync<Note, NoteError>;
+  /** ノートを削除（カスケード、authorId による所有権チェック） */
+  readonly deleteNote: (id: string, authorId: string) => ResultAsync<void, NoteError>;
 }

@@ -20,12 +20,13 @@ const app = createRouter()
   .get('/', requireAuth, validatePagination, async (c) => {
     const db = c.get('db');
     const noteService = createNoteService({ db });
+    const authorId = getAuthUserId(c);
 
     const { limit, offset } = c.req.valid('query');
     const includeHidden = c.req.query('includeHidden') === 'true';
 
     return handleServiceResponse(
-      noteService.getRootNotes(limit, offset, includeHidden),
+      noteService.getRootNotes(authorId, limit, offset, includeHidden),
       c,
       (d) => ({
         notes: d.notes.map(serialize),
@@ -45,7 +46,7 @@ const app = createRouter()
 
     return handleServiceResponse(
       noteService
-        .createNote(data)
+        .createNote({ ...data, authorId })
         .andThen((note) =>
           taskService.syncTasksFromNote(note.id, authorId, note.content).map(() => note)
         ),
@@ -60,12 +61,13 @@ const app = createRouter()
     const db = c.get('db');
     const noteService = createNoteService({ db });
     const threadService = createThreadService({ db });
+    const authorId = getAuthUserId(c);
     const { id } = c.req.valid('param');
     const includeThread = c.req.query('includeThread') !== 'false';
 
     return handleServiceResponse(
-      noteService.getNoteById(id).andThen((note) =>
-        (includeThread ? threadService.getThread(id) : okAsync([])).map((thread) => {
+      noteService.getNoteById(id, authorId).andThen((note) =>
+        (includeThread ? threadService.getThread(id, authorId) : okAsync([])).map((thread) => {
           const response: NoteDetailResponse = {
             note: serialize(note),
             thread: thread.map(serialize),
@@ -88,7 +90,7 @@ const app = createRouter()
 
     return handleServiceResponse(
       noteService
-        .updateNote(id, data)
+        .updateNote(id, authorId, data)
         .andThen((note) =>
           taskService.syncTasksFromNote(note.id, authorId, note.content).map(() => note)
         ),
@@ -101,19 +103,21 @@ const app = createRouter()
   .patch('/:id/hidden', requireAuth, validateNoteId, validateUpdateHidden, async (c) => {
     const db = c.get('db');
     const noteService = createNoteService({ db });
+    const authorId = getAuthUserId(c);
     const { id } = c.req.valid('param');
     const { isHidden } = c.req.valid('json');
 
-    return handleServiceResponse(noteService.updateHidden(id, isHidden), c, serialize);
+    return handleServiceResponse(noteService.updateHidden(id, authorId, isHidden), c, serialize);
   })
 
   // DELETE /api/notes/:id - Delete note (cascade)
   .delete('/:id', requireAuth, validateNoteId, async (c) => {
     const db = c.get('db');
     const noteService = createNoteService({ db });
+    const authorId = getAuthUserId(c);
     const { id } = c.req.valid('param');
 
-    return handleVoidResponse(noteService.deleteNote(id), c);
+    return handleVoidResponse(noteService.deleteNote(id, authorId), c);
   });
 
 export default app;

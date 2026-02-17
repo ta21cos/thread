@@ -1,19 +1,27 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 // NOTE: Initialize database before importing db
 import '../../../tests/preload';
-import { db, notes, mentions } from '../../db';
+import { db, notes, mentions, profiles } from '../../db';
 
 import { generateId } from '../../utils/id-generator';
 import { MAX_NOTE_LENGTH } from '@thread-note/shared/constants';
 import { createNoteService } from '.';
 
+const TEST_AUTHOR_ID = 'test-author-id';
+const OTHER_AUTHOR_ID = 'other-author-id';
+
 describe('NoteService', () => {
-  const prepareServices = async () => {
+  const prepareServices = async (authorId: string = TEST_AUTHOR_ID) => {
     const service = createNoteService({ db });
 
     // ResultAsyncをPromiseに変換するラッパー
     const noteService = {
-      createNote: async (input: { content: string; parentId?: string; isHidden?: boolean }) => {
+      createNote: async (input: {
+        content: string;
+        authorId: string;
+        parentId?: string;
+        isHidden?: boolean;
+      }) => {
         const result = await service.createNote(input);
         return result.match(
           (note) => note,
@@ -22,8 +30,8 @@ describe('NoteService', () => {
           }
         );
       },
-      getNoteById: async (id: string) => {
-        const result = await service.getNoteById(id);
+      getNoteById: async (id: string, overrideAuthorId?: string) => {
+        const result = await service.getNoteById(id, overrideAuthorId ?? authorId);
         return result.match(
           (note) => note,
           (error) => {
@@ -36,7 +44,7 @@ describe('NoteService', () => {
         );
       },
       getRootNotes: async (limit?: number, offset?: number, includeHidden?: boolean) => {
-        const result = await service.getRootNotes(limit, offset, includeHidden);
+        const result = await service.getRootNotes(authorId, limit, offset, includeHidden);
         return result.match(
           (data) => data,
           (error) => {
@@ -45,7 +53,7 @@ describe('NoteService', () => {
         );
       },
       updateNote: async (id: string, input: { content: string }) => {
-        const result = await service.updateNote(id, input);
+        const result = await service.updateNote(id, authorId, input);
         return result.match(
           (note) => note,
           (error) => {
@@ -54,7 +62,7 @@ describe('NoteService', () => {
         );
       },
       deleteNote: async (id: string) => {
-        const result = await service.deleteNote(id);
+        const result = await service.deleteNote(id, authorId);
         return result.match(
           () => undefined,
           (error) => {
@@ -70,6 +78,21 @@ describe('NoteService', () => {
   beforeEach(async () => {
     await db.delete(mentions);
     await db.delete(notes);
+    await db.delete(profiles);
+    await db.insert(profiles).values([
+      {
+        id: TEST_AUTHOR_ID,
+        displayName: 'Test User',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: OTHER_AUTHOR_ID,
+        displayName: 'Other User',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ]);
   });
 
   describe('createNote', () => {
@@ -78,12 +101,25 @@ describe('NoteService', () => {
 
       const result = await noteService.createNote({
         content: 'Test note content',
+        authorId: TEST_AUTHOR_ID,
       });
 
       expect(result).toBeDefined();
       expect(result.content).toBe('Test note content');
       expect(result.parentId).toBeNull();
       expect(result.depth).toBe(0);
+    });
+
+    it('should set authorId on created note', async () => {
+      const { noteService } = await prepareServices();
+
+      const result = await noteService.createNote({
+        content: 'Note with author',
+        authorId: TEST_AUTHOR_ID,
+      });
+
+      expect(result).toBeDefined();
+      expect(result.authorId).toBe(TEST_AUTHOR_ID);
     });
 
     it('should create a child note with parentId', async () => {
@@ -94,6 +130,7 @@ describe('NoteService', () => {
       await db.insert(notes).values({
         id: parentId,
         content: 'Parent note',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -102,6 +139,7 @@ describe('NoteService', () => {
 
       const result = await noteService.createNote({
         content: 'Child note',
+        authorId: TEST_AUTHOR_ID,
         parentId: parentId,
       });
 
@@ -114,9 +152,9 @@ describe('NoteService', () => {
     it('should throw error when content is empty', async () => {
       const { noteService } = await prepareServices();
 
-      await expect(noteService.createNote({ content: '' })).rejects.toThrow(
-        'Note content cannot be empty'
-      );
+      await expect(
+        noteService.createNote({ content: '', authorId: TEST_AUTHOR_ID })
+      ).rejects.toThrow('Note content cannot be empty');
     });
 
     it('should throw error when content exceeds max length', async () => {
@@ -124,7 +162,9 @@ describe('NoteService', () => {
 
       const longContent = 'a'.repeat(MAX_NOTE_LENGTH + 1);
 
-      await expect(noteService.createNote({ content: longContent })).rejects.toThrow(
+      await expect(
+        noteService.createNote({ content: longContent, authorId: TEST_AUTHOR_ID })
+      ).rejects.toThrow(
         `Note content must be at most ${MAX_NOTE_LENGTH} characters (got ${MAX_NOTE_LENGTH + 1})`
       );
     });
@@ -134,7 +174,10 @@ describe('NoteService', () => {
 
       const maxContent = 'a'.repeat(MAX_NOTE_LENGTH);
 
-      const result = await noteService.createNote({ content: maxContent });
+      const result = await noteService.createNote({
+        content: maxContent,
+        authorId: TEST_AUTHOR_ID,
+      });
 
       expect(result).toBeDefined();
       expect(result.content).toBe(maxContent);
@@ -146,6 +189,7 @@ describe('NoteService', () => {
       await expect(
         noteService.createNote({
           content: 'Child note',
+          authorId: TEST_AUTHOR_ID,
           parentId: 'nonexistent',
         })
       ).rejects.toThrow("Parent note with id 'nonexistent' not found");
@@ -162,6 +206,7 @@ describe('NoteService', () => {
         {
           id: rootId,
           content: 'Root note',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -170,6 +215,7 @@ describe('NoteService', () => {
         {
           id: childId,
           content: 'Child note',
+          authorId: TEST_AUTHOR_ID,
           parentId: rootId,
           depth: 1,
           createdAt: now,
@@ -180,6 +226,7 @@ describe('NoteService', () => {
       await expect(
         noteService.createNote({
           content: 'Grandchild note',
+          authorId: TEST_AUTHOR_ID,
           parentId: childId,
         })
       ).rejects.toThrow('Cannot create child for a note that is already at maximum depth (1)');
@@ -193,6 +240,7 @@ describe('NoteService', () => {
       await db.insert(notes).values({
         id: targetNoteId,
         content: 'Target note',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -201,6 +249,7 @@ describe('NoteService', () => {
 
       const result = await noteService.createNote({
         content: `Mentioning @${targetNoteId} here`,
+        authorId: TEST_AUTHOR_ID,
       });
 
       expect(result).toBeDefined();
@@ -222,6 +271,7 @@ describe('NoteService', () => {
         {
           id: targetNoteId1,
           content: 'Target note 1',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -230,6 +280,7 @@ describe('NoteService', () => {
         {
           id: targetNoteId2,
           content: 'Target note 2',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -239,6 +290,7 @@ describe('NoteService', () => {
 
       const result = await noteService.createNote({
         content: `Mentioning @${targetNoteId1} and @${targetNoteId2}`,
+        authorId: TEST_AUTHOR_ID,
       });
 
       expect(result).toBeDefined();
@@ -255,6 +307,7 @@ describe('NoteService', () => {
       await db.insert(notes).values({
         id: targetNoteId,
         content: 'Target note',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -263,6 +316,7 @@ describe('NoteService', () => {
 
       await noteService.createNote({
         content: `Hello @${targetNoteId}`,
+        authorId: TEST_AUTHOR_ID,
       });
 
       const mentionRecords = await db.select().from(mentions);
@@ -280,6 +334,7 @@ describe('NoteService', () => {
       await db.insert(notes).values({
         id: noteId,
         content: 'Test note content',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -313,6 +368,7 @@ describe('NoteService', () => {
       await db.insert(notes).values({
         id: parentId,
         content: 'Parent note',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -322,6 +378,7 @@ describe('NoteService', () => {
       await db.insert(notes).values({
         id: childId,
         content: 'Child note',
+        authorId: TEST_AUTHOR_ID,
         parentId: parentId,
         depth: 1,
         createdAt: now,
@@ -360,6 +417,7 @@ describe('NoteService', () => {
         {
           id: rootId1,
           content: 'Root note 1',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -368,6 +426,7 @@ describe('NoteService', () => {
         {
           id: rootId2,
           content: 'Root note 2',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: new Date(now.getTime() + 1000),
@@ -376,6 +435,7 @@ describe('NoteService', () => {
         {
           id: childId,
           content: 'Child note',
+          authorId: TEST_AUTHOR_ID,
           parentId: rootId1,
           depth: 1,
           createdAt: now,
@@ -399,6 +459,7 @@ describe('NoteService', () => {
       await db.insert(notes).values({
         id: rootId,
         content: 'Root note',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -409,6 +470,7 @@ describe('NoteService', () => {
         {
           id: generateId(),
           content: 'Reply 1',
+          authorId: TEST_AUTHOR_ID,
           parentId: rootId,
           depth: 1,
           createdAt: now,
@@ -417,6 +479,7 @@ describe('NoteService', () => {
         {
           id: generateId(),
           content: 'Reply 2',
+          authorId: TEST_AUTHOR_ID,
           parentId: rootId,
           depth: 1,
           createdAt: now,
@@ -438,6 +501,7 @@ describe('NoteService', () => {
         await db.insert(notes).values({
           id: generateId(),
           content: `Note ${i}`,
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: new Date(now.getTime() + i * 1000),
@@ -463,6 +527,7 @@ describe('NoteService', () => {
         await db.insert(notes).values({
           id,
           content: `Note ${i}`,
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: new Date(now.getTime() + i * 1000),
@@ -487,6 +552,7 @@ describe('NoteService', () => {
         {
           id: oldNoteId,
           content: 'Old note',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: new Date(now.getTime() - 10000),
@@ -495,6 +561,7 @@ describe('NoteService', () => {
         {
           id: newNoteId,
           content: 'New note',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -518,6 +585,7 @@ describe('NoteService', () => {
       await db.insert(notes).values({
         id: noteId,
         content: 'Original content',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -549,6 +617,7 @@ describe('NoteService', () => {
       await db.insert(notes).values({
         id: noteId,
         content: 'Original content',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -568,6 +637,7 @@ describe('NoteService', () => {
       await db.insert(notes).values({
         id: noteId,
         content: 'Original content',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -589,6 +659,7 @@ describe('NoteService', () => {
       await db.insert(notes).values({
         id: noteId,
         content: 'Original content',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -615,6 +686,7 @@ describe('NoteService', () => {
         {
           id: noteId,
           content: `Original @${targetNoteId1}`,
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -623,6 +695,7 @@ describe('NoteService', () => {
         {
           id: targetNoteId1,
           content: 'Target 1',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -631,6 +704,7 @@ describe('NoteService', () => {
         {
           id: targetNoteId2,
           content: 'Target 2',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -666,6 +740,7 @@ describe('NoteService', () => {
         {
           id: noteId,
           content: `Original @${targetNoteId}`,
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -674,6 +749,7 @@ describe('NoteService', () => {
         {
           id: targetNoteId,
           content: 'Target note',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -708,6 +784,7 @@ describe('NoteService', () => {
         {
           id: noteId,
           content: 'No mentions',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -716,6 +793,7 @@ describe('NoteService', () => {
         {
           id: targetNoteId,
           content: 'Target note',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -744,6 +822,7 @@ describe('NoteService', () => {
         {
           id: parentId,
           content: 'Parent note',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -752,6 +831,7 @@ describe('NoteService', () => {
         {
           id: childId,
           content: 'Child note',
+          authorId: TEST_AUTHOR_ID,
           parentId: parentId,
           depth: 1,
           createdAt: now,
@@ -774,6 +854,7 @@ describe('NoteService', () => {
 
       const result = await noteService.createNote({
         content: 'Hidden note',
+        authorId: TEST_AUTHOR_ID,
         isHidden: true,
       });
 
@@ -788,6 +869,7 @@ describe('NoteService', () => {
 
       const result = await noteService.createNote({
         content: 'Visible note',
+        authorId: TEST_AUTHOR_ID,
       });
 
       expect(result).toBeDefined();
@@ -802,6 +884,7 @@ describe('NoteService', () => {
       await db.insert(notes).values({
         id: parentId,
         content: 'Parent note',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         isHidden: false,
@@ -812,6 +895,7 @@ describe('NoteService', () => {
       await expect(
         noteService.createNote({
           content: 'Child note',
+          authorId: TEST_AUTHOR_ID,
           parentId: parentId,
           isHidden: true,
         })
@@ -828,6 +912,7 @@ describe('NoteService', () => {
       await db.insert(notes).values({
         id: parentId,
         content: 'Hidden parent',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         isHidden: true,
@@ -837,6 +922,7 @@ describe('NoteService', () => {
 
       const result = await noteService.createNote({
         content: 'Child note',
+        authorId: TEST_AUTHOR_ID,
         parentId: parentId,
       });
 
@@ -853,6 +939,7 @@ describe('NoteService', () => {
         {
           id: generateId(),
           content: 'Visible note 1',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           isHidden: false,
@@ -862,6 +949,7 @@ describe('NoteService', () => {
         {
           id: generateId(),
           content: 'Hidden note',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           isHidden: true,
@@ -871,6 +959,7 @@ describe('NoteService', () => {
         {
           id: generateId(),
           content: 'Visible note 2',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           isHidden: false,
@@ -894,6 +983,7 @@ describe('NoteService', () => {
         {
           id: generateId(),
           content: 'Visible note',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           isHidden: false,
@@ -903,6 +993,7 @@ describe('NoteService', () => {
         {
           id: generateId(),
           content: 'Hidden note',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           isHidden: true,
@@ -925,6 +1016,7 @@ describe('NoteService', () => {
       await db.insert(notes).values({
         id: parentId,
         content: 'Parent note',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         isHidden: false,
@@ -934,12 +1026,116 @@ describe('NoteService', () => {
 
       const result = await noteService.createNote({
         content: 'Child note',
+        authorId: TEST_AUTHOR_ID,
         parentId: parentId,
         isHidden: false,
       });
 
       expect(result).toBeDefined();
       expect(result.isHidden).toBe(false);
+    });
+  });
+
+  describe('authorId constraints', () => {
+    it('should reject note creation with non-existent authorId', async () => {
+      const { noteService } = await prepareServices();
+
+      await expect(
+        noteService.createNote({
+          content: 'Note with bad author',
+          authorId: 'non-existent-author',
+        })
+      ).rejects.toThrow();
+    });
+
+    it('should persist authorId across note retrieval', async () => {
+      const { noteService } = await prepareServices();
+
+      const created = await noteService.createNote({
+        content: 'Persisted author note',
+        authorId: TEST_AUTHOR_ID,
+      });
+
+      const fetched = await noteService.getNoteById(created.id);
+      expect(fetched).toBeDefined();
+      expect(fetched!.authorId).toBe(TEST_AUTHOR_ID);
+    });
+
+    it('should preserve authorId on child notes', async () => {
+      const { noteService } = await prepareServices();
+
+      const parent = await noteService.createNote({
+        content: 'Parent note',
+        authorId: TEST_AUTHOR_ID,
+      });
+
+      const child = await noteService.createNote({
+        content: 'Child note',
+        authorId: TEST_AUTHOR_ID,
+        parentId: parent.id,
+      });
+
+      expect(child.authorId).toBe(TEST_AUTHOR_ID);
+    });
+  });
+
+  describe('cross-user isolation', () => {
+    it('should not return note when accessed by different authorId', async () => {
+      const { noteService } = await prepareServices();
+
+      const created = await noteService.createNote({
+        content: 'Private note',
+        authorId: TEST_AUTHOR_ID,
+      });
+
+      const result = await noteService.getNoteById(created.id, OTHER_AUTHOR_ID);
+      expect(result).toBeUndefined();
+    });
+
+    it('should not include other users notes in getRootNotes', async () => {
+      const { noteService: myService } = await prepareServices(TEST_AUTHOR_ID);
+      const { noteService: otherService } = await prepareServices(OTHER_AUTHOR_ID);
+
+      await myService.createNote({ content: 'My note', authorId: TEST_AUTHOR_ID });
+      await otherService.createNote({ content: 'Other note', authorId: OTHER_AUTHOR_ID });
+
+      const myNotes = await myService.getRootNotes();
+      expect(myNotes.notes).toHaveLength(1);
+      expect(myNotes.notes[0].content).toBe('My note');
+
+      const otherNotes = await otherService.getRootNotes();
+      expect(otherNotes.notes).toHaveLength(1);
+      expect(otherNotes.notes[0].content).toBe('Other note');
+    });
+
+    it('should not allow updating note owned by another user', async () => {
+      const { noteService: ownerService } = await prepareServices(TEST_AUTHOR_ID);
+      const { noteService: otherService } = await prepareServices(OTHER_AUTHOR_ID);
+
+      const created = await ownerService.createNote({
+        content: 'Owner note',
+        authorId: TEST_AUTHOR_ID,
+      });
+
+      await expect(otherService.updateNote(created.id, { content: 'Hijacked' })).rejects.toThrow(
+        'not found'
+      );
+    });
+
+    it('should not allow deleting note owned by another user', async () => {
+      const { noteService: ownerService } = await prepareServices(TEST_AUTHOR_ID);
+      const { noteService: otherService } = await prepareServices(OTHER_AUTHOR_ID);
+
+      const created = await ownerService.createNote({
+        content: 'Owner note',
+        authorId: TEST_AUTHOR_ID,
+      });
+
+      await expect(otherService.deleteNote(created.id)).rejects.toThrow('not found');
+
+      // Verify note still exists for the owner
+      const stillExists = await ownerService.getNoteById(created.id);
+      expect(stillExists).toBeDefined();
     });
   });
 });

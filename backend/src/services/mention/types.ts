@@ -28,10 +28,13 @@ export interface MentionWithNote {
  * メンション管理のための公開API。
  */
 export interface MentionServiceHandle {
-  /** 指定ノートへのメンション一覧を取得 */
-  readonly getMentions: (toNoteId: string) => ResultAsync<Mention[], NoteError>;
-  /** 指定ノートへのメンションとソースノート情報を取得 */
-  readonly getMentionsWithNotes: (toNoteId: string) => ResultAsync<MentionWithNote[], NoteError>;
+  /** 指定ノートへのメンション一覧を取得（authorId でフィルタ） */
+  readonly getMentions: (toNoteId: string, authorId: string) => ResultAsync<Mention[], NoteError>;
+  /** 指定ノートへのメンションとソースノート情報を取得（authorId でフィルタ） */
+  readonly getMentionsWithNotes: (
+    toNoteId: string,
+    authorId: string
+  ) => ResultAsync<MentionWithNote[], NoteError>;
   /** メンションの循環参照を検証 */
   readonly validateMentions: (
     fromNoteId: string,

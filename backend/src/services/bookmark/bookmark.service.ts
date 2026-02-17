@@ -23,7 +23,7 @@ export const createBookmarkService = ({ db }: { db: Database }): BookmarkService
   return {
     toggleBookmark: (noteId, authorId) =>
       noteRepo
-        .findById(noteId)
+        .findById(noteId, authorId)
         .andThen(ensureNoteExists(noteId))
         .andThen(() =>
           bookmarkRepo

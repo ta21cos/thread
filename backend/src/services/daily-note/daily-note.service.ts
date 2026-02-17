@@ -72,13 +72,19 @@ export const createDailyNoteService = ({ db }: { db: Database }): DailyNoteServi
     getDailyNote: (authorId, date, templateId) =>
       dailyNoteRepo.findByAuthorAndDate(authorId, date).andThen((existing) =>
         existing
-          ? noteService.getNoteById(existing.noteId).map((note) => ({ dailyNote: existing, note }))
+          ? noteService
+              .getNoteById(existing.noteId, authorId)
+              .map((note) => ({ dailyNote: existing, note }))
           : (templateId
               ? templateRepo.findById(templateId).andThen(ensureTemplateExists(templateId))
               : getOrCreateDefaultTemplate(authorId)
             ).andThen((template) =>
               noteService
-                .createNote({ content: processTemplate(template.content, date), isHidden: false })
+                .createNote({
+                  content: processTemplate(template.content, date),
+                  authorId,
+                  isHidden: false,
+                })
                 .andThen((note) =>
                   dailyNoteRepo
                     .create({

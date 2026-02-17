@@ -1,7 +1,7 @@
 import { createMentionService } from '../../services/mention';
 import { createNoteService } from '../../services/note';
 import { validateNoteId } from '../../middleware/validation';
-import { requireAuth } from '../../middleware/auth.middleware';
+import { requireAuth, getAuthUserId } from '../../middleware/auth.middleware';
 import { handleServiceResponse } from '../middleware/response-handler';
 import type { MentionsResponse } from '@thread-note/shared/types';
 import { serialize } from '../../types/api';
@@ -13,11 +13,14 @@ const app = createRouter()
     const db = c.get('db');
     const noteService = createNoteService({ db });
     const mentionService = createMentionService({ db });
+    const authorId = getAuthUserId(c);
 
     const { id } = c.req.valid('param');
 
     return handleServiceResponse(
-      noteService.getNoteById(id).andThen(() => mentionService.getMentionsWithNotes(id)),
+      noteService
+        .getNoteById(id, authorId)
+        .andThen(() => mentionService.getMentionsWithNotes(id, authorId)),
       c,
       (mentionsWithNotes) => {
         const response: MentionsResponse = {

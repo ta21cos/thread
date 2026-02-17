@@ -1,17 +1,20 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import '../../../tests/preload';
-import { db, notes, mentions } from '../../db';
+import { db, notes, mentions, profiles } from '../../db';
 import { createThreadService } from '.';
 import { generateId } from '../../utils/id-generator';
 
+const TEST_AUTHOR_ID = 'test-author-id';
+const OTHER_AUTHOR_ID = 'other-author-id';
+
 describe('ThreadService', () => {
-  const prepareServices = () => {
+  const prepareServices = (authorId: string = TEST_AUTHOR_ID) => {
     const service = createThreadService({ db });
 
     // ResultAsync を Promise に変換するラッパー
     return {
       getThread: async (noteId: string) => {
-        const result = await service.getThread(noteId);
+        const result = await service.getThread(noteId, authorId);
         return result.match(
           (notes) => notes,
           (error) => {
@@ -20,7 +23,7 @@ describe('ThreadService', () => {
         );
       },
       getChildren: async (noteId: string) => {
-        const result = await service.getChildren(noteId);
+        const result = await service.getChildren(noteId, authorId);
         return result.match(
           (notes) => notes,
           (error) => {
@@ -34,6 +37,21 @@ describe('ThreadService', () => {
   beforeEach(async () => {
     await db.delete(mentions);
     await db.delete(notes);
+    await db.delete(profiles);
+    await db.insert(profiles).values([
+      {
+        id: TEST_AUTHOR_ID,
+        displayName: 'Test User',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: OTHER_AUTHOR_ID,
+        displayName: 'Other User',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ]);
   });
 
   describe('getThread', () => {
@@ -51,6 +69,7 @@ describe('ThreadService', () => {
       await db.insert(notes).values({
         id: noteId,
         content: 'Root note',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -73,6 +92,7 @@ describe('ThreadService', () => {
       await db.insert(notes).values({
         id: rootId,
         content: 'Root note',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -82,6 +102,7 @@ describe('ThreadService', () => {
       await db.insert(notes).values({
         id: childId,
         content: 'Child note',
+        authorId: TEST_AUTHOR_ID,
         parentId: rootId,
         depth: 1,
         createdAt: now,
@@ -105,6 +126,7 @@ describe('ThreadService', () => {
       await db.insert(notes).values({
         id: rootId,
         content: 'Root note',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -114,6 +136,7 @@ describe('ThreadService', () => {
       await db.insert(notes).values({
         id: childId,
         content: 'Child note',
+        authorId: TEST_AUTHOR_ID,
         parentId: rootId,
         depth: 1,
         createdAt: now,
@@ -139,6 +162,7 @@ describe('ThreadService', () => {
         {
           id: rootId,
           content: 'Root note',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -147,6 +171,7 @@ describe('ThreadService', () => {
         {
           id: childId1,
           content: 'Child 1',
+          authorId: TEST_AUTHOR_ID,
           parentId: rootId,
           depth: 1,
           createdAt: new Date(now.getTime() + 1000),
@@ -155,6 +180,7 @@ describe('ThreadService', () => {
         {
           id: childId2,
           content: 'Child 2',
+          authorId: TEST_AUTHOR_ID,
           parentId: rootId,
           depth: 1,
           createdAt: new Date(now.getTime() + 2000),
@@ -179,6 +205,7 @@ describe('ThreadService', () => {
         {
           id: thread1RootId,
           content: 'Thread 1 root',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -187,6 +214,7 @@ describe('ThreadService', () => {
         {
           id: thread1ChildId,
           content: 'Thread 1 child',
+          authorId: TEST_AUTHOR_ID,
           parentId: thread1RootId,
           depth: 1,
           createdAt: now,
@@ -195,6 +223,7 @@ describe('ThreadService', () => {
         {
           id: thread2RootId,
           content: 'Thread 2 root',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -218,6 +247,7 @@ describe('ThreadService', () => {
       await db.insert(notes).values({
         id: noteId,
         content: 'Root note',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -239,6 +269,7 @@ describe('ThreadService', () => {
       await db.insert(notes).values({
         id: parentId,
         content: 'Parent note',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -248,6 +279,7 @@ describe('ThreadService', () => {
       await db.insert(notes).values({
         id: childId,
         content: 'Child note',
+        authorId: TEST_AUTHOR_ID,
         parentId: parentId,
         depth: 1,
         createdAt: now,
@@ -272,6 +304,7 @@ describe('ThreadService', () => {
       await db.insert(notes).values({
         id: parentId,
         content: 'Parent note',
+        authorId: TEST_AUTHOR_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -282,6 +315,7 @@ describe('ThreadService', () => {
         {
           id: childId1,
           content: 'Child 1',
+          authorId: TEST_AUTHOR_ID,
           parentId: parentId,
           depth: 1,
           createdAt: now,
@@ -290,6 +324,7 @@ describe('ThreadService', () => {
         {
           id: childId2,
           content: 'Child 2',
+          authorId: TEST_AUTHOR_ID,
           parentId: parentId,
           depth: 1,
           createdAt: now,
@@ -298,6 +333,7 @@ describe('ThreadService', () => {
         {
           id: childId3,
           content: 'Child 3',
+          authorId: TEST_AUTHOR_ID,
           parentId: parentId,
           depth: 1,
           createdAt: now,
@@ -322,6 +358,7 @@ describe('ThreadService', () => {
         {
           id: grandparentId,
           content: 'Grandparent',
+          authorId: TEST_AUTHOR_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -330,6 +367,7 @@ describe('ThreadService', () => {
         {
           id: parentId,
           content: 'Parent',
+          authorId: TEST_AUTHOR_ID,
           parentId: grandparentId,
           depth: 1,
           createdAt: now,
@@ -338,6 +376,7 @@ describe('ThreadService', () => {
         {
           id: grandchildId,
           content: 'Grandchild',
+          authorId: TEST_AUTHOR_ID,
           parentId: parentId,
           depth: 2,
           createdAt: now,
@@ -349,6 +388,58 @@ describe('ThreadService', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe(parentId);
+    });
+  });
+
+  describe('cross-user isolation', () => {
+    it('should not return thread for note owned by another user', async () => {
+      const otherThreadService = prepareServices(OTHER_AUTHOR_ID);
+
+      const noteId = generateId();
+      const now = new Date();
+      await db.insert(notes).values({
+        id: noteId,
+        content: 'Private note',
+        authorId: TEST_AUTHOR_ID,
+        parentId: null,
+        depth: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      await expect(otherThreadService.getThread(noteId)).rejects.toThrow();
+    });
+
+    it('should not return children of note owned by another user', async () => {
+      const otherThreadService = prepareServices(OTHER_AUTHOR_ID);
+
+      const parentId = generateId();
+      const childId = generateId();
+      const now = new Date();
+
+      await db.insert(notes).values([
+        {
+          id: parentId,
+          content: 'Parent note',
+          authorId: TEST_AUTHOR_ID,
+          parentId: null,
+          depth: 0,
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: childId,
+          content: 'Child note',
+          authorId: TEST_AUTHOR_ID,
+          parentId: parentId,
+          depth: 1,
+          createdAt: now,
+          updatedAt: now,
+        },
+      ]);
+
+      const result = await otherThreadService.getChildren(parentId);
+      expect(result).toEqual([]);
     });
   });
 });

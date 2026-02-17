@@ -25,15 +25,15 @@ export const createThreadService = ({ db }: { db: Database }): ThreadServiceHand
   // ==========================================
 
   /**
-   * ノートのルートを見つける（親を辿る）
+   * ノートのルートを見つける（親を辿る、authorId でフィルタ）
    */
-  const findRootId = (note: Note): ResultAsync<string, NoteError> => {
+  const findRootId = (note: Note, authorId: string): ResultAsync<string, NoteError> => {
     const findParent = (current: Note): ResultAsync<string, NoteError> => {
       if (!current.parentId) {
         return okAsync(current.id);
       }
       return noteRepo
-        .findById(current.parentId)
+        .findById(current.parentId, authorId)
         .andThen((parent) => (parent ? findParent(parent) : okAsync(current.id)));
     };
     return findParent(note);
@@ -44,14 +44,14 @@ export const createThreadService = ({ db }: { db: Database }): ThreadServiceHand
   // ==========================================
 
   return {
-    getThread: (noteId) =>
+    getThread: (noteId, authorId) =>
       noteRepo
-        .findById(noteId)
+        .findById(noteId, authorId)
         .andThen((note) => (note ? okAsync(note) : errAsync(noteNotFoundError(noteId))))
-        .andThen(findRootId)
-        .andThen((rootId) => noteRepo.getThreadRecursive(rootId)),
+        .andThen((note) => findRootId(note, authorId))
+        .andThen((rootId) => noteRepo.getThreadRecursive(rootId, authorId)),
 
-    getChildren: (noteId) => noteRepo.findByParentId(noteId),
+    getChildren: (noteId, authorId) => noteRepo.findByParentId(noteId, authorId),
   };
 };
 

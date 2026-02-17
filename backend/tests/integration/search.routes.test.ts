@@ -30,6 +30,8 @@ type TestBindings = {
   APP_DOMAIN: string;
 };
 
+const TEST_USER_ID = 'test_user_123';
+
 describe('Search Routes Integration Tests', () => {
   let app: Hono<{ Bindings: TestBindings }>;
 
@@ -38,23 +40,35 @@ describe('Search Routes Integration Tests', () => {
     await env.DB.exec('DELETE FROM search_index');
     await env.DB.exec('DELETE FROM mentions');
     await env.DB.exec('DELETE FROM notes');
+    await env.DB.exec('DELETE FROM profiles');
+  };
+
+  // Helper to insert a profile directly via D1
+  const insertProfile = async (id: string, displayName = 'Test User') => {
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO profiles (id, display_name, created_at, updated_at) VALUES (?, ?, datetime('now'), datetime('now'))"
+    )
+      .bind(id, displayName)
+      .run();
   };
 
   // Helper to insert a note directly via D1
   const insertNote = async (note: {
     id: string;
     content: string;
+    authorId?: string;
     parentId: string | null;
     depth: number;
     createdAt: Date;
     updatedAt: Date;
   }) => {
     await env.DB.prepare(
-      'INSERT INTO notes (id, content, parent_id, depth, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT INTO notes (id, content, author_id, parent_id, depth, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
     )
       .bind(
         note.id,
         note.content,
+        note.authorId ?? TEST_USER_ID,
         note.parentId,
         note.depth,
         note.createdAt.toISOString(),
@@ -109,13 +123,16 @@ describe('Search Routes Integration Tests', () => {
     // Clear database before each test
     await clearTables();
 
+    // Create test user profile (required by FK constraint)
+    await insertProfile(TEST_USER_ID, 'Test User');
+
     // Reset mocks
     vi.clearAllMocks();
 
     // Mock authentication to succeed by default
     mockAuthenticateRequest.mockResolvedValue({
       isAuthenticated: true,
-      toAuth: () => ({ userId: 'test_user_123', sessionId: 'test_session_456' }),
+      toAuth: () => ({ userId: TEST_USER_ID, sessionId: 'test_session_456' }),
     });
 
     // Create a fresh Hono app with the search routes
