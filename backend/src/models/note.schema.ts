@@ -18,9 +18,11 @@ export const notes = sqliteTable(
     parentId: text('parent_id').references((): AnySQLiteColumn => notes.id, {
       onDelete: 'cascade',
     }),
-    channelId: text('channel_id').references((): AnySQLiteColumn => channels.id, {
-      onDelete: 'set null',
-    }),
+    channelId: text('channel_id')
+      .notNull()
+      .references((): AnySQLiteColumn => channels.id, {
+        onDelete: 'restrict',
+      }),
     createdAt: integer('created_at', { mode: 'timestamp' })
       .notNull()
       .default(sql`(unixepoch())`),

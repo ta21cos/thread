@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 // NOTE: Initialize database before importing db
 import '../../../tests/preload';
-import { db, notes, mentions, profiles } from '../../db';
+import { db, notes, mentions, profiles, channels } from '../../db';
 
 import { generateId } from '../../utils/id-generator';
 import { MAX_NOTE_LENGTH } from '@thread-note/shared/constants';
@@ -9,6 +9,8 @@ import { createNoteService } from '.';
 
 const TEST_AUTHOR_ID = 'test-author-id';
 const OTHER_AUTHOR_ID = 'other-author-id';
+const TEST_CHANNEL_ID = 'test-channel-id';
+const OTHER_CHANNEL_ID = 'other-channel-id';
 
 describe('NoteService', () => {
   const prepareServices = async (authorId: string = TEST_AUTHOR_ID) => {
@@ -19,6 +21,7 @@ describe('NoteService', () => {
       createNote: async (input: {
         content: string;
         authorId: string;
+        channelId: string;
         parentId?: string;
         isHidden?: boolean;
       }) => {
@@ -78,6 +81,7 @@ describe('NoteService', () => {
   beforeEach(async () => {
     await db.delete(mentions);
     await db.delete(notes);
+    await db.delete(channels);
     await db.delete(profiles);
     await db.insert(profiles).values([
       {
@@ -93,6 +97,22 @@ describe('NoteService', () => {
         updatedAt: new Date(),
       },
     ]);
+    await db.insert(channels).values([
+      {
+        id: TEST_CHANNEL_ID,
+        authorId: TEST_AUTHOR_ID,
+        name: 'Test Channel',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: OTHER_CHANNEL_ID,
+        authorId: OTHER_AUTHOR_ID,
+        name: 'Other Channel',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ]);
   });
 
   describe('createNote', () => {
@@ -102,6 +122,7 @@ describe('NoteService', () => {
       const result = await noteService.createNote({
         content: 'Test note content',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
       });
 
       expect(result).toBeDefined();
@@ -116,6 +137,7 @@ describe('NoteService', () => {
       const result = await noteService.createNote({
         content: 'Note with author',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
       });
 
       expect(result).toBeDefined();
@@ -131,6 +153,7 @@ describe('NoteService', () => {
         id: parentId,
         content: 'Parent note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -140,6 +163,7 @@ describe('NoteService', () => {
       const result = await noteService.createNote({
         content: 'Child note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: parentId,
       });
 
@@ -153,7 +177,11 @@ describe('NoteService', () => {
       const { noteService } = await prepareServices();
 
       await expect(
-        noteService.createNote({ content: '', authorId: TEST_AUTHOR_ID })
+        noteService.createNote({
+          content: '',
+          authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
+        })
       ).rejects.toThrow('Note content cannot be empty');
     });
 
@@ -163,7 +191,11 @@ describe('NoteService', () => {
       const longContent = 'a'.repeat(MAX_NOTE_LENGTH + 1);
 
       await expect(
-        noteService.createNote({ content: longContent, authorId: TEST_AUTHOR_ID })
+        noteService.createNote({
+          content: longContent,
+          authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
+        })
       ).rejects.toThrow(
         `Note content must be at most ${MAX_NOTE_LENGTH} characters (got ${MAX_NOTE_LENGTH + 1})`
       );
@@ -177,6 +209,7 @@ describe('NoteService', () => {
       const result = await noteService.createNote({
         content: maxContent,
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
       });
 
       expect(result).toBeDefined();
@@ -190,6 +223,7 @@ describe('NoteService', () => {
         noteService.createNote({
           content: 'Child note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: 'nonexistent',
         })
       ).rejects.toThrow("Parent note with id 'nonexistent' not found");
@@ -207,6 +241,7 @@ describe('NoteService', () => {
           id: rootId,
           content: 'Root note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -216,6 +251,7 @@ describe('NoteService', () => {
           id: childId,
           content: 'Child note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: rootId,
           depth: 1,
           createdAt: now,
@@ -227,6 +263,7 @@ describe('NoteService', () => {
         noteService.createNote({
           content: 'Grandchild note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: childId,
         })
       ).rejects.toThrow('Cannot create child for a note that is already at maximum depth (1)');
@@ -241,6 +278,7 @@ describe('NoteService', () => {
         id: targetNoteId,
         content: 'Target note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -250,6 +288,7 @@ describe('NoteService', () => {
       const result = await noteService.createNote({
         content: `Mentioning @${targetNoteId} here`,
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
       });
 
       expect(result).toBeDefined();
@@ -272,6 +311,7 @@ describe('NoteService', () => {
           id: targetNoteId1,
           content: 'Target note 1',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -281,6 +321,7 @@ describe('NoteService', () => {
           id: targetNoteId2,
           content: 'Target note 2',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -291,6 +332,7 @@ describe('NoteService', () => {
       const result = await noteService.createNote({
         content: `Mentioning @${targetNoteId1} and @${targetNoteId2}`,
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
       });
 
       expect(result).toBeDefined();
@@ -308,6 +350,7 @@ describe('NoteService', () => {
         id: targetNoteId,
         content: 'Target note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -317,6 +360,7 @@ describe('NoteService', () => {
       await noteService.createNote({
         content: `Hello @${targetNoteId}`,
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
       });
 
       const mentionRecords = await db.select().from(mentions);
@@ -335,6 +379,7 @@ describe('NoteService', () => {
         id: noteId,
         content: 'Test note content',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -369,6 +414,7 @@ describe('NoteService', () => {
         id: parentId,
         content: 'Parent note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -379,6 +425,7 @@ describe('NoteService', () => {
         id: childId,
         content: 'Child note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: parentId,
         depth: 1,
         createdAt: now,
@@ -418,6 +465,7 @@ describe('NoteService', () => {
           id: rootId1,
           content: 'Root note 1',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -427,6 +475,7 @@ describe('NoteService', () => {
           id: rootId2,
           content: 'Root note 2',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: new Date(now.getTime() + 1000),
@@ -436,6 +485,7 @@ describe('NoteService', () => {
           id: childId,
           content: 'Child note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: rootId1,
           depth: 1,
           createdAt: now,
@@ -460,6 +510,7 @@ describe('NoteService', () => {
         id: rootId,
         content: 'Root note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -471,6 +522,7 @@ describe('NoteService', () => {
           id: generateId(),
           content: 'Reply 1',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: rootId,
           depth: 1,
           createdAt: now,
@@ -480,6 +532,7 @@ describe('NoteService', () => {
           id: generateId(),
           content: 'Reply 2',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: rootId,
           depth: 1,
           createdAt: now,
@@ -502,6 +555,7 @@ describe('NoteService', () => {
           id: generateId(),
           content: `Note ${i}`,
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: new Date(now.getTime() + i * 1000),
@@ -528,6 +582,7 @@ describe('NoteService', () => {
           id,
           content: `Note ${i}`,
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: new Date(now.getTime() + i * 1000),
@@ -553,6 +608,7 @@ describe('NoteService', () => {
           id: oldNoteId,
           content: 'Old note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: new Date(now.getTime() - 10000),
@@ -562,6 +618,7 @@ describe('NoteService', () => {
           id: newNoteId,
           content: 'New note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -586,6 +643,7 @@ describe('NoteService', () => {
         id: noteId,
         content: 'Original content',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -618,6 +676,7 @@ describe('NoteService', () => {
         id: noteId,
         content: 'Original content',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -638,6 +697,7 @@ describe('NoteService', () => {
         id: noteId,
         content: 'Original content',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -660,6 +720,7 @@ describe('NoteService', () => {
         id: noteId,
         content: 'Original content',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -687,6 +748,7 @@ describe('NoteService', () => {
           id: noteId,
           content: `Original @${targetNoteId1}`,
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -696,6 +758,7 @@ describe('NoteService', () => {
           id: targetNoteId1,
           content: 'Target 1',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -705,6 +768,7 @@ describe('NoteService', () => {
           id: targetNoteId2,
           content: 'Target 2',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -741,6 +805,7 @@ describe('NoteService', () => {
           id: noteId,
           content: `Original @${targetNoteId}`,
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -750,6 +815,7 @@ describe('NoteService', () => {
           id: targetNoteId,
           content: 'Target note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -785,6 +851,7 @@ describe('NoteService', () => {
           id: noteId,
           content: 'No mentions',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -794,6 +861,7 @@ describe('NoteService', () => {
           id: targetNoteId,
           content: 'Target note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -823,6 +891,7 @@ describe('NoteService', () => {
           id: parentId,
           content: 'Parent note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -832,6 +901,7 @@ describe('NoteService', () => {
           id: childId,
           content: 'Child note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: parentId,
           depth: 1,
           createdAt: now,
@@ -855,6 +925,7 @@ describe('NoteService', () => {
       const result = await noteService.createNote({
         content: 'Hidden note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         isHidden: true,
       });
 
@@ -870,6 +941,7 @@ describe('NoteService', () => {
       const result = await noteService.createNote({
         content: 'Visible note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
       });
 
       expect(result).toBeDefined();
@@ -885,6 +957,7 @@ describe('NoteService', () => {
         id: parentId,
         content: 'Parent note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         isHidden: false,
@@ -896,6 +969,7 @@ describe('NoteService', () => {
         noteService.createNote({
           content: 'Child note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: parentId,
           isHidden: true,
         })
@@ -913,6 +987,7 @@ describe('NoteService', () => {
         id: parentId,
         content: 'Hidden parent',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         isHidden: true,
@@ -923,6 +998,7 @@ describe('NoteService', () => {
       const result = await noteService.createNote({
         content: 'Child note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: parentId,
       });
 
@@ -940,6 +1016,7 @@ describe('NoteService', () => {
           id: generateId(),
           content: 'Visible note 1',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           isHidden: false,
@@ -950,6 +1027,7 @@ describe('NoteService', () => {
           id: generateId(),
           content: 'Hidden note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           isHidden: true,
@@ -960,6 +1038,7 @@ describe('NoteService', () => {
           id: generateId(),
           content: 'Visible note 2',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           isHidden: false,
@@ -984,6 +1063,7 @@ describe('NoteService', () => {
           id: generateId(),
           content: 'Visible note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           isHidden: false,
@@ -994,6 +1074,7 @@ describe('NoteService', () => {
           id: generateId(),
           content: 'Hidden note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           isHidden: true,
@@ -1017,6 +1098,7 @@ describe('NoteService', () => {
         id: parentId,
         content: 'Parent note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         isHidden: false,
@@ -1027,6 +1109,7 @@ describe('NoteService', () => {
       const result = await noteService.createNote({
         content: 'Child note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: parentId,
         isHidden: false,
       });
@@ -1044,6 +1127,7 @@ describe('NoteService', () => {
         noteService.createNote({
           content: 'Note with bad author',
           authorId: 'non-existent-author',
+          channelId: TEST_CHANNEL_ID,
         })
       ).rejects.toThrow();
     });
@@ -1054,6 +1138,7 @@ describe('NoteService', () => {
       const created = await noteService.createNote({
         content: 'Persisted author note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
       });
 
       const fetched = await noteService.getNoteById(created.id);
@@ -1067,11 +1152,13 @@ describe('NoteService', () => {
       const parent = await noteService.createNote({
         content: 'Parent note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
       });
 
       const child = await noteService.createNote({
         content: 'Child note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: parent.id,
       });
 
@@ -1086,6 +1173,7 @@ describe('NoteService', () => {
       const created = await noteService.createNote({
         content: 'Private note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
       });
 
       const result = await noteService.getNoteById(created.id, OTHER_AUTHOR_ID);
@@ -1096,8 +1184,16 @@ describe('NoteService', () => {
       const { noteService: myService } = await prepareServices(TEST_AUTHOR_ID);
       const { noteService: otherService } = await prepareServices(OTHER_AUTHOR_ID);
 
-      await myService.createNote({ content: 'My note', authorId: TEST_AUTHOR_ID });
-      await otherService.createNote({ content: 'Other note', authorId: OTHER_AUTHOR_ID });
+      await myService.createNote({
+        content: 'My note',
+        authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
+      });
+      await otherService.createNote({
+        content: 'Other note',
+        authorId: OTHER_AUTHOR_ID,
+        channelId: OTHER_CHANNEL_ID,
+      });
 
       const myNotes = await myService.getRootNotes();
       expect(myNotes.notes).toHaveLength(1);
@@ -1115,6 +1211,7 @@ describe('NoteService', () => {
       const created = await ownerService.createNote({
         content: 'Owner note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
       });
 
       await expect(otherService.updateNote(created.id, { content: 'Hijacked' })).rejects.toThrow(
@@ -1129,6 +1226,7 @@ describe('NoteService', () => {
       const created = await ownerService.createNote({
         content: 'Owner note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
       });
 
       await expect(otherService.deleteNote(created.id)).rejects.toThrow('not found');
@@ -1136,6 +1234,53 @@ describe('NoteService', () => {
       // Verify note still exists for the owner
       const stillExists = await ownerService.getNoteById(created.id);
       expect(stillExists).toBeDefined();
+    });
+  });
+
+  describe('channelId constraints', () => {
+    it('should reject note creation with non-existent channelId', async () => {
+      const { noteService } = await prepareServices();
+
+      await expect(
+        noteService.createNote({
+          content: 'Note with bad channel',
+          authorId: TEST_AUTHOR_ID,
+          channelId: 'nonexistent',
+        })
+      ).rejects.toThrow();
+    });
+
+    it('should persist channelId across note retrieval', async () => {
+      const { noteService } = await prepareServices();
+
+      const created = await noteService.createNote({
+        content: 'Note with channel',
+        authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
+      });
+
+      const fetched = await noteService.getNoteById(created.id);
+      expect(fetched).toBeDefined();
+      expect(fetched!.channelId).toBe(TEST_CHANNEL_ID);
+    });
+
+    it('should preserve channelId on child notes', async () => {
+      const { noteService } = await prepareServices();
+
+      const parent = await noteService.createNote({
+        content: 'Parent note',
+        authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
+      });
+
+      const child = await noteService.createNote({
+        content: 'Child note',
+        authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
+        parentId: parent.id,
+      });
+
+      expect(child.channelId).toBe(TEST_CHANNEL_ID);
     });
   });
 });

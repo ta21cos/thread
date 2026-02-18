@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import '../../../tests/preload';
-import { db, notes, mentions, profiles } from '../../db';
+import { db, notes, mentions, profiles, channels } from '../../db';
 import { createMentionService } from '.';
 import { generateId } from '../../utils/id-generator';
 
 const TEST_AUTHOR_ID = 'test-author-id';
 const OTHER_AUTHOR_ID = 'other-author-id';
+const TEST_CHANNEL_ID = 'test-channel-id';
 
 describe('MentionService', () => {
   const prepareServices = (authorId: string = TEST_AUTHOR_ID) => {
@@ -46,6 +47,7 @@ describe('MentionService', () => {
   beforeEach(async () => {
     await db.delete(mentions);
     await db.delete(notes);
+    await db.delete(channels);
     await db.delete(profiles);
     await db.insert(profiles).values([
       {
@@ -61,6 +63,13 @@ describe('MentionService', () => {
         updatedAt: new Date(),
       },
     ]);
+    await db.insert(channels).values({
+      id: TEST_CHANNEL_ID,
+      authorId: TEST_AUTHOR_ID,
+      name: 'Test Channel',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
   });
 
   describe('getMentions', () => {
@@ -73,6 +82,7 @@ describe('MentionService', () => {
         id: noteId,
         content: 'Test note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -96,6 +106,7 @@ describe('MentionService', () => {
           id: targetNoteId,
           content: 'Target note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -105,6 +116,7 @@ describe('MentionService', () => {
           id: sourceNoteId,
           content: `Mentioning @${targetNoteId}`,
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -140,6 +152,7 @@ describe('MentionService', () => {
           id: targetNoteId,
           content: 'Target note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -149,6 +162,7 @@ describe('MentionService', () => {
           id: sourceNoteId1,
           content: `First mention @${targetNoteId}`,
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -158,6 +172,7 @@ describe('MentionService', () => {
           id: sourceNoteId2,
           content: `Second mention @${targetNoteId}`,
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -198,6 +213,7 @@ describe('MentionService', () => {
         id: noteId,
         content: 'Test note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -221,6 +237,7 @@ describe('MentionService', () => {
           id: targetNoteId,
           content: 'Target note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -230,6 +247,7 @@ describe('MentionService', () => {
           id: sourceNoteId,
           content: `Source note @${targetNoteId}`,
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -266,6 +284,7 @@ describe('MentionService', () => {
           id: noteId1,
           content: 'Note 1',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -275,6 +294,7 @@ describe('MentionService', () => {
           id: noteId2,
           content: 'Note 2',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -297,6 +317,7 @@ describe('MentionService', () => {
           id: noteId1,
           content: 'Note 1',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -306,6 +327,7 @@ describe('MentionService', () => {
           id: noteId2,
           content: 'Note 2',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -337,6 +359,7 @@ describe('MentionService', () => {
           id: noteId1,
           content: 'Note 1',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -346,6 +369,7 @@ describe('MentionService', () => {
           id: noteId2,
           content: 'Note 2',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -355,6 +379,7 @@ describe('MentionService', () => {
           id: noteId3,
           content: 'Note 3',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -395,6 +420,7 @@ describe('MentionService', () => {
           id: noteId1,
           content: 'Note 1',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -404,6 +430,7 @@ describe('MentionService', () => {
           id: noteId2,
           content: 'Note 2',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -413,6 +440,7 @@ describe('MentionService', () => {
           id: noteId3,
           content: 'Note 3',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -439,6 +467,7 @@ describe('MentionService', () => {
           id: targetNoteId,
           content: 'Target note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -448,6 +477,7 @@ describe('MentionService', () => {
           id: sourceNoteId,
           content: `Mentioning @${targetNoteId}`,
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -479,6 +509,7 @@ describe('MentionService', () => {
           id: targetNoteId,
           content: 'Target note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -488,6 +519,7 @@ describe('MentionService', () => {
           id: sourceNoteId,
           content: `Source note @${targetNoteId}`,
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,

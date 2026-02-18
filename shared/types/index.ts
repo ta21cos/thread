@@ -11,7 +11,7 @@ export interface Note {
   id: string; // 6-char alphanumeric ID
   content: string; // Markdown content (max 1000 chars)
   parentId: string | null; // Reference to parent note (null for root)
-  channelId: string | null; // Reference to channel
+  channelId: string; // Reference to channel (required)
   createdAt: string; // ISO 8601 string
   updatedAt: string; // ISO 8601 string
   depth: number; // Thread depth (0 for root)
@@ -56,7 +56,7 @@ export interface Task {
 export interface ScratchPad {
   id: string;
   authorId: string;
-  channelId: string | null;
+  channelId: string;
   content: string;
   updatedAt: string;
 }
@@ -99,7 +99,7 @@ export interface SearchIndex {
 export interface CreateNoteRequest {
   content: string;
   parentId?: string;
-  channelId?: string;
+  channelId: string;
   isHidden?: boolean;
 }
 

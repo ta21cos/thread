@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDailyNote, useCalendar, dailyNoteKeys } from '../services/daily-note.service';
 import { useUpdateNote } from '../services/note.service';
+import { useChannelUI } from '../store/channel.store';
 
 const AUTO_SAVE_DELAY_MS = 1000;
 
@@ -116,8 +117,12 @@ export const DailyNotesPage: React.FC = () => {
   const [calYear, setCalYear] = useState(parsedDate.year);
   const [calMonth, setCalMonth] = useState(parsedDate.month);
 
+  const { selectedChannelId } = useChannelUI();
   const queryClient = useQueryClient();
-  const { data: dailyNoteData, isLoading } = useDailyNote(selectedDate);
+  const { data: dailyNoteData, isLoading } = useDailyNote(
+    selectedDate,
+    selectedChannelId ?? undefined
+  );
   const { data: calendarEntries } = useCalendar(calYear, calMonth);
   const updateNote = useUpdateNote();
 

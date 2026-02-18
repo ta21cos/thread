@@ -3,7 +3,7 @@
  */
 
 import type { ResultAsync } from 'neverthrow';
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { scratchPads, type ScratchPad, type NewScratchPad, type Database } from '../db';
 import type { NoteError } from '../errors/domain-errors';
 import { dbQueryFirst, dbInsertReturning, dbUpdateReturning, dbDelete } from './helpers';
@@ -16,7 +16,7 @@ export interface ScratchPadRepository {
   readonly findById: (id: string) => ResultAsync<ScratchPad | undefined, NoteError>;
   readonly findByAuthorAndChannel: (
     authorId: string,
-    channelId: string | null
+    channelId: string
   ) => ResultAsync<ScratchPad | undefined, NoteError>;
   readonly create: (scratchPad: NewScratchPad) => ResultAsync<ScratchPad, NoteError>;
   readonly update: (id: string, content: string) => ResultAsync<ScratchPad, NoteError>;
@@ -34,16 +34,14 @@ export const createScratchPadRepository = ({ db }: { db: Database }): ScratchPad
       'Failed to find scratch pad'
     ),
 
-  findByAuthorAndChannel: (authorId, channelId) => {
-    const condition = channelId
-      ? and(eq(scratchPads.authorId, authorId), eq(scratchPads.channelId, channelId))
-      : and(eq(scratchPads.authorId, authorId), isNull(scratchPads.channelId));
-
-    return dbQueryFirst(
-      db.select().from(scratchPads).where(condition),
+  findByAuthorAndChannel: (authorId, channelId) =>
+    dbQueryFirst(
+      db
+        .select()
+        .from(scratchPads)
+        .where(and(eq(scratchPads.authorId, authorId), eq(scratchPads.channelId, channelId))),
       'Failed to find scratch pad by author and channel'
-    );
-  },
+    ),
 
   create: (scratchPad) =>
     dbInsertReturning(

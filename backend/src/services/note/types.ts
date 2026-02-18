@@ -16,6 +16,7 @@ import type { NoteError } from '../../errors/domain-errors';
 export interface CreateNoteInput {
   readonly content: string;
   readonly authorId: string;
+  readonly channelId: string;
   readonly parentId?: string;
   readonly isHidden?: boolean;
 }
@@ -45,6 +46,7 @@ export interface ValidatedNoteData {
   readonly id: string;
   readonly content: string;
   readonly authorId: string;
+  readonly channelId: string;
   readonly parentId?: string;
   readonly depth: number;
   readonly mentionIds: string[];

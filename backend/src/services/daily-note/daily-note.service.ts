@@ -69,7 +69,7 @@ export const createDailyNoteService = ({ db }: { db: Database }): DailyNoteServi
       : `${year}-${String(month).padStart(2, '0')}`;
 
   return {
-    getDailyNote: (authorId, date, templateId) =>
+    getDailyNote: (authorId, date, channelId, templateId) =>
       dailyNoteRepo.findByAuthorAndDate(authorId, date).andThen((existing) =>
         existing
           ? noteService
@@ -83,6 +83,7 @@ export const createDailyNoteService = ({ db }: { db: Database }): DailyNoteServi
                 .createNote({
                   content: processTemplate(template.content, date),
                   authorId,
+                  channelId,
                   isHidden: false,
                 })
                 .andThen((note) =>

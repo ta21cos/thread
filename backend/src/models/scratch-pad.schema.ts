@@ -4,7 +4,7 @@ import { profiles } from './profile.schema';
 import { channels } from './channel.schema';
 
 // NOTE: Scratch pad schema for quick note-taking
-// Each user has one scratch pad per channel (or one global if channel is null)
+// Each user has one scratch pad per channel
 export const scratchPads = sqliteTable(
   'scratch_pads',
   {
@@ -12,9 +12,11 @@ export const scratchPads = sqliteTable(
     authorId: text('author_id')
       .notNull()
       .references((): AnySQLiteColumn => profiles.id, { onDelete: 'cascade' }),
-    channelId: text('channel_id').references((): AnySQLiteColumn => channels.id, {
-      onDelete: 'set null',
-    }),
+    channelId: text('channel_id')
+      .notNull()
+      .references((): AnySQLiteColumn => channels.id, {
+        onDelete: 'restrict',
+      }),
     content: text('content').notNull().default(''),
     updatedAt: integer('updated_at', { mode: 'timestamp' })
       .notNull()

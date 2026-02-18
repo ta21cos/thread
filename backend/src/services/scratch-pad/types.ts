@@ -14,17 +14,14 @@ export interface ScratchPadServiceHandle {
   /** スクラッチパッドを取得（なければ作成） */
   readonly getScratchPad: (
     authorId: string,
-    channelId?: string | null
+    channelId: string
   ) => ResultAsync<ScratchPad, NoteError>;
   /** スクラッチパッドを更新 */
   readonly updateScratchPad: (
     authorId: string,
     content: string,
-    channelId?: string | null
+    channelId: string
   ) => ResultAsync<ScratchPad, NoteError>;
   /** スクラッチパッドをノートに変換 */
-  readonly convertToNote: (
-    authorId: string,
-    channelId?: string | null
-  ) => ResultAsync<Note, NoteError>;
+  readonly convertToNote: (authorId: string, channelId: string) => ResultAsync<Note, NoteError>;
 }

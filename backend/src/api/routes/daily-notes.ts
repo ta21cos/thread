@@ -18,10 +18,15 @@ const app = createRouter()
     const authorId = getAuthUserId(c);
     const dailyNoteService = createDailyNoteService({ db });
     const { date } = c.req.valid('param');
+    const channelId = c.req.query('channelId');
     const templateId = c.req.query('templateId');
 
+    if (!channelId) {
+      return c.json({ error: 'channelId is required' }, 400);
+    }
+
     return handleServiceResponse(
-      dailyNoteService.getDailyNote(authorId, date, templateId),
+      dailyNoteService.getDailyNote(authorId, date, channelId, templateId),
       c,
       ({ dailyNote, note }) => ({
         dailyNote: serialize(dailyNote),

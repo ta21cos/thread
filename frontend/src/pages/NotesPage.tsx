@@ -79,11 +79,12 @@ export const NotesPage: React.FC = () => {
 
   // NOTE: Create new note or reply
   const handleCreateNote = async (content: string, isHidden?: boolean) => {
+    if (!selectedChannelId) return;
     try {
       const newNote = await createNote.mutateAsync({
         content,
         parentId: replyingToNoteId || undefined,
-        channelId: selectedChannelId || undefined,
+        channelId: selectedChannelId,
         isHidden,
       });
 
@@ -145,9 +146,11 @@ export const NotesPage: React.FC = () => {
                   thread={noteData.thread || []}
                   onClose={handleCloseThread}
                   onReply={async (parentId: string, content: string) => {
+                    if (!selectedChannelId) return;
                     await createNote.mutateAsync({
                       content,
                       parentId,
+                      channelId: selectedChannelId,
                     });
                   }}
                   onEdit={async (noteId: string, content: string) => {

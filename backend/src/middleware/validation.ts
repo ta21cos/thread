@@ -40,7 +40,7 @@ export const noteIdParamSchema = createIdParamSchema('noteId');
 export const createNoteSchema = z.object({
   content: z.string().min(1).max(MAX_NOTE_LENGTH),
   parentId: optionalIdValidator,
-  channelId: optionalIdValidator,
+  channelId: idValidator,
   isHidden: z.boolean().optional(),
 });
 
@@ -79,11 +79,11 @@ export const updateChannelSchema = z.object({
 
 export const updateScratchPadSchema = z.object({
   content: z.string(),
-  channelId: nullableIdValidator,
+  channelId: idValidator,
 });
 
 export const convertToNoteSchema = z.object({
-  channelId: nullableIdValidator,
+  channelId: idValidator,
 });
 
 // ==========================================

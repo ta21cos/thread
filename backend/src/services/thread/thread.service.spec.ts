@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import '../../../tests/preload';
-import { db, notes, mentions, profiles } from '../../db';
+import { db, notes, mentions, profiles, channels } from '../../db';
 import { createThreadService } from '.';
 import { generateId } from '../../utils/id-generator';
 
 const TEST_AUTHOR_ID = 'test-author-id';
 const OTHER_AUTHOR_ID = 'other-author-id';
+const TEST_CHANNEL_ID = 'test-channel-id';
 
 describe('ThreadService', () => {
   const prepareServices = (authorId: string = TEST_AUTHOR_ID) => {
@@ -37,6 +38,7 @@ describe('ThreadService', () => {
   beforeEach(async () => {
     await db.delete(mentions);
     await db.delete(notes);
+    await db.delete(channels);
     await db.delete(profiles);
     await db.insert(profiles).values([
       {
@@ -52,6 +54,13 @@ describe('ThreadService', () => {
         updatedAt: new Date(),
       },
     ]);
+    await db.insert(channels).values({
+      id: TEST_CHANNEL_ID,
+      authorId: TEST_AUTHOR_ID,
+      name: 'Test Channel',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
   });
 
   describe('getThread', () => {
@@ -70,6 +79,7 @@ describe('ThreadService', () => {
         id: noteId,
         content: 'Root note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -93,6 +103,7 @@ describe('ThreadService', () => {
         id: rootId,
         content: 'Root note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -103,6 +114,7 @@ describe('ThreadService', () => {
         id: childId,
         content: 'Child note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: rootId,
         depth: 1,
         createdAt: now,
@@ -127,6 +139,7 @@ describe('ThreadService', () => {
         id: rootId,
         content: 'Root note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -137,6 +150,7 @@ describe('ThreadService', () => {
         id: childId,
         content: 'Child note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: rootId,
         depth: 1,
         createdAt: now,
@@ -163,6 +177,7 @@ describe('ThreadService', () => {
           id: rootId,
           content: 'Root note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -172,6 +187,7 @@ describe('ThreadService', () => {
           id: childId1,
           content: 'Child 1',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: rootId,
           depth: 1,
           createdAt: new Date(now.getTime() + 1000),
@@ -181,6 +197,7 @@ describe('ThreadService', () => {
           id: childId2,
           content: 'Child 2',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: rootId,
           depth: 1,
           createdAt: new Date(now.getTime() + 2000),
@@ -206,6 +223,7 @@ describe('ThreadService', () => {
           id: thread1RootId,
           content: 'Thread 1 root',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -215,6 +233,7 @@ describe('ThreadService', () => {
           id: thread1ChildId,
           content: 'Thread 1 child',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: thread1RootId,
           depth: 1,
           createdAt: now,
@@ -224,6 +243,7 @@ describe('ThreadService', () => {
           id: thread2RootId,
           content: 'Thread 2 root',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -248,6 +268,7 @@ describe('ThreadService', () => {
         id: noteId,
         content: 'Root note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -270,6 +291,7 @@ describe('ThreadService', () => {
         id: parentId,
         content: 'Parent note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -280,6 +302,7 @@ describe('ThreadService', () => {
         id: childId,
         content: 'Child note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: parentId,
         depth: 1,
         createdAt: now,
@@ -305,6 +328,7 @@ describe('ThreadService', () => {
         id: parentId,
         content: 'Parent note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -316,6 +340,7 @@ describe('ThreadService', () => {
           id: childId1,
           content: 'Child 1',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: parentId,
           depth: 1,
           createdAt: now,
@@ -325,6 +350,7 @@ describe('ThreadService', () => {
           id: childId2,
           content: 'Child 2',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: parentId,
           depth: 1,
           createdAt: now,
@@ -334,6 +360,7 @@ describe('ThreadService', () => {
           id: childId3,
           content: 'Child 3',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: parentId,
           depth: 1,
           createdAt: now,
@@ -359,6 +386,7 @@ describe('ThreadService', () => {
           id: grandparentId,
           content: 'Grandparent',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -368,6 +396,7 @@ describe('ThreadService', () => {
           id: parentId,
           content: 'Parent',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: grandparentId,
           depth: 1,
           createdAt: now,
@@ -377,6 +406,7 @@ describe('ThreadService', () => {
           id: grandchildId,
           content: 'Grandchild',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: parentId,
           depth: 2,
           createdAt: now,
@@ -401,6 +431,7 @@ describe('ThreadService', () => {
         id: noteId,
         content: 'Private note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -422,6 +453,7 @@ describe('ThreadService', () => {
           id: parentId,
           content: 'Parent note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -431,6 +463,7 @@ describe('ThreadService', () => {
           id: childId,
           content: 'Child note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: parentId,
           depth: 1,
           createdAt: now,

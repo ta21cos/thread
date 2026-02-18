@@ -12,7 +12,10 @@ const app = createRouter()
     const authorId = getAuthUserId(c);
     const scratchPadService = createScratchPadService({ db });
 
-    const channelId = c.req.query('channelId') || null;
+    const channelId = c.req.query('channelId');
+    if (!channelId) {
+      return c.json({ error: 'channelId is required' }, 400);
+    }
 
     return handleServiceResponse(
       scratchPadService.getScratchPad(authorId, channelId),
@@ -29,7 +32,7 @@ const app = createRouter()
     const { content, channelId } = c.req.valid('json');
 
     return handleServiceResponse(
-      scratchPadService.updateScratchPad(authorId, content, channelId ?? null),
+      scratchPadService.updateScratchPad(authorId, content, channelId),
       c,
       serialize
     );
@@ -43,7 +46,7 @@ const app = createRouter()
     const { channelId } = c.req.valid('json');
 
     return handleServiceResponse(
-      scratchPadService.convertToNote(authorId, channelId ?? null),
+      scratchPadService.convertToNote(authorId, channelId),
       c,
       serialize,
       201

@@ -16,7 +16,7 @@ interface ScratchPadPanelProps {
 
 export const ScratchPadPanel: React.FC<ScratchPadPanelProps> = ({ open, onClose }) => {
   const { selectedChannelId } = useChannelUI();
-  const { data: scratchPad } = useScratchPad(selectedChannelId);
+  const { data: scratchPad } = useScratchPad(selectedChannelId ?? undefined);
   const updateScratchPad = useUpdateScratchPad();
   const convertToNote = useConvertScratchPad();
   const [content, setContent] = useState('');
@@ -49,6 +49,7 @@ export const ScratchPadPanel: React.FC<ScratchPadPanelProps> = ({ open, onClose 
       }
 
       debounceRef.current = setTimeout(() => {
+        if (!selectedChannelId) return;
         setSaveStatus('saving');
         updateScratchPad.mutate(
           { content: newContent, channelId: selectedChannelId },
@@ -72,7 +73,7 @@ export const ScratchPadPanel: React.FC<ScratchPadPanelProps> = ({ open, onClose 
   }, []);
 
   const handleConvert = async () => {
-    if (!content.trim()) return;
+    if (!content.trim() || !selectedChannelId) return;
     try {
       await convertToNote.mutateAsync(selectedChannelId);
       setContent('');

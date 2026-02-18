@@ -1,11 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import '../../../tests/preload';
-import { db, notes, mentions, profiles } from '../../db';
+import { db, notes, mentions, profiles, channels } from '../../db';
 import { createSearchService } from '.';
 import { generateId } from '../../utils/id-generator';
 
 const TEST_AUTHOR_ID = 'test-author-id';
 const OTHER_AUTHOR_ID = 'other-author-id';
+const TEST_CHANNEL_ID = 'test-channel-id';
+const OTHER_CHANNEL_ID = 'other-channel-id';
 
 describe('SearchService', () => {
   const prepareServices = (authorId: string = TEST_AUTHOR_ID) => {
@@ -37,6 +39,7 @@ describe('SearchService', () => {
   beforeEach(async () => {
     await db.delete(mentions);
     await db.delete(notes);
+    await db.delete(channels);
     await db.delete(profiles);
     await db.insert(profiles).values([
       {
@@ -48,6 +51,22 @@ describe('SearchService', () => {
       {
         id: OTHER_AUTHOR_ID,
         displayName: 'Other User',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ]);
+    await db.insert(channels).values([
+      {
+        id: TEST_CHANNEL_ID,
+        authorId: TEST_AUTHOR_ID,
+        name: 'Test Channel',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: OTHER_CHANNEL_ID,
+        authorId: OTHER_AUTHOR_ID,
+        name: 'Other Channel',
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -72,6 +91,7 @@ describe('SearchService', () => {
         id: noteId,
         content: 'This is a test note about TypeScript',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -93,6 +113,7 @@ describe('SearchService', () => {
         id: noteId,
         content: 'JavaScript Tutorial',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -114,6 +135,7 @@ describe('SearchService', () => {
           id: generateId(),
           content: 'First note about JavaScript',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -123,6 +145,7 @@ describe('SearchService', () => {
           id: generateId(),
           content: 'Second note about JavaScript frameworks',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -132,6 +155,7 @@ describe('SearchService', () => {
           id: generateId(),
           content: 'Note about Python',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -153,6 +177,7 @@ describe('SearchService', () => {
           id: generateId(),
           content: `Test note number ${i}`,
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: new Date(now.getTime() + i * 1000),
@@ -174,6 +199,7 @@ describe('SearchService', () => {
           id: generateId(),
           content: `Search note ${i}`,
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: new Date(now.getTime() + i * 1000),
@@ -197,6 +223,7 @@ describe('SearchService', () => {
         id: noteId,
         content: 'Test note',
         authorId: TEST_AUTHOR_ID,
+        channelId: TEST_CHANNEL_ID,
         parentId: null,
         depth: 0,
         createdAt: now,
@@ -220,6 +247,7 @@ describe('SearchService', () => {
           id: targetNoteId,
           content: 'Target note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -229,6 +257,7 @@ describe('SearchService', () => {
           id: sourceNoteId,
           content: `Source note @${targetNoteId}`,
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -263,6 +292,7 @@ describe('SearchService', () => {
           id: targetNoteId,
           content: 'Target note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -272,6 +302,7 @@ describe('SearchService', () => {
           id: sourceNoteId1,
           content: `First source @${targetNoteId}`,
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -281,6 +312,7 @@ describe('SearchService', () => {
           id: sourceNoteId2,
           content: `Second source @${targetNoteId}`,
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -322,6 +354,7 @@ describe('SearchService', () => {
           id: generateId(),
           content: 'Shared keyword note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -331,6 +364,7 @@ describe('SearchService', () => {
           id: generateId(),
           content: 'Shared keyword note from other',
           authorId: OTHER_AUTHOR_ID,
+          channelId: OTHER_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -359,6 +393,7 @@ describe('SearchService', () => {
           id: targetNoteId,
           content: 'Target note',
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,
@@ -368,6 +403,7 @@ describe('SearchService', () => {
           id: sourceNoteId,
           content: `Source note @${targetNoteId}`,
           authorId: TEST_AUTHOR_ID,
+          channelId: TEST_CHANNEL_ID,
           parentId: null,
           depth: 0,
           createdAt: now,

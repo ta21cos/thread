@@ -19,7 +19,7 @@ export const createScratchPadService = ({ db }: { db: Database }): ScratchPadSer
   const scratchPadRepo = createScratchPadRepository({ db });
   const noteService = createNoteService({ db });
 
-  const createEmptyScratchPad = (authorId: string, channelId: string | null) =>
+  const createEmptyScratchPad = (authorId: string, channelId: string) =>
     scratchPadRepo.create({
       id: generateId(),
       authorId,
@@ -29,12 +29,12 @@ export const createScratchPadService = ({ db }: { db: Database }): ScratchPadSer
     });
 
   return {
-    getScratchPad: (authorId, channelId = null) =>
+    getScratchPad: (authorId, channelId) =>
       scratchPadRepo
         .findByAuthorAndChannel(authorId, channelId)
         .andThen(getOrCreate(() => createEmptyScratchPad(authorId, channelId))),
 
-    updateScratchPad: (authorId, content, channelId = null) =>
+    updateScratchPad: (authorId, content, channelId) =>
       scratchPadRepo.findByAuthorAndChannel(authorId, channelId).andThen((existing) =>
         existing
           ? scratchPadRepo.update(existing.id, content)
@@ -47,14 +47,14 @@ export const createScratchPadService = ({ db }: { db: Database }): ScratchPadSer
             })
       ),
 
-    convertToNote: (authorId, channelId = null) =>
+    convertToNote: (authorId, channelId) =>
       scratchPadRepo
         .findByAuthorAndChannel(authorId, channelId)
         .andThen((scratchPad) =>
           !scratchPad || !scratchPad.content.trim()
             ? errAsync(contentEmptyError())
             : noteService
-                .createNote({ content: scratchPad.content, authorId, isHidden: false })
+                .createNote({ content: scratchPad.content, authorId, channelId, isHidden: false })
                 .andThen((note) => scratchPadRepo.update(scratchPad.id, '').map(() => note))
         ),
   };
@@ -71,7 +71,7 @@ export const createMockScratchPadService = (
     okAsync({
       id: 'mock',
       authorId: 'mock',
-      channelId: null,
+      channelId: 'mock-ch',
       content: '',
       updatedAt: new Date(),
     }),
@@ -79,7 +79,7 @@ export const createMockScratchPadService = (
     okAsync({
       id: 'mock',
       authorId: 'mock',
-      channelId: null,
+      channelId: 'mock-ch',
       content: '',
       updatedAt: new Date(),
     }),

@@ -30,18 +30,23 @@ interface TemplateListResponse {
 }
 
 // NOTE: Fetch or create daily note for a date
-export const useDailyNote = (date: string | undefined, templateId?: string) => {
+export const useDailyNote = (
+  date: string | undefined,
+  channelId: string | undefined,
+  templateId?: string
+) => {
   const { get } = useApiClient();
 
   return useQuery({
-    queryKey: dailyNoteKeys.detail(date!),
+    queryKey: [...dailyNoteKeys.detail(date!), channelId],
     queryFn: async () => {
       const params: Record<string, string> = {};
+      if (channelId) params.channelId = channelId;
       if (templateId) params.templateId = templateId;
       const response = await get<DailyNoteResponse>(`/daily-notes/${date}`, params);
       return response;
     },
-    enabled: !!date,
+    enabled: !!date && !!channelId,
     staleTime: 1000 * 60 * 5,
   });
 };

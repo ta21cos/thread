@@ -29,6 +29,7 @@ export interface DailyNoteServiceHandle {
   readonly getDailyNote: (
     authorId: string,
     date: string,
+    channelId: string,
     templateId?: string
   ) => ResultAsync<DailyNoteWithNote, NoteError>;
   /** 月のカレンダーを取得 */
