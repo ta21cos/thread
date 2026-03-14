@@ -1,12 +1,15 @@
+import { Hash } from "lucide-react";
+
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight">Thread</h1>
-        <p className="mt-2 text-muted-foreground">
-          Channel-based note management
-        </p>
+    <div className="flex h-full flex-col items-center justify-center text-center">
+      <div className="rounded-full bg-muted p-4">
+        <Hash className="h-8 w-8 text-muted-foreground" />
       </div>
+      <h2 className="mt-4 text-xl font-semibold">Welcome to Thread</h2>
+      <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+        Select a channel from the sidebar to get started, or create a new one.
+      </p>
     </div>
   );
 }

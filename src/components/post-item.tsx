@@ -1,0 +1,185 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Pencil, Trash2, Check, X, MessageSquare } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { updatePost, deletePost } from "@/app/actions/posts";
+
+type Post = {
+  id: string;
+  channelId: string;
+  content: string;
+  authorId: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+function formatTimestamp(date: Date) {
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export function PostItem({
+  post,
+  threadReplyCount,
+  highlight,
+}: {
+  post: Post;
+  threadReplyCount?: number;
+  highlight?: boolean;
+}) {
+  const highlightRef = useRef<HTMLDivElement>(null);
+  const [editing, setEditing] = useState(false);
+
+  useEffect(() => {
+    if (highlight && highlightRef.current) {
+      const el = highlightRef.current;
+      el.classList.add("bg-yellow-100", "dark:bg-yellow-900/30");
+      const timer = setTimeout(() => {
+        el.classList.remove("bg-yellow-100", "dark:bg-yellow-900/30");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [highlight]);
+
+  const [editContent, setEditContent] = useState(post.content);
+  const [deleting, setDeleting] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const isEdited = post.createdAt.getTime() !== post.updatedAt.getTime();
+
+  const handleSaveEdit = async () => {
+    if (!editContent.trim()) return;
+    await updatePost(post.id, post.channelId, editContent);
+    setEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditContent(post.content);
+    setEditing(false);
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    await deletePost(post.id, post.channelId);
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      handleSaveEdit();
+    }
+    if (e.key === "Escape") {
+      handleCancelEdit();
+    }
+  };
+
+  const handleOpenThread = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("thread", post.id);
+    router.push(`?${params.toString()}`);
+  };
+
+  return (
+    <div
+      ref={highlightRef}
+      id={`post-${post.id}`}
+      className={`group relative cursor-pointer border-b border-border/50 px-3 py-3 transition-colors duration-1000 hover:bg-muted/50`}
+      onClick={!editing ? handleOpenThread : undefined}
+    >
+      <div className="flex items-baseline gap-2">
+        <span className="text-xs font-medium text-muted-foreground">
+          {formatTimestamp(post.createdAt)}
+        </span>
+        {isEdited && (
+          <span className="text-xs italic text-muted-foreground">(edited)</span>
+        )}
+      </div>
+
+      {editing ? (
+        <div className="mt-1 space-y-2">
+          <Textarea
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            onKeyDown={handleEditKeyDown}
+            className="min-h-[60px]"
+            autoFocus
+          />
+          <div className="flex gap-1">
+            <Button size="sm" variant="ghost" onClick={handleSaveEdit}>
+              <Check className="mr-1 h-3 w-3" />
+              Save
+            </Button>
+            <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
+              <X className="mr-1 h-3 w-3" />
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-0.5">
+          <MarkdownRenderer content={post.content} />
+        </div>
+      )}
+
+      {threadReplyCount !== undefined && threadReplyCount > 0 && !editing && (
+        <button
+          onClick={handleOpenThread}
+          className="mt-1 text-xs font-medium text-primary hover:underline"
+        >
+          {threadReplyCount} {threadReplyCount === 1 ? "reply" : "replies"}
+        </button>
+      )}
+
+      {!editing && (
+        <div
+          className="absolute -top-2 right-2 hidden gap-0.5 rounded-md border bg-background p-0.5 shadow-sm group-hover:flex"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={handleOpenThread}
+            aria-label="Reply in thread"
+            title="Reply in thread"
+          >
+            <MessageSquare className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => {
+              setEditContent(post.content);
+              setEditing(true);
+            }}
+            aria-label="Edit post"
+            title="Edit post"
+          >
+            <Pencil className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-destructive hover:text-destructive"
+            onClick={handleDelete}
+            disabled={deleting}
+            aria-label="Delete post"
+            title="Delete post"
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
