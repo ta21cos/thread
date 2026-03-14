@@ -1,101 +1,56 @@
-# Git-related
-*.orig
-*.rej
-*.patch
-.git/
-.gitattributes
-.gitmodules
-
 # Dependencies
 node_modules/
-vendor/
-venv/
-.venv/
-env/
-.env/
 
-.dev.vars.*
+# Next.js
+.next/
+out/
 
-# Build outputs
+# Build
 dist/
 build/
-out/
-target/
-*.pyc
-__pycache__/
-*.so
-*.dylib
-*.dll
-*.exe
 
-# Electron build output
-release/
-dist-electron/
+# Environment
+.env
+.env.local
+.env.*.local
 
-# IDE files
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+
+# OS
 .DS_Store
+Thumbs.db
 
-# Environment files
-.env
-.env.test
-.env.local
-.env.*.local
-.env.production
-.env.staging
-.env.development
-.dev.vars
-
-# Logs
-logs/
-*.log
+# Debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
 # Testing
 coverage/
-.coverage
-htmlcov/
-.pytest_cache/
-.tox/
 playwright-report/
 test-results/
+
+# Vercel
+.vercel
+
+# PWA
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map
+public/swe-worker-*.js
 
 # Database
 *.db
 *.sqlite
 *.sqlite3
 
-# Package files
-*.egg-info/
-*.egg
-
-# Temporary files
+# Misc
+*.log
 tmp/
 temp/
-.tmp/
-
-# OS files
-Thumbs.db
-Desktop.ini
-
-# Project specific
-/data/
-/uploads/
-/cache/
-
-# serena
-.serena/
-
-# Cloudflare Workers
-.wrangler/
-wrangler.toml.local
-*.workers.dev
-
-# TODO: Remove this
-slack-chat-app/
