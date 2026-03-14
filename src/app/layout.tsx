@@ -17,7 +17,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Thread",
-  description: "Channel-based note management",
+  description: "Personal thread-based note app",
+  manifest: "/manifest.json",
+  themeColor: "#09090b",
 };
 
 export default function RootLayout({
