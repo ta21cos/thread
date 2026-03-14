@@ -1,4 +1,0 @@
-[test]
-preload = ["./tests/preload.ts"]
-# NOTE: Exclude integration tests (they use vitest with @cloudflare/vitest-pool-workers)
-root = "./src"
