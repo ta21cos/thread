@@ -50,9 +50,11 @@ function formatTimestamp(date: Date) {
 function ReplyItem({
   reply,
   channelId,
+  onMutate,
 }: {
   reply: Reply;
   channelId: string;
+  onMutate?: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(reply.content);
@@ -64,6 +66,7 @@ function ReplyItem({
     if (!editContent.trim()) return;
     await updateReply(reply.id, editContent, channelId);
     setEditing(false);
+    onMutate?.();
   };
 
   const handleCancelEdit = () => {
@@ -74,6 +77,7 @@ function ReplyItem({
   const handleDelete = async () => {
     setDeleting(true);
     await deleteReply(reply.id, channelId);
+    onMutate?.();
   };
 
   const handleEditKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -315,6 +319,7 @@ function ThreadPanelContent({
               key={reply.id}
               reply={reply}
               channelId={channelId}
+              onMutate={refreshReplies}
             />
           ))}
           <div ref={bottomRef} />
