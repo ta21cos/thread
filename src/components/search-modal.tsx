@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Hash, MessageSquare } from "lucide-react";
+import { BookOpen, Hash, MessageSquare } from "lucide-react";
 import {
   CommandDialog,
   CommandEmpty,
@@ -11,7 +11,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { searchPosts, type SearchResult } from "@/app/actions/search";
+import { searchAll, type SearchResult } from "@/app/actions/search";
 
 function formatTimestamp(date: Date) {
   return date.toLocaleString(undefined, {
@@ -44,7 +44,7 @@ export function SearchModal() {
   const performSearch = useCallback(async (value: string) => {
     setLoading(true);
     try {
-      const data = await searchPosts(value);
+      const data = await searchAll(value);
       setResults(data);
     } catch {
       setResults([]);
@@ -75,7 +75,11 @@ export function SearchModal() {
     setOpen(false);
     setQuery("");
     setResults([]);
-    router.push(`/channels/${result.channelId}?highlight=${result.id}`);
+    if (result.type === "note") {
+      router.push(`/notes/${result.id}`);
+    } else {
+      router.push(`/channels/${result.channelId}?highlight=${result.id}`);
+    }
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -88,16 +92,17 @@ export function SearchModal() {
 
   const postResults = results.filter((r) => r.type === "post");
   const replyResults = results.filter((r) => r.type === "reply");
+  const noteResults = results.filter((r) => r.type === "note");
 
   return (
     <CommandDialog
       open={open}
       onOpenChange={handleOpenChange}
       title="Search"
-      description="Search posts and replies across all channels"
+      description="Search posts, replies, and notes"
     >
       <CommandInput
-        placeholder="Search posts and replies..."
+        placeholder="Search posts, replies, and notes..."
         value={query}
         onValueChange={handleSearch}
       />
@@ -153,9 +158,30 @@ export function SearchModal() {
           </CommandGroup>
         )}
 
+        {!loading && noteResults.length > 0 && (
+          <CommandGroup heading="Notes">
+            {noteResults.map((result) => (
+              <CommandItem
+                key={`note-${result.id}`}
+                value={`note-${result.id}`}
+                onSelect={() => handleSelect(result)}
+                className="flex flex-col items-start gap-1"
+              >
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <BookOpen className="h-3 w-3" />
+                  <span>{result.group || "Note"}</span>
+                  <span>·</span>
+                  <span>{formatTimestamp(result.createdAt)}</span>
+                </div>
+                <p className="line-clamp-2 text-sm">{result.content}</p>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+
         {!loading && !query.trim() && (
           <div className="py-6 text-center text-sm text-muted-foreground">
-            Type to search posts and replies across all channels
+            Type to search posts, replies, and notes
           </div>
         )}
       </CommandList>
