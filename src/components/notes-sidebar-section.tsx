@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight, FileText } from "lucide-react";
+import { ChevronDown, ChevronRight, FileText, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { NoteWithTags } from "@/app/actions/stocks";
 
@@ -18,20 +18,21 @@ export function NotesSidebarSection({
 }: NotesSidebarSectionProps) {
   const pathname = usePathname();
 
-  const grouped = new Map<string, NoteWithTags[]>();
+  const grouped: Record<string, NoteWithTags[]> = {};
   const ungrouped: NoteWithTags[] = [];
 
   for (const note of notes) {
     if (note.group) {
-      const list = grouped.get(note.group) ?? [];
-      list.push(note);
-      grouped.set(note.group, list);
+      if (!grouped[note.group]) {
+        grouped[note.group] = [];
+      }
+      grouped[note.group].push(note);
     } else {
       ungrouped.push(note);
     }
   }
 
-  const sortedGroups = [...grouped.keys()].sort();
+  const groupNames = Object.keys(grouped).sort();
 
   if (notes.length === 0) {
     return (
@@ -42,12 +43,12 @@ export function NotesSidebarSection({
   }
 
   return (
-    <div className="space-y-1">
-      {sortedGroups.map((group) => (
-        <GroupSection
+    <div className="space-y-0.5">
+      {groupNames.map((group) => (
+        <SidebarGroup
           key={group}
           group={group}
-          notes={grouped.get(group)!}
+          notes={grouped[group]}
           pathname={pathname}
           onNavigate={onNavigate}
         />
@@ -64,7 +65,7 @@ export function NotesSidebarSection({
   );
 }
 
-function GroupSection({
+function SidebarGroup({
   group,
   notes,
   pathname,
@@ -82,25 +83,28 @@ function GroupSection({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+        className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
       >
-        <ChevronRight
-          className={cn("h-3 w-3 transition-transform", open && "rotate-90")}
-        />
+        {open ? (
+          <ChevronDown className="h-3 w-3" />
+        ) : (
+          <ChevronRight className="h-3 w-3" />
+        )}
+        <BookOpen className="h-3 w-3" />
         <span className="truncate">{group}</span>
-        <span className="ml-auto text-[10px]">{notes.length}</span>
       </button>
       {open && (
-        <div className="ml-2">
+        <ul className="ml-3 space-y-0.5">
           {notes.map((note) => (
-            <NoteLink
-              key={note.id}
-              note={note}
-              isActive={pathname === `/notes/${note.id}`}
-              onNavigate={onNavigate}
-            />
+            <li key={note.id}>
+              <NoteLink
+                note={note}
+                isActive={pathname === `/notes/${note.id}`}
+                onNavigate={onNavigate}
+              />
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );
@@ -120,12 +124,12 @@ function NoteLink({
       href={`/notes/${note.id}`}
       onClick={onNavigate}
       className={cn(
-        "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent",
+        "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors hover:bg-accent",
         isActive && "bg-accent font-medium",
       )}
     >
       <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-      <span className="truncate">{note.title}</span>
+      <span className="truncate text-xs">{note.title}</span>
     </Link>
   );
 }

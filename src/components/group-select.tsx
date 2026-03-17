@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { cn } from "@/lib/utils";
+import { Folder, ChevronDown } from "lucide-react";
 
 interface GroupSelectProps {
   value: string;
@@ -10,58 +10,73 @@ interface GroupSelectProps {
 }
 
 export function GroupSelect({ value, onChange, groups }: GroupSelectProps) {
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [inputValue, setInputValue] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const filtered = groups.filter(
-    (g) => g.toLowerCase().includes(value.toLowerCase()) && value.length > 0,
+  const filteredGroups = groups.filter((g) =>
+    g.toLowerCase().includes(inputValue.toLowerCase()),
   );
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      setShowSuggestions(false);
-      inputRef.current?.blur();
-    }
+  function selectGroup(group: string) {
+    onChange(group);
+    setInputValue(group);
+    setOpen(false);
   }
 
   return (
     <div className="relative">
-      <input
-        ref={inputRef}
-        type="text"
-        value={value}
-        onChange={(e) => {
-          onChange(e.target.value);
-          setShowSuggestions(true);
-        }}
-        onFocus={() => setShowSuggestions(true)}
-        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-        onKeyDown={handleKeyDown}
-        placeholder="Group (optional)"
-        className={cn(
-          "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs",
-          "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-        )}
-      />
-      {showSuggestions && filtered.length > 0 && (
-        <ul className="absolute z-10 mt-1 max-h-40 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md">
-          {filtered.map((group) => (
-            <li key={group}>
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  onChange(group);
-                  setShowSuggestions(false);
-                }}
-                className="w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent"
-              >
-                {group}
-              </button>
-            </li>
+      {open ? (
+        <input
+          ref={inputRef}
+          value={inputValue}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            onChange(e.target.value);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              setOpen(false);
+            }
+            if (e.key === "Escape") {
+              setOpen(false);
+              inputRef.current?.blur();
+            }
+          }}
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          autoFocus
+          placeholder="Group name..."
+          className="h-6 w-28 bg-transparent text-xs outline-none placeholder:text-muted-foreground/50"
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <Folder className="h-3 w-3" />
+          {value || "No group"}
+          <ChevronDown className="h-3 w-3 opacity-50" />
+        </button>
+      )}
+
+      {open && filteredGroups.length > 0 && (
+        <div className="absolute left-0 top-full z-50 mt-1 min-w-[140px] overflow-hidden rounded-lg border bg-popover p-1 shadow-lg">
+          {filteredGroups.map((group) => (
+            <button
+              key={group}
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                selectGroup(group);
+              }}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent"
+            >
+              <Folder className="h-3 w-3 text-muted-foreground" />
+              {group}
+            </button>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
