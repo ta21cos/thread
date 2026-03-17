@@ -337,11 +337,77 @@ function ThreadPanelContent({
   );
 }
 
+const THREAD_WIDTH_KEY = "thread-panel-width";
+const DEFAULT_WIDTH = 384;
+const MIN_WIDTH = 280;
+const MAX_WIDTH = 640;
+
+function getInitialWidth() {
+  if (typeof window === "undefined") return DEFAULT_WIDTH;
+  const saved = localStorage.getItem(THREAD_WIDTH_KEY);
+  if (saved) {
+    const parsed = Number(saved);
+    if (parsed >= MIN_WIDTH && parsed <= MAX_WIDTH) return parsed;
+  }
+  return DEFAULT_WIDTH;
+}
+
+function useThreadPanelWidth() {
+  const [width, setWidth] = useState(getInitialWidth);
+
+  const updateWidth = useCallback((newWidth: number) => {
+    const clamped = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, newWidth));
+    setWidth(clamped);
+    localStorage.setItem(THREAD_WIDTH_KEY, String(clamped));
+  }, []);
+
+  return { width, updateWidth };
+}
+
+function ResizeHandle({ onResize }: { onResize: (deltaX: number) => void }) {
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      const startX = e.clientX;
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        onResize(startX - moveEvent.clientX);
+      };
+
+      const handleMouseUp = () => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      };
+
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    },
+    [onResize],
+  );
+
+  return (
+    <div
+      className="absolute top-0 left-0 z-10 h-full w-1 cursor-col-resize hover:bg-primary/20 active:bg-primary/30"
+      onMouseDown={handleMouseDown}
+    />
+  );
+}
+
 export function ThreadPanel({ channelId }: { channelId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const threadId = searchParams.get("thread");
   const [isMobile, setIsMobile] = useState(false);
+  const { width, updateWidth } = useThreadPanelWidth();
+  const widthRef = useRef(width);
+
+  useEffect(() => {
+    widthRef.current = width;
+  }, [width]);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -350,12 +416,19 @@ export function ThreadPanel({ channelId }: { channelId: string }) {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("thread");
     const query = params.toString();
-    router.push(query ? `?${query}` : `/channels/${channelId}`);
-  };
+    router.replace(query ? `?${query}` : `?`);
+  }, [router, searchParams]);
+
+  const handleResize = useCallback(
+    (deltaX: number) => {
+      updateWidth(widthRef.current + deltaX);
+    },
+    [updateWidth],
+  );
 
   if (!threadId) return null;
 
@@ -381,7 +454,11 @@ export function ThreadPanel({ channelId }: { channelId: string }) {
   }
 
   return (
-    <div className="flex h-full w-96 shrink-0 flex-col border-l">
+    <div
+      className="relative flex h-full shrink-0 flex-col border-l"
+      style={{ width }}
+    >
+      <ResizeHandle onResize={handleResize} />
       <ThreadPanelContent
         postId={threadId}
         channelId={channelId}
