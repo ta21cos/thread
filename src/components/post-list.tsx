@@ -1,15 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PostItem } from "@/components/post-item";
-import { MessageCircle } from "lucide-react";
+import { PromoteDialog } from "@/components/promote-dialog";
+import { MessageCircle, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type Post = {
   id: string;
   channelId: string;
   content: string;
   authorId: string;
+  isPromoted?: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -26,6 +29,14 @@ export function PostList({
   const bottomRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [promoteTarget, setPromoteTarget] = useState<{
+    type: "single" | "thread" | "multiple";
+    postIds: string[];
+    defaultTitle: string;
+  } | null>(null);
+
+  const selectionMode = selectedIds.size > 0;
 
   useEffect(() => {
     if (highlightPostId) {
@@ -47,6 +58,54 @@ export function PostList({
     [router, searchParams],
   );
 
+  const handleToggleSelect = useCallback((postId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(postId)) {
+        next.delete(postId);
+      } else {
+        next.add(postId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handlePromoteSingle = useCallback(
+    (postId: string) => {
+      const post = posts.find((p) => p.id === postId);
+      if (!post) return;
+      const defaultTitle = post.content.slice(0, 30).replace(/\n/g, " ");
+      setPromoteTarget({
+        type: "single",
+        postIds: [postId],
+        defaultTitle,
+      });
+    },
+    [posts],
+  );
+
+  const handleBulkPromote = useCallback(() => {
+    const ids = [...selectedIds];
+    const firstPost = posts.find((p) => ids.includes(p.id));
+    const defaultTitle = firstPost
+      ? firstPost.content.slice(0, 30).replace(/\n/g, " ")
+      : "";
+    setPromoteTarget({
+      type: "multiple",
+      postIds: ids,
+      defaultTitle,
+    });
+  }, [selectedIds, posts]);
+
+  const handlePromoteComplete = useCallback(() => {
+    setPromoteTarget(null);
+    setSelectedIds(new Set());
+  }, []);
+
+  const handleCancelSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
   if (posts.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-2 text-muted-foreground">
@@ -66,10 +125,44 @@ export function PostList({
             threadReplyCount={threadReplyCounts?.[post.id]}
             highlight={post.id === highlightPostId}
             onOpenThread={handleOpenThread}
+            onPromote={handlePromoteSingle}
+            isSelected={selectedIds.has(post.id)}
+            onToggleSelect={handleToggleSelect}
+            selectionMode={selectionMode}
           />
         ))}
         <div ref={bottomRef} />
       </div>
+
+      {selectionMode && (
+        <div className="sticky bottom-0 flex items-center justify-between border-t bg-background px-4 py-3 shadow-lg">
+          <span className="text-sm font-medium">
+            {selectedIds.size} selected
+          </span>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleCancelSelection}>
+              <X className="mr-1 h-3 w-3" />
+              Cancel
+            </Button>
+            <Button size="sm" onClick={handleBulkPromote}>
+              Promote {selectedIds.size} posts
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {promoteTarget && (
+        <PromoteDialog
+          open={!!promoteTarget}
+          onOpenChange={(open) => {
+            if (!open) setPromoteTarget(null);
+          }}
+          type={promoteTarget.type}
+          postIds={promoteTarget.postIds}
+          defaultTitle={promoteTarget.defaultTitle}
+          onComplete={handlePromoteComplete}
+        />
+      )}
     </div>
   );
 }

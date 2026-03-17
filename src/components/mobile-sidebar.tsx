@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu } from "lucide-react";
+import { Menu, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -29,9 +29,11 @@ type Channel = {
 export function MobileSidebar({
   channels,
   notes,
+  inboxCount,
 }: {
   channels: Channel[];
   notes: NoteWithTags[];
+  inboxCount?: number;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -57,6 +59,22 @@ export function MobileSidebar({
         <nav className="px-2 pb-4">
           <ChannelList channels={channels} onNavigate={() => setOpen(false)} />
         </nav>
+
+        <div className="px-2 pb-2">
+          <Link
+            href="/inbox"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent"
+          >
+            <Inbox className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <span>Inbox</span>
+            {inboxCount !== undefined && inboxCount > 0 && (
+              <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-medium leading-none text-primary-foreground">
+                {inboxCount}
+              </span>
+            )}
+          </Link>
+        </div>
 
         <div className="flex items-center justify-between px-4 pt-2 pb-2">
           <Link
