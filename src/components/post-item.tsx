@@ -1,7 +1,16 @@
 "use client";
 
 import { memo, useEffect, useRef, useState } from "react";
-import { Pencil, Trash2, Check, X, MessageSquare } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  Check,
+  X,
+  MessageSquare,
+  Archive,
+  Square,
+  CheckSquare,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
@@ -12,6 +21,7 @@ type Post = {
   channelId: string;
   content: string;
   authorId: string;
+  isPromoted?: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -30,11 +40,19 @@ export const PostItem = memo(function PostItem({
   threadReplyCount,
   highlight,
   onOpenThread,
+  onPromote,
+  isSelected,
+  onToggleSelect,
+  selectionMode,
 }: {
   post: Post;
   threadReplyCount?: number;
   highlight?: boolean;
   onOpenThread: (postId: string) => void;
+  onPromote?: (postId: string) => void;
+  isSelected?: boolean;
+  onToggleSelect?: (postId: string) => void;
+  selectionMode?: boolean;
 }) {
   const highlightRef = useRef<HTMLDivElement>(null);
   const [editing, setEditing] = useState(false);
@@ -81,17 +99,46 @@ export const PostItem = memo(function PostItem({
     }
   };
 
+  const handleClick = () => {
+    if (editing) return;
+    if (selectionMode && onToggleSelect) {
+      onToggleSelect(post.id);
+    } else {
+      onOpenThread(post.id);
+    }
+  };
+
   return (
     <div
       ref={highlightRef}
       id={`post-${post.id}`}
-      className={`group relative cursor-pointer border-b border-border/50 px-3 py-3 transition-colors duration-150 hover:bg-muted/50`}
-      onClick={!editing ? () => onOpenThread(post.id) : undefined}
+      className={`group relative cursor-pointer border-b border-border/50 px-3 py-3 transition-colors duration-150 hover:bg-muted/50 ${isSelected ? "bg-primary/5" : ""}`}
+      onClick={handleClick}
     >
       <div className="flex items-baseline gap-2">
+        {selectionMode && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSelect?.(post.id);
+            }}
+            className="relative top-0.5 shrink-0"
+          >
+            {isSelected ? (
+              <CheckSquare className="h-4 w-4 text-primary" />
+            ) : (
+              <Square className="h-4 w-4 text-muted-foreground" />
+            )}
+          </button>
+        )}
         <span className="text-xs font-medium text-muted-foreground">
           {formatTimestamp(post.createdAt)}
         </span>
+        {post.isPromoted && (
+          <span className="inline-flex items-center gap-0.5 rounded-sm bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+            📌 Stocked
+          </span>
+        )}
         {isEdited && (
           <span className="text-xs italic text-muted-foreground">(edited)</span>
         )}
@@ -137,6 +184,30 @@ export const PostItem = memo(function PostItem({
           className="absolute -top-2 right-2 hidden gap-0.5 rounded-md border bg-background p-0.5 shadow-sm group-hover:flex"
           onClick={(e) => e.stopPropagation()}
         >
+          {!selectionMode && onToggleSelect && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => onToggleSelect(post.id)}
+              aria-label="Select post"
+              title="Select post"
+            >
+              <Square className="h-3 w-3" />
+            </Button>
+          )}
+          {!post.isPromoted && onPromote && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => onPromote(post.id)}
+              aria-label="Promote to inbox"
+              title="Promote to inbox"
+            >
+              <Archive className="h-3 w-3" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
