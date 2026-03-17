@@ -1,6 +1,9 @@
+import Link from "next/link";
 import { ChannelList } from "./channel-list";
 import { CreateChannelDialog } from "./create-channel-dialog";
+import { NotesSidebarSection } from "./notes-sidebar-section";
 import { ThemeToggle } from "./theme-toggle";
+import type { NoteWithTags } from "@/app/actions/stocks";
 
 type Channel = {
   id: string;
@@ -12,7 +15,13 @@ type Channel = {
   updatedAt: Date;
 };
 
-export function Sidebar({ channels }: { channels: Channel[] }) {
+export function Sidebar({
+  channels,
+  notes,
+}: {
+  channels: Channel[];
+  notes: NoteWithTags[];
+}) {
   return (
     <aside className="hidden w-64 shrink-0 border-r bg-muted/30 md:flex md:flex-col">
       <div className="flex h-14 items-center justify-between border-b px-4">
@@ -28,6 +37,18 @@ export function Sidebar({ channels }: { channels: Channel[] }) {
         </div>
         <nav className="px-2">
           <ChannelList channels={channels} />
+        </nav>
+
+        <div className="flex items-center justify-between px-4 pt-6 pb-2">
+          <Link
+            href="/notes"
+            className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 hover:text-foreground"
+          >
+            Notes
+          </Link>
+        </div>
+        <nav className="px-2">
+          <NotesSidebarSection notes={notes} />
         </nav>
       </div>
     </aside>
