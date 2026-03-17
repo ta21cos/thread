@@ -18,52 +18,56 @@ import {
   promoteMultiple,
 } from "@/app/actions/stocks";
 
+type PromoteMode =
+  | { type: "single"; postId: string; content: string; hasThread: boolean }
+  | { type: "multiple"; postIds: string[]; firstContent: string };
+
 interface PromoteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  type: "single" | "thread" | "multiple";
-  postIds: string[];
-  defaultTitle: string;
+  mode: PromoteMode;
   onComplete: () => void;
 }
 
 export function PromoteDialog({
   open,
   onOpenChange,
-  type,
-  postIds,
-  defaultTitle,
+  mode,
   onComplete,
 }: PromoteDialogProps) {
+  const defaultTitle =
+    mode.type === "single"
+      ? mode.content.slice(0, 30)
+      : mode.firstContent.slice(0, 30);
   const [title, setTitle] = useState(defaultTitle);
+  const [includeThread, setIncludeThread] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const handleConfirm = () => {
+  const handlePromote = () => {
     startTransition(async () => {
-      if (type === "single") {
-        await promotePost(postIds[0], title);
-      } else if (type === "thread") {
-        await promoteThread(postIds[0], title);
+      if (mode.type === "single") {
+        if (includeThread && mode.hasThread) {
+          await promoteThread(mode.postId, title);
+        } else {
+          await promotePost(mode.postId, title);
+        }
       } else {
-        await promoteMultiple(postIds, title);
+        await promoteMultiple(mode.postIds, title);
       }
       onComplete();
+      onOpenChange(false);
     });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !isPending) {
       e.preventDefault();
-      handleConfirm();
+      handlePromote();
     }
   };
 
   const typeLabel =
-    type === "single"
-      ? "post"
-      : type === "thread"
-        ? "thread"
-        : `${postIds.length} posts`;
+    mode.type === "single" ? "post" : `${mode.postIds.length} posts`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -71,7 +75,7 @@ export function PromoteDialog({
         <DialogHeader>
           <DialogTitle>Promote to Inbox</DialogTitle>
           <DialogDescription>
-            Promote this {typeLabel} to your inbox for later review.
+            Save this {typeLabel} to your inbox for later.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
@@ -86,6 +90,17 @@ export function PromoteDialog({
               autoFocus
             />
           </div>
+          {mode.type === "single" && mode.hasThread && (
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={includeThread}
+                onChange={(e) => setIncludeThread(e.target.checked)}
+                className="rounded"
+              />
+              Include thread replies
+            </label>
+          )}
         </div>
         <DialogFooter>
           <Button
@@ -95,7 +110,7 @@ export function PromoteDialog({
           >
             Cancel
           </Button>
-          <Button onClick={handleConfirm} disabled={isPending}>
+          <Button onClick={handlePromote} disabled={isPending || !title.trim()}>
             {isPending ? "Promoting..." : "Promote"}
           </Button>
         </DialogFooter>

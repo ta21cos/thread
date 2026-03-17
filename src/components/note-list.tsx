@@ -1,91 +1,94 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { ChevronDown, ChevronRight, FileText } from "lucide-react";
 import type { NoteWithTags } from "@/app/actions/stocks";
 
 interface NoteListProps {
   notes: NoteWithTags[];
 }
 
-function formatDate(date: Date) {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function NoteItem({ note }: { note: NoteWithTags }) {
-  return (
-    <Link
-      href={`/notes/${note.id}`}
-      className="block rounded-md px-3 py-2 transition-colors hover:bg-accent"
-    >
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="truncate font-medium">{note.title}</span>
-        <span className="shrink-0 text-xs text-muted-foreground">
-          {formatDate(note.updatedAt)}
-        </span>
-      </div>
-      {note.tags.length > 0 && (
-        <div className="mt-1 flex flex-wrap gap-1">
-          {note.tags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-md bg-secondary px-1.5 py-0.5 text-xs text-secondary-foreground"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
-    </Link>
-  );
-}
-
 export function NoteList({ notes }: NoteListProps) {
-  const grouped = new Map<string, NoteWithTags[]>();
+  const grouped: Record<string, NoteWithTags[]> = {};
   const ungrouped: NoteWithTags[] = [];
 
   for (const note of notes) {
     if (note.group) {
-      const list = grouped.get(note.group) ?? [];
-      list.push(note);
-      grouped.set(note.group, list);
+      if (!grouped[note.group]) {
+        grouped[note.group] = [];
+      }
+      grouped[note.group].push(note);
     } else {
       ungrouped.push(note);
     }
   }
 
-  const sortedGroups = [...grouped.keys()].sort();
+  const groupNames = Object.keys(grouped).sort();
+
+  if (notes.length === 0) {
+    return (
+      <div className="py-12 text-center text-muted-foreground">
+        <FileText className="mx-auto mb-3 h-12 w-12 opacity-50" />
+        <p className="text-lg font-medium">No notes yet</p>
+        <p className="mt-1 text-sm">Create your first note to get started.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {sortedGroups.map((group) => (
-        <section key={group}>
-          <h3 className="mb-2 px-3 text-sm font-semibold text-muted-foreground">
-            {group}
-          </h3>
-          <div className="space-y-0.5">
-            {grouped.get(group)!.map((note) => (
-              <NoteItem key={note.id} note={note} />
-            ))}
-          </div>
-        </section>
+    <div className="space-y-4">
+      {groupNames.map((group) => (
+        <GroupAccordion key={group} group={group} notes={grouped[group]} />
       ))}
       {ungrouped.length > 0 && (
-        <section>
-          {sortedGroups.length > 0 && (
-            <h3 className="mb-2 px-3 text-sm font-semibold text-muted-foreground">
-              Ungrouped
-            </h3>
-          )}
-          <div className="space-y-0.5">
-            {ungrouped.map((note) => (
-              <NoteItem key={note.id} note={note} />
-            ))}
-          </div>
-        </section>
+        <GroupAccordion group="Ungrouped" notes={ungrouped} />
+      )}
+    </div>
+  );
+}
+
+function GroupAccordion({
+  group,
+  notes,
+}: {
+  group: string;
+  notes: NoteWithTags[];
+}) {
+  const [open, setOpen] = useState(true);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-muted-foreground hover:bg-accent"
+      >
+        {open ? (
+          <ChevronDown className="h-4 w-4" />
+        ) : (
+          <ChevronRight className="h-4 w-4" />
+        )}
+        {group}
+        <span className="ml-auto text-xs">{notes.length}</span>
+      </button>
+      {open && (
+        <ul className="ml-4 mt-1 space-y-0.5">
+          {notes.map((note) => (
+            <li key={note.id}>
+              <Link
+                href={`/notes/${note.id}`}
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+              >
+                <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="truncate">{note.title}</span>
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {new Date(note.updatedAt).toLocaleDateString()}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

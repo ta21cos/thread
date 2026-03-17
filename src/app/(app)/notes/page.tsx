@@ -6,7 +6,7 @@ export default async function NotesPage() {
   const notes = await getNotes("note");
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-3xl">
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-2xl font-bold">Notes</h2>
         <Link

@@ -31,9 +31,9 @@ export function PostList({
   const searchParams = useSearchParams();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [promoteTarget, setPromoteTarget] = useState<{
-    type: "single" | "thread" | "multiple";
-    postIds: string[];
-    defaultTitle: string;
+    mode:
+      | { type: "single"; postId: string; content: string; hasThread: boolean }
+      | { type: "multiple"; postIds: string[]; firstContent: string };
   } | null>(null);
 
   const selectionMode = selectedIds.size > 0;
@@ -74,26 +74,32 @@ export function PostList({
     (postId: string) => {
       const post = posts.find((p) => p.id === postId);
       if (!post) return;
-      const defaultTitle = post.content.slice(0, 30).replace(/\n/g, " ");
+      const content = post.content.slice(0, 30).replace(/\n/g, " ");
+      const hasThread = (threadReplyCounts?.[postId] ?? 0) > 0;
       setPromoteTarget({
-        type: "single",
-        postIds: [postId],
-        defaultTitle,
+        mode: {
+          type: "single",
+          postId,
+          content,
+          hasThread,
+        },
       });
     },
-    [posts],
+    [posts, threadReplyCounts],
   );
 
   const handleBulkPromote = useCallback(() => {
     const ids = [...selectedIds];
     const firstPost = posts.find((p) => ids.includes(p.id));
-    const defaultTitle = firstPost
+    const firstContent = firstPost
       ? firstPost.content.slice(0, 30).replace(/\n/g, " ")
       : "";
     setPromoteTarget({
-      type: "multiple",
-      postIds: ids,
-      defaultTitle,
+      mode: {
+        type: "multiple",
+        postIds: ids,
+        firstContent,
+      },
     });
   }, [selectedIds, posts]);
 
@@ -157,9 +163,7 @@ export function PostList({
           onOpenChange={(open) => {
             if (!open) setPromoteTarget(null);
           }}
-          type={promoteTarget.type}
-          postIds={promoteTarget.postIds}
-          defaultTitle={promoteTarget.defaultTitle}
+          mode={promoteTarget.mode}
           onComplete={handlePromoteComplete}
         />
       )}

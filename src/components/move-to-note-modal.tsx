@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { FileText, Plus } from "lucide-react";
+import { FilePlus, FileText } from "lucide-react";
 import {
   CommandDialog,
   CommandInput,
@@ -36,7 +36,7 @@ export function MoveToNoteModal({
 
   const isSingle = stockIds.length === 1;
 
-  const handleSaveAsNewNote = () => {
+  const handleCreateNew = () => {
     startTransition(async () => {
       if (isSingle) {
         await moveToNote(stockIds[0]);
@@ -47,10 +47,11 @@ export function MoveToNoteModal({
     });
   };
 
-  const handleMergeIntoNote = (targetNoteId: string) => {
-    if (!isSingle) return;
+  const handleMerge = (targetNoteId: string) => {
     startTransition(async () => {
-      await mergeIntoNote(stockIds[0], targetNoteId);
+      for (const stockId of stockIds) {
+        await mergeIntoNote(stockId, targetNoteId);
+      }
       onComplete();
     });
   };
@@ -60,33 +61,30 @@ export function MoveToNoteModal({
       open={open}
       onOpenChange={onOpenChange}
       title="Move to Note"
-      description="Save as a new note or merge into an existing note."
+      description="Save as a new note or merge into an existing one"
     >
-      <CommandInput
-        placeholder="Search notes..."
-        disabled={isPending}
-      />
+      <CommandInput placeholder="Search notes..." disabled={isPending} />
       <CommandList>
-        <CommandEmpty>No notes found.</CommandEmpty>
+        <CommandEmpty>No matching notes found.</CommandEmpty>
         <CommandGroup heading="Actions">
-          <CommandItem onSelect={handleSaveAsNewNote} disabled={isPending}>
-            <Plus className="mr-2 h-4 w-4" />
+          <CommandItem onSelect={handleCreateNew} disabled={isPending}>
+            <FilePlus className="mr-2 h-4 w-4" />
             Save as new note
           </CommandItem>
         </CommandGroup>
-        {isSingle && existingNotes.length > 0 && (
+        {existingNotes.length > 0 && (
           <CommandGroup heading="Merge into existing note">
             {existingNotes.map((note) => (
               <CommandItem
                 key={note.id}
-                onSelect={() => handleMergeIntoNote(note.id)}
+                onSelect={() => handleMerge(note.id)}
                 disabled={isPending}
               >
                 <FileText className="mr-2 h-4 w-4" />
-                <div className="min-w-0 flex-1">
-                  <span className="truncate">{note.title}</span>
+                <div className="flex flex-col">
+                  <span>{note.title}</span>
                   {note.group && (
-                    <span className="ml-2 text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       {note.group}
                     </span>
                   )}
