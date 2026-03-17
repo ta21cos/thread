@@ -6,6 +6,10 @@ const withSerwist = withSerwistInit({
   swDest: "public/sw.js",
 });
 
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  experimental: {
+    optimizePackageImports: ["lucide-react"],
+  },
+};
 
 export default withSerwist(nextConfig);

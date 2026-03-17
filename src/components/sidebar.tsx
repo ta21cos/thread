@@ -1,11 +1,18 @@
-import { getChannels } from "@/app/actions/channels";
 import { ChannelList } from "./channel-list";
 import { CreateChannelDialog } from "./create-channel-dialog";
 import { ThemeToggle } from "./theme-toggle";
 
-export async function Sidebar() {
-  const channelList = await getChannels();
+type Channel = {
+  id: string;
+  name: string;
+  description: string | null;
+  sortOrder: number;
+  authorId: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
+export function Sidebar({ channels }: { channels: Channel[] }) {
   return (
     <aside className="hidden w-64 shrink-0 border-r bg-muted/30 md:flex md:flex-col">
       <div className="flex h-14 items-center justify-between border-b px-4">
@@ -20,7 +27,7 @@ export async function Sidebar() {
           <CreateChannelDialog />
         </div>
         <nav className="px-2">
-          <ChannelList channels={channelList} />
+          <ChannelList channels={channels} />
         </nav>
       </div>
     </aside>

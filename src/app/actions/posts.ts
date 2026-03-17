@@ -5,9 +5,10 @@ import { db } from "@/db";
 import { posts } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { getAuthProfile } from "./auth";
+import { getCachedAuthProfile } from "@/lib/cached-auth";
 
 export async function getPosts(channelId: string) {
-  await getAuthProfile();
+  await getCachedAuthProfile();
   return db
     .select()
     .from(posts)
@@ -16,7 +17,7 @@ export async function getPosts(channelId: string) {
 }
 
 export async function getPost(id: string) {
-  await getAuthProfile();
+  await getCachedAuthProfile();
   const [post] = await db.select().from(posts).where(eq(posts.id, id));
   return post ?? null;
 }

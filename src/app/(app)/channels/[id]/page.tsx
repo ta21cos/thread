@@ -17,13 +17,12 @@ export default async function ChannelPage({
 }) {
   const { id } = await params;
   const { highlight } = await searchParams;
-  const channel = await getChannel(id);
+  const [channel, posts] = await Promise.all([getChannel(id), getPosts(id)]);
 
   if (!channel) {
     notFound();
   }
 
-  const posts = await getPosts(id);
   const postIds = posts.map((p) => p.id);
   const threadReplyCounts = await getReplyCounts(postIds);
 

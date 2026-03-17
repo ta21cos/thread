@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PostItem } from "@/components/post-item";
 import { MessageCircle } from "lucide-react";
 
@@ -23,6 +24,8 @@ export function PostList({
   highlightPostId?: string;
 }) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (highlightPostId) {
@@ -34,6 +37,15 @@ export function PostList({
     }
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [posts.length, highlightPostId]);
+
+  const handleOpenThread = useCallback(
+    (postId: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("thread", postId);
+      router.push(`?${params.toString()}`);
+    },
+    [router, searchParams],
+  );
 
   if (posts.length === 0) {
     return (
@@ -53,6 +65,7 @@ export function PostList({
             post={post}
             threadReplyCount={threadReplyCounts?.[post.id]}
             highlight={post.id === highlightPostId}
+            onOpenThread={handleOpenThread}
           />
         ))}
         <div ref={bottomRef} />

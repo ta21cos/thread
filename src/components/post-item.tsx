@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { memo, useEffect, useRef, useState } from "react";
 import { Pencil, Trash2, Check, X, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,14 +25,16 @@ function formatTimestamp(date: Date) {
   });
 }
 
-export function PostItem({
+export const PostItem = memo(function PostItem({
   post,
   threadReplyCount,
   highlight,
+  onOpenThread,
 }: {
   post: Post;
   threadReplyCount?: number;
   highlight?: boolean;
+  onOpenThread: (postId: string) => void;
 }) {
   const highlightRef = useRef<HTMLDivElement>(null);
   const [editing, setEditing] = useState(false);
@@ -51,8 +52,6 @@ export function PostItem({
 
   const [editContent, setEditContent] = useState(post.content);
   const [deleting, setDeleting] = useState(false);
-  const router = useRouter();
-  const searchParams = useSearchParams();
 
   const isEdited = post.createdAt.getTime() !== post.updatedAt.getTime();
 
@@ -82,18 +81,12 @@ export function PostItem({
     }
   };
 
-  const handleOpenThread = () => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("thread", post.id);
-    router.push(`?${params.toString()}`);
-  };
-
   return (
     <div
       ref={highlightRef}
       id={`post-${post.id}`}
-      className={`group relative cursor-pointer border-b border-border/50 px-3 py-3 transition-colors duration-1000 hover:bg-muted/50`}
-      onClick={!editing ? handleOpenThread : undefined}
+      className={`group relative cursor-pointer border-b border-border/50 px-3 py-3 transition-colors duration-150 hover:bg-muted/50`}
+      onClick={!editing ? () => onOpenThread(post.id) : undefined}
     >
       <div className="flex items-baseline gap-2">
         <span className="text-xs font-medium text-muted-foreground">
@@ -132,7 +125,7 @@ export function PostItem({
 
       {threadReplyCount !== undefined && threadReplyCount > 0 && !editing && (
         <button
-          onClick={handleOpenThread}
+          onClick={() => onOpenThread(post.id)}
           className="mt-1 text-xs font-medium text-primary hover:underline"
         >
           {threadReplyCount} {threadReplyCount === 1 ? "reply" : "replies"}
@@ -148,7 +141,7 @@ export function PostItem({
             variant="ghost"
             size="icon"
             className="h-6 w-6"
-            onClick={handleOpenThread}
+            onClick={() => onOpenThread(post.id)}
             aria-label="Reply in thread"
             title="Reply in thread"
           >
@@ -182,4 +175,4 @@ export function PostItem({
       )}
     </div>
   );
-}
+});

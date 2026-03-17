@@ -5,9 +5,10 @@ import { db } from "@/db";
 import { postReplies } from "@/db/schema";
 import { eq, asc, sql, inArray } from "drizzle-orm";
 import { getAuthProfile } from "./auth";
+import { getCachedAuthProfile } from "@/lib/cached-auth";
 
 export async function getReplies(postId: string) {
-  await getAuthProfile();
+  await getCachedAuthProfile();
   return db
     .select()
     .from(postReplies)
@@ -16,7 +17,7 @@ export async function getReplies(postId: string) {
 }
 
 export async function getReplyCount(postId: string) {
-  await getAuthProfile();
+  await getCachedAuthProfile();
   const [result] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(postReplies)
@@ -27,7 +28,7 @@ export async function getReplyCount(postId: string) {
 export async function getReplyCounts(postIds: string[]) {
   if (postIds.length === 0) return {};
 
-  await getAuthProfile();
+  await getCachedAuthProfile();
   const results = await db
     .select({
       postId: postReplies.postId,
