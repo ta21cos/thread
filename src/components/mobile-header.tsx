@@ -1,5 +1,6 @@
 import { MobileSidebar } from "./mobile-sidebar";
 import { ThemeToggle } from "./theme-toggle";
+import type { NoteWithTags } from "@/app/actions/stocks";
 
 type Channel = {
   id: string;
@@ -11,10 +12,16 @@ type Channel = {
   updatedAt: Date;
 };
 
-export function MobileHeader({ channels }: { channels: Channel[] }) {
+export function MobileHeader({
+  channels,
+  notes,
+}: {
+  channels: Channel[];
+  notes: NoteWithTags[];
+}) {
   return (
     <header className="flex h-14 items-center border-b px-4 md:hidden">
-      <MobileSidebar channels={channels} />
+      <MobileSidebar channels={channels} notes={notes} />
       <h1 className="ml-3 flex-1 text-lg font-semibold">Thread</h1>
       <ThemeToggle />
     </header>
