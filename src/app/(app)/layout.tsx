@@ -1,16 +1,8 @@
-import dynamic from "next/dynamic";
 import { getChannels } from "@/app/actions/channels";
 import { getNotes } from "@/app/actions/stocks";
 import { Sidebar } from "@/components/sidebar";
 import { MobileHeader } from "@/components/mobile-header";
-
-const SearchModal = dynamic(
-  () =>
-    import("@/components/search-modal").then((mod) => ({
-      default: mod.SearchModal,
-    })),
-  { ssr: false },
-);
+import { SearchModal } from "@/components/search-modal";
 
 export default async function AppLayout({
   children,
