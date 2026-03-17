@@ -5,9 +5,10 @@ import { db } from "@/db";
 import { channels } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { getAuthProfile } from "./auth";
+import { getCachedAuthProfile } from "@/lib/cached-auth";
 
 export async function getChannels() {
-  const profile = await getAuthProfile();
+  const profile = await getCachedAuthProfile();
   return db
     .select()
     .from(channels)
@@ -16,11 +17,8 @@ export async function getChannels() {
 }
 
 export async function getChannel(id: string) {
-  const profile = await getAuthProfile();
-  const [channel] = await db
-    .select()
-    .from(channels)
-    .where(eq(channels.id, id));
+  const profile = await getCachedAuthProfile();
+  const [channel] = await db.select().from(channels).where(eq(channels.id, id));
 
   if (!channel || channel.authorId !== profile.id) {
     return null;
