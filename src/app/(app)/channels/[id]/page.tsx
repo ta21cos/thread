@@ -4,8 +4,7 @@ import { notFound } from "next/navigation";
 import { getChannel } from "@/app/actions/channels";
 import { getPosts } from "@/app/actions/posts";
 import { getReplyCounts } from "@/app/actions/post-replies";
-import { PostList } from "@/components/post-list";
-import { PostInput } from "@/components/post-input";
+import { ChannelView } from "@/components/channel-view";
 import { ThreadPanel } from "@/components/thread-panel";
 
 export default async function ChannelPage({
@@ -42,16 +41,12 @@ export default async function ChannelPage({
             )}
           </div>
         </div>
-        <div className="flex-1 overflow-auto px-6">
-          <PostList
-            posts={posts}
-            threadReplyCounts={threadReplyCounts}
-            highlightPostId={highlight}
-          />
-        </div>
-        <div className="shrink-0 px-6 pb-4">
-          <PostInput channelId={id} />
-        </div>
+        <ChannelView
+          channelId={id}
+          posts={posts}
+          threadReplyCounts={threadReplyCounts}
+          highlightPostId={highlight}
+        />
       </div>
       <Suspense>
         <ThreadPanel channelId={id} />
