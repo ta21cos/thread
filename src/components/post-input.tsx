@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { createPost } from "@/app/actions/posts";
 
-export function PostInput({ channelId }: { channelId: string }) {
+export function PostInput({
+  channelId,
+  onOptimisticPost,
+}: {
+  channelId: string;
+  onOptimisticPost?: (content: string) => void;
+}) {
   const [content, setContent] = useState("");
   const [sending, setSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -17,6 +23,7 @@ export function PostInput({ channelId }: { channelId: string }) {
 
     setSending(true);
     setContent("");
+    onOptimisticPost?.(trimmed);
     await createPost(channelId, trimmed);
     setSending(false);
     textareaRef.current?.focus();
