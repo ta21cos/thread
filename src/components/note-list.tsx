@@ -78,6 +78,7 @@ function GroupAccordion({
             <li key={note.id}>
               <Link
                 href={`/notes/${note.id}`}
+                prefetch={false}
                 className="flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
               >
                 <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
