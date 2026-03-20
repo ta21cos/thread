@@ -122,6 +122,7 @@ function NoteLink({
   return (
     <Link
       href={`/notes/${note.id}`}
+      prefetch={false}
       onClick={onNavigate}
       className={cn(
         "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors hover:bg-accent",
