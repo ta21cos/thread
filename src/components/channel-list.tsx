@@ -1,8 +1,9 @@
 "use client";
 
+import { useCallback } from "react";
 import { Hash } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ChannelActions } from "./channel-actions";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,14 @@ interface ChannelListProps {
 
 export function ChannelList({ channels, onNavigate }: ChannelListProps) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handlePrefetch = useCallback(
+    (href: string) => {
+      router.prefetch(href);
+    },
+    [router],
+  );
 
   if (channels.length === 0) {
     return (
@@ -43,6 +52,7 @@ export function ChannelList({ channels, onNavigate }: ChannelListProps) {
             <Link
               href={`/channels/${channel.id}`}
               prefetch={false}
+              onMouseEnter={() => handlePrefetch(`/channels/${channel.id}`)}
               onClick={onNavigate}
               className={cn(
                 "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors hover:bg-accent",
